@@ -59,4 +59,4 @@ pnpm db:validate
 
 現在の Prisma スキーマには、意図的にドメインモデルを定義していません。Phase 2 のデータベース設計レビュー後にモデルと最初の Migration を追加します。
 
-プロダクト制約とエンジニアリング規約は [AGENTS.md](./AGENTS.md)、現在の実装状況は [docs/progress.md](./docs/progress.md) を参照してください。
+現在の実装状況は [docs/progress.md](./docs/progress.md) を参照してください。
