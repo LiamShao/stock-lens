@@ -1,62 +1,62 @@
-# Docker Development Environment
+# Docker 開発環境
 
-This setup starts a project-owned PostgreSQL container with pgvector installed in the image.
+この構成では、pgvector をイメージ内に組み込んだプロジェクト専用の PostgreSQL コンテナを起動します。
 
-The database container is independent from any other local PostgreSQL container, such as `expense-postgres`.
+データベースコンテナは `expense-postgres` など、ほかのローカル PostgreSQL コンテナから独立しています。
 
-## Services Managed Here
+## 管理対象サービス
 
-`compose.yaml` starts the local services StockLens AI needs for development:
+`compose.yaml` は StockLens AI のローカル開発に必要な次のサービスを起動します。
 
-- PostgreSQL 16 with pgvector
-- Redis for BullMQ queues
-- MinIO as local S3-compatible object storage for uploaded PDFs
+- PostgreSQL 16 + pgvector
+- BullMQ キュー用 Redis
+- アップロードされた PDF を保存するローカル S3 互換ストレージ MinIO
 
-## PostgreSQL and pgvector
+## PostgreSQL と pgvector
 
-PostgreSQL is built from:
+PostgreSQL イメージは次のファイルからビルドします。
 
 ```text
 docker/postgres/Dockerfile
 ```
 
-The image installs `postgresql-16-pgvector`, so pgvector survives `docker compose down` and future container recreation.
+イメージに `postgresql-16-pgvector` をインストールしているため、`docker compose down` やコンテナの再作成後も pgvector を利用できます。
 
-On first database initialization, this script enables the extension in `stocklens_ai`:
+データベースの初回初期化時に、次のスクリプトが `stocklens_ai` で pgvector Extension を有効化します。
 
 ```text
 docker/postgres/init/01-enable-pgvector.sql
 ```
 
-Database data is persisted in the Docker volume:
+PostgreSQL のデータは次の Docker Volume に保存されます。
 
 ```text
 stocklens-ai_postgres-data
 ```
 
-`docker compose down` removes containers but keeps this volume. `docker compose down -v` removes the volume and deletes the local database data.
+`docker compose down` はコンテナを削除しますが、Volume は保持します。`docker compose down -v` は Volume も削除するため、ローカルデータベースのデータが失われます。
 
-## Start
+## 起動
 
 ```bash
 docker compose up -d
 ```
 
-## Stop
+## 停止
 
 ```bash
 docker compose down
 ```
 
-## Environment
+## 環境変数
 
-Copy the example file:
+サンプルファイルをコピーします。
 
 ```bash
 cp .env.example .env
 ```
 
-When the API or worker runs directly on the host, use:
+API または Worker をホスト上で直接実行する場合は、次の接続先を使用します。
 
 ```text
 DATABASE_URL=postgresql://stocklens:stocklens-dev-password@localhost:15433/stocklens_ai?schema=public
@@ -64,7 +64,7 @@ REDIS_URL=redis://localhost:6379
 S3_ENDPOINT=http://localhost:9000
 ```
 
-When the API or worker later runs inside this Docker Compose network, use:
+API または Worker を Docker Compose ネットワーク内で実行する場合は、サービス名を接続先に使用します。
 
 ```text
 DATABASE_URL=postgresql://stocklens:stocklens-dev-password@postgres:5432/stocklens_ai?schema=public
@@ -72,9 +72,9 @@ REDIS_URL=redis://redis:6379
 S3_ENDPOINT=http://minio:9000
 ```
 
-Adjust the PostgreSQL username, password, and database name through `.env` if needed.
+必要に応じて `.env` で PostgreSQL のユーザー名、パスワード、データベース名を変更してください。
 
-## Ports
+## ポート
 
 ```text
 Redis:        localhost:6379
@@ -83,8 +83,8 @@ MinIO Console localhost:9001
 PostgreSQL:   localhost:15433
 ```
 
-## Notes
+## 注意事項
 
-- The initial MinIO bucket will be created later by application bootstrap, migration scripts, or a dedicated setup command.
-- Redis and MinIO data are stored in Docker volumes: `stocklens-ai_redis-data` and `stocklens-ai_minio-data`.
-- PostgreSQL data is stored in Docker volume: `stocklens-ai_postgres-data`.
+- 初期 MinIO Bucket は、今後 Application Bootstrap、Migration Script、または専用セットアップコマンドで作成します。
+- Redis と MinIO のデータは、それぞれ `stocklens-ai_redis-data` と `stocklens-ai_minio-data` に保存されます。
+- PostgreSQL のデータは `stocklens-ai_postgres-data` に保存されます。
