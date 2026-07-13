@@ -1,0 +1,31 @@
+{
+  "name": "stocklens-ai",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.5.2",
+  "engines": {
+    "node": ">=22 <24",
+    "pnpm": ">=10 <11"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "dotenv -e .env.example -- prisma generate --schema prisma/schema.prisma",
+    "db:validate": "dotenv -e .env.example -- prisma validate --schema prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.0"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^11.0.0",
+    "prettier": "^3.6.2",
+    "prisma": "^6.19.0",
+    "turbo": "^2.10.4",
+    "typescript": "^5.9.3"
+  }
+}

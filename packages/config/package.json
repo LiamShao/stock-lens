@@ -1,0 +1,13 @@
+{
+  "name": "@stocklens/config",
+  "version": "0.1.0",
+  "private": true,
+  "files": [
+    "typescript"
+  ],
+  "exports": {
+    "./typescript/base.json": "./typescript/base.json",
+    "./typescript/nest.json": "./typescript/nest.json",
+    "./typescript/next.json": "./typescript/next.json"
+  }
+}

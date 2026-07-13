@@ -7,6 +7,10 @@ node_modules/
 dist/
 build/
 coverage/
+.turbo/
+*.tsbuildinfo
+test-results/
+playwright-report/
 
 # Local env
 .env
@@ -19,6 +23,9 @@ npm-debug.log*
 pnpm-debug.log*
 yarn-debug.log*
 
+# Temporarily keep CI local until GitHub workflow permissions are configured
+.github/workflows/ci.yml
+
 # OS/editor
 .DS_Store
 .idea/
@@ -27,4 +34,3 @@ yarn-debug.log*
 # Runtime files
 tmp/
 uploads/
-

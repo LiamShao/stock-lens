@@ -1,5 +1,37 @@
 # StockLens AI Progress
 
+## 2026-07-13
+
+### Phase 1 foundation
+
+- Initialized the Git repository with `main` as the default branch.
+- Added a pnpm and Turborepo monorepo configuration.
+- Added initial Next.js, NestJS/Fastify, and BullMQ worker applications.
+- Added shared TypeScript, ESLint, Zod schema, database tooling, and UI packages.
+- Added Prisma 6 tooling and an intentionally model-free initial schema.
+- Added an API liveness endpoint at `/api/health/live`.
+- Added OpenAPI documentation at `/api/docs`.
+- Added initial API, worker, and frontend tests.
+- Prepared a local GitHub Actions workflow for formatting, linting,
+  typechecking, tests, and builds. It is temporarily ignored by Git until the
+  GitHub credential has permission to update workflows.
+- Added the root development README.
+
+### Deliberately deferred
+
+- Domain database models and migrations require review of the database design.
+- The worker rejects analysis jobs until the Phase 3 pipeline is implemented.
+- Authentication, object storage integration, uploads, and analysis APIs belong
+  to Phase 2.
+
+### Verified
+
+- Prisma schema validation and client generation pass.
+- Formatting, linting, strict TypeScript checks, and all five initial tests pass.
+- Production builds pass for Web, API, Worker, and internal packages.
+- The running API returns HTTP 200 from `/api/health/live` with a request ID in
+  structured JSON logs.
+
 ## 2026-07-10
 
 ### Completed
@@ -92,4 +124,3 @@ Start Phase 1 engineering initialization:
 6. Add Prisma with PostgreSQL connection.
 7. Add minimal health check endpoint.
 8. Add ESLint, Prettier, and initial GitHub Actions workflow.
-
