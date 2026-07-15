@@ -16,7 +16,9 @@
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "db:generate": "dotenv -e .env.example -- prisma generate --schema prisma/schema.prisma",
-    "db:validate": "dotenv -e .env.example -- prisma validate --schema prisma/schema.prisma"
+    "db:validate": "dotenv -e .env.example -- prisma validate --schema prisma/schema.prisma",
+    "db:migrate:dev": "dotenv -e .env -- prisma migrate dev --schema prisma/schema.prisma",
+    "db:migrate:deploy": "dotenv -e .env -- prisma migrate deploy --schema prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0"

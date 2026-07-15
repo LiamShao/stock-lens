@@ -7,4 +7,535 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Domain models will be introduced with the reviewed database design in Phase 2.
+enum AnalysisStatus {
+  UPLOADED
+  PARSING
+  CHUNKING
+  EMBEDDING
+  EXTRACTING
+  VALIDATING
+  COMPLETED
+  FAILED_PARSING
+  FAILED_CHUNKING
+  FAILED_EMBEDDING
+  FAILED_EXTRACTION
+  FAILED_VALIDATION
+}
+
+enum DocumentType {
+  EARNINGS_SUMMARY
+  EARNINGS_PRESENTATION
+  ANNUAL_SECURITIES_REPORT
+  OTHER
+  UNKNOWN
+}
+
+enum FindingCategory {
+  BUSINESS_OVERVIEW
+  FINANCIAL_HIGHLIGHT
+  MANAGEMENT_GUIDANCE
+  POSITIVE
+  RISK
+  UNCERTAINTY
+  WATCH_ITEM
+  MISSING_INFORMATION
+}
+
+enum FindingStatus {
+  SUPPORTED
+  INSUFFICIENT_EVIDENCE
+}
+
+enum EntityType {
+  COMPANY
+  PERSON
+  BUSINESS_SEGMENT
+  PRODUCT
+  FINANCIAL_METRIC
+  ORGANIZATION
+  OTHER
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum ChatMessageStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum JobStep {
+  PARSE
+  DETECT_SECTIONS
+  CHUNK
+  CALCULATE_FINANCIAL_METRICS
+  EMBED
+  SELECT_EVIDENCE
+  EXTRACT
+  VALIDATE
+  GENERATE_VIEWS
+  PERSIST
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+enum AiOperation {
+  STRUCTURED_GENERATION
+  EMBEDDING
+}
+
+model User {
+  id              String    @id @default(uuid()) @db.Uuid
+  email           String    @unique
+  passwordHash    String
+  displayName     String?
+  isDemo          Boolean   @default(false)
+  emailVerifiedAt DateTime? @db.Timestamptz(3)
+  lastLoginAt     DateTime? @db.Timestamptz(3)
+  createdAt       DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @db.Timestamptz(3)
+  deletedAt       DateTime? @db.Timestamptz(3)
+
+  refreshTokens            RefreshToken[]
+  analyses                 Analysis[]
+  documents                Document[]
+  documentPages            DocumentPage[]
+  documentChunks           DocumentChunk[]
+  findings                 AnalysisFinding[]
+  evidences                Evidence[]
+  entities                 Entity[]
+  relationships            Relationship[]
+  chatSessions             ChatSession[]
+  chatMessages             ChatMessage[]
+  jobExecutions            JobExecution[]
+  jobAttempts              JobAttempt[]
+  aiUsageLogs              AiUsageLog[]
+  findingEvidenceLinks     FindingEvidence[]
+  chatMessageEvidenceLinks ChatMessageEvidence[]
+
+  @@index([deletedAt])
+}
+
+model RefreshToken {
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @db.Uuid
+  tokenHash         String    @unique
+  familyId          String    @db.Uuid
+  expiresAt         DateTime  @db.Timestamptz(3)
+  revokedAt         DateTime? @db.Timestamptz(3)
+  replacedByTokenId String?   @unique @db.Uuid
+  lastUsedAt        DateTime? @db.Timestamptz(3)
+  userAgentHash     String?
+  createdAt         DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime  @updatedAt @db.Timestamptz(3)
+
+  user            User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  replacedByToken RefreshToken? @relation("RefreshTokenRotation", fields: [replacedByTokenId], references: [id], onDelete: SetNull)
+  replaces        RefreshToken? @relation("RefreshTokenRotation")
+
+  @@index([userId, familyId])
+  @@index([expiresAt])
+}
+
+model Company {
+  id         String   @id @default(uuid()) @db.Uuid
+  nameJa     String
+  nameEn     String?
+  ticker     String?
+  exchange   String?
+  edinetCode String?  @unique
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+
+  analyses     Analysis[]
+  chatSessions ChatSession[]
+
+  @@unique([ticker, exchange])
+  @@index([nameJa])
+}
+
+model Analysis {
+  id                  String         @id @default(uuid()) @db.Uuid
+  ownerId             String         @db.Uuid
+  companyId           String?        @db.Uuid
+  title               String
+  status              AnalysisStatus @default(UPLOADED)
+  failureCode         String?
+  failureMessage      String?
+  justTellMeOutput    Json?          @db.JsonB
+  analystViewOutput   Json?          @db.JsonB
+  buffettMungerOutput Json?          @db.JsonB
+  financialMetrics    Json?          @db.JsonB
+  completedAt         DateTime?      @db.Timestamptz(3)
+  createdAt           DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime       @updatedAt @db.Timestamptz(3)
+  deletedAt           DateTime?      @db.Timestamptz(3)
+
+  owner         User              @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  company       Company?          @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  documents     Document[]
+  findings      AnalysisFinding[]
+  evidences     Evidence[]
+  entities      Entity[]
+  relationships Relationship[]
+  jobExecutions JobExecution[]
+  aiUsageLogs   AiUsageLog[]
+  chatSessions  ChatSession[]
+
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@index([ownerId, status])
+  @@index([companyId])
+  @@index([deletedAt])
+}
+
+model Document {
+  id            String       @id @default(uuid()) @db.Uuid
+  ownerId       String       @db.Uuid
+  analysisId    String       @db.Uuid
+  originalName  String
+  documentType  DocumentType @default(UNKNOWN)
+  mimeType      String
+  sizeBytes     BigInt
+  sha256        String
+  storageBucket String
+  storageKey    String       @unique
+  pageCount     Int?
+  uploadedAt    DateTime?    @db.Timestamptz(3)
+  createdAt     DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime     @updatedAt @db.Timestamptz(3)
+  deletedAt     DateTime?    @db.Timestamptz(3)
+
+  owner         User            @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  analysis      Analysis        @relation(fields: [analysisId], references: [id], onDelete: Restrict)
+  pages         DocumentPage[]
+  chunks        DocumentChunk[]
+  evidences     Evidence[]
+  jobExecutions JobExecution[]
+
+  @@index([ownerId, analysisId])
+  @@index([analysisId, createdAt])
+  @@index([ownerId, sha256])
+  @@index([deletedAt])
+}
+
+model DocumentPage {
+  id              String   @id @default(uuid()) @db.Uuid
+  ownerId         String   @db.Uuid
+  documentId      String   @db.Uuid
+  pageNumber      Int
+  text            String
+  textSha256      String
+  sectionMetadata Json?    @db.JsonB
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+
+  owner     User            @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  document  Document        @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  chunks    DocumentChunk[]
+  evidences Evidence[]
+
+  @@unique([documentId, pageNumber])
+  @@index([ownerId, documentId])
+}
+
+model DocumentChunk {
+  id             String                 @id @default(uuid()) @db.Uuid
+  ownerId        String                 @db.Uuid
+  documentId     String                 @db.Uuid
+  pageId         String                 @db.Uuid
+  chunkIndex     Int
+  section        String?
+  content        String
+  contentSha256  String
+  tokenCount     Int?
+  embedding      Unsupported("vector")?
+  embeddingModel String?
+  createdAt      DateTime               @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime               @updatedAt @db.Timestamptz(3)
+
+  owner     User         @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  document  Document     @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  page      DocumentPage @relation(fields: [pageId], references: [id], onDelete: Restrict)
+  evidences Evidence[]
+
+  @@unique([documentId, chunkIndex])
+  @@index([documentId, contentSha256])
+  @@index([ownerId, documentId])
+  @@index([pageId])
+}
+
+model AnalysisFinding {
+  id         String          @id @default(uuid()) @db.Uuid
+  ownerId    String          @db.Uuid
+  analysisId String          @db.Uuid
+  findingKey String
+  category   FindingCategory
+  title      String
+  body       String
+  importance Int
+  status     FindingStatus
+  createdAt  DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime        @updatedAt @db.Timestamptz(3)
+
+  owner         User              @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  analysis      Analysis          @relation(fields: [analysisId], references: [id], onDelete: Restrict)
+  evidenceLinks FindingEvidence[]
+
+  @@unique([analysisId, findingKey])
+  @@index([ownerId, analysisId])
+  @@index([analysisId, category])
+}
+
+model Evidence {
+  id            String   @id @default(uuid()) @db.Uuid
+  ownerId       String   @db.Uuid
+  analysisId    String   @db.Uuid
+  documentId    String   @db.Uuid
+  pageId        String   @db.Uuid
+  chunkId       String   @db.Uuid
+  pageNumber    Int
+  excerpt       String
+  excerptSha256 String
+  startOffset   Int?
+  endOffset     Int?
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(3)
+
+  owner            User                  @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  analysis         Analysis              @relation(fields: [analysisId], references: [id], onDelete: Restrict)
+  document         Document              @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  page             DocumentPage          @relation(fields: [pageId], references: [id], onDelete: Restrict)
+  chunk            DocumentChunk         @relation(fields: [chunkId], references: [id], onDelete: Restrict)
+  findingLinks     FindingEvidence[]
+  chatMessageLinks ChatMessageEvidence[]
+  relationships    Relationship[]
+
+  @@unique([analysisId, documentId, pageNumber, excerptSha256])
+  @@index([ownerId, analysisId])
+  @@index([documentId, pageNumber])
+  @@index([pageId])
+  @@index([chunkId])
+}
+
+model FindingEvidence {
+  ownerId    String   @db.Uuid
+  findingId  String   @db.Uuid
+  evidenceId String   @db.Uuid
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+
+  owner    User            @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  finding  AnalysisFinding @relation(fields: [findingId], references: [id], onDelete: Cascade)
+  evidence Evidence        @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+
+  @@id([findingId, evidenceId])
+  @@index([ownerId, findingId])
+  @@index([evidenceId])
+}
+
+model Entity {
+  id             String     @id @default(uuid()) @db.Uuid
+  ownerId        String     @db.Uuid
+  analysisId     String     @db.Uuid
+  type           EntityType
+  name           String
+  normalizedName String
+  attributes     Json?      @db.JsonB
+  createdAt      DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime   @updatedAt @db.Timestamptz(3)
+
+  owner                 User           @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  analysis              Analysis       @relation(fields: [analysisId], references: [id], onDelete: Restrict)
+  outgoingRelationships Relationship[] @relation("RelationshipSource")
+  incomingRelationships Relationship[] @relation("RelationshipTarget")
+
+  @@unique([analysisId, type, normalizedName])
+  @@index([ownerId, analysisId])
+}
+
+model Relationship {
+  id             String   @id @default(uuid()) @db.Uuid
+  ownerId        String   @db.Uuid
+  analysisId     String   @db.Uuid
+  sourceEntityId String   @db.Uuid
+  targetEntityId String   @db.Uuid
+  type           String
+  attributes     Json?    @db.JsonB
+  evidenceId     String?  @db.Uuid
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+
+  owner        User      @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  analysis     Analysis  @relation(fields: [analysisId], references: [id], onDelete: Restrict)
+  sourceEntity Entity    @relation("RelationshipSource", fields: [sourceEntityId], references: [id], onDelete: Restrict)
+  targetEntity Entity    @relation("RelationshipTarget", fields: [targetEntityId], references: [id], onDelete: Restrict)
+  evidence     Evidence? @relation(fields: [evidenceId], references: [id], onDelete: SetNull)
+
+  @@index([ownerId, analysisId])
+  @@index([sourceEntityId])
+  @@index([targetEntityId])
+  @@index([evidenceId])
+}
+
+model ChatSession {
+  id         String    @id @default(uuid()) @db.Uuid
+  ownerId    String    @db.Uuid
+  companyId  String?   @db.Uuid
+  analysisId String?   @db.Uuid
+  title      String
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @db.Timestamptz(3)
+  deletedAt  DateTime? @db.Timestamptz(3)
+
+  owner    User          @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  company  Company?      @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  analysis Analysis?     @relation(fields: [analysisId], references: [id], onDelete: Restrict)
+  messages ChatMessage[]
+
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@index([companyId])
+  @@index([analysisId])
+  @@index([deletedAt])
+}
+
+model ChatMessage {
+  id        String            @id @default(uuid()) @db.Uuid
+  ownerId   String            @db.Uuid
+  sessionId String            @db.Uuid
+  role      ChatRole
+  content   String
+  status    ChatMessageStatus @default(PENDING)
+  createdAt DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime          @updatedAt @db.Timestamptz(3)
+
+  owner         User                  @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  session       ChatSession           @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  evidenceLinks ChatMessageEvidence[]
+
+  @@index([ownerId, sessionId])
+  @@index([sessionId, createdAt])
+}
+
+model ChatMessageEvidence {
+  ownerId       String   @db.Uuid
+  chatMessageId String   @db.Uuid
+  evidenceId    String   @db.Uuid
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(3)
+
+  owner       User        @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  chatMessage ChatMessage @relation(fields: [chatMessageId], references: [id], onDelete: Cascade)
+  evidence    Evidence    @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+
+  @@id([chatMessageId, evidenceId])
+  @@index([ownerId, chatMessageId])
+  @@index([evidenceId])
+}
+
+model JobExecution {
+  id             String    @id @default(uuid()) @db.Uuid
+  ownerId        String    @db.Uuid
+  analysisId     String    @db.Uuid
+  documentId     String?   @db.Uuid
+  step           JobStep
+  status         JobStatus @default(QUEUED)
+  currentAttempt Int       @default(0)
+  idempotencyKey String    @unique
+  startedAt      DateTime? @db.Timestamptz(3)
+  finishedAt     DateTime? @db.Timestamptz(3)
+  errorCode      String?
+  errorMessage   String?
+  errorDetails   Json?     @db.JsonB
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(3)
+
+  owner       User         @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  analysis    Analysis     @relation(fields: [analysisId], references: [id], onDelete: Restrict)
+  document    Document?    @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  attempts    JobAttempt[]
+  aiUsageLogs AiUsageLog[]
+
+  @@index([ownerId, analysisId])
+  @@index([analysisId, step, status])
+  @@index([documentId])
+}
+
+model JobAttempt {
+  id             String    @id @default(uuid()) @db.Uuid
+  ownerId        String    @db.Uuid
+  jobExecutionId String    @db.Uuid
+  attempt        Int
+  bullmqJobId    String?
+  status         JobStatus
+  startedAt      DateTime? @db.Timestamptz(3)
+  finishedAt     DateTime? @db.Timestamptz(3)
+  errorCode      String?
+  errorMessage   String?
+  errorDetails   Json?     @db.JsonB
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(3)
+
+  owner        User         @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  jobExecution JobExecution @relation(fields: [jobExecutionId], references: [id], onDelete: Cascade)
+
+  @@unique([jobExecutionId, attempt])
+  @@index([ownerId, jobExecutionId])
+  @@index([bullmqJobId])
+}
+
+model PromptVersion {
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String
+  version       Int
+  template      String
+  schemaVersion String
+  contentSha256 String   @unique
+  isActive      Boolean  @default(false)
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(3)
+
+  aiUsageLogs AiUsageLog[]
+
+  @@unique([name, version])
+  @@index([name, isActive])
+}
+
+model AiUsageLog {
+  id                  String      @id @default(uuid()) @db.Uuid
+  ownerId             String      @db.Uuid
+  analysisId          String?     @db.Uuid
+  jobExecutionId      String?     @db.Uuid
+  promptVersionId     String?     @db.Uuid
+  provider            String
+  model               String
+  operation           AiOperation
+  inputTokens         Int?
+  outputTokens        Int?
+  embeddingTokens     Int?
+  estimatedCostMicros BigInt?
+  latencyMs           Int
+  requestId           String?
+  providerRequestId   String?
+  metadata            Json?       @db.JsonB
+  createdAt           DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime    @updatedAt @db.Timestamptz(3)
+
+  owner         User           @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  analysis      Analysis?      @relation(fields: [analysisId], references: [id], onDelete: Restrict)
+  jobExecution  JobExecution?  @relation(fields: [jobExecutionId], references: [id], onDelete: Restrict)
+  promptVersion PromptVersion? @relation(fields: [promptVersionId], references: [id], onDelete: Restrict)
+
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@index([analysisId])
+  @@index([jobExecutionId])
+  @@index([promptVersionId])
+}

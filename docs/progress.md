@@ -1,5 +1,42 @@
 # StockLens AI 開発進捗
 
+## 2026-07-15
+
+### Phase 2 Database Design Draft
+
+- `docs/database-design.md` を追加し、Prisma Model 実装前の論理データモデルを定義しました。
+- Required Entity、Ownership、Soft Delete、Index、JSONB、pgvector、Full Text Search の方針を整理しました。
+- Analysis、Document、Page、Chunk、Finding、Evidence をページ単位で追跡できる Relation を定義しました。
+- Refresh Token Rotation、Job Retry、Idempotency、Prompt Version、AI Usage Audit の保存方針を定義しました。
+- `Company` と `PromptVersion` を System-wide Reference Data、それ以外のユーザーデータを Owner-scoped Data としました。
+
+### 次のレビュー項目
+
+- Access Token / Refresh Token の Transport 方針
+- Soft-deleted User の Email 再利用方針
+- Embedding Model と Dimension
+- 日本語 Full Text Search の MVP Strategy
+- JSONB View Output を将来別 Table に分離する条件
+
+この設計レビューを経て、次節の Prisma Schema と Migration を実装しました。
+
+### Phase 2 Domain Schema
+
+- 論理 Database Design を `prisma/schema.prisma` に反映しました。
+- Required Entity に加え、Evidence Link 用 Join Table と Retry 履歴用 `JobAttempt` を追加しました。
+- User-owned Data に直接 `ownerId` を持たせ、Repository で Owner Scope を強制できる構造にしました。
+- pgvector Extension、Domain Table、Foreign Key、Index、Check Constraint を作成する最初の Migration を追加しました。
+- `DocumentChunk.embedding` は Provider 未決定のため Dimension 未固定の `vector` とし、HNSW Index は延期しました。
+- Local PostgreSQL に Migration を適用し、19 Domain Table、pgvector `0.8.4`、`vector` Column の作成を確認しました。
+- Root Script に `db:migrate:dev` と `db:migrate:deploy` を追加しました。
+
+### Database 検証済み
+
+- `prisma validate` が成功します。
+- Prisma Client の生成が成功します。
+- 最初の Migration が空の Prisma Migration History から適用できます。
+- `DocumentChunk.embedding` が PostgreSQL の `vector` Type です。
+
 ## 2026-07-13
 
 ### Phase 1 基盤

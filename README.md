@@ -32,6 +32,7 @@ docs/              プロジェクト文書と進捗記録
 cp .env.example .env
 docker compose up -d
 pnpm install
+pnpm db:migrate:deploy
 pnpm db:generate
 pnpm dev
 ```
@@ -57,6 +58,14 @@ pnpm build
 pnpm db:validate
 ```
 
-現在の Prisma スキーマには、意図的にドメインモデルを定義していません。Phase 2 のデータベース設計レビュー後にモデルと最初の Migration を追加します。
+Prisma Schema と Migration には、User、Analysis、Document、Evidence、Job などの Domain Model を定義しています。論理設計と Ownership Rule は [docs/database-design.md](./docs/database-design.md) を参照してください。
+
+Schema を変更して Development Migration を作成する場合は、Local PostgreSQL を起動してから次を実行します。
+
+```bash
+pnpm db:migrate:dev
+```
+
+既存 Migration の適用だけを行う Environment では `pnpm db:migrate:deploy` を使用します。
 
 現在の実装状況は [docs/progress.md](./docs/progress.md) を参照してください。
