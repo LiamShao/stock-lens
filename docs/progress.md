@@ -1,5 +1,31 @@
 # StockLens AI 開発進捗
 
+## 2026-07-17
+
+### Phase 2 Authentication Foundation
+
+- Email Registration、Login、Logout、`GET /api/auth/me` を追加しました。
+- Password は Argon2id で Hash 化し、12 文字以上の入力を Zod で検証します。
+- Access Token は短期 JWT、Refresh Token は `HttpOnly` / `SameSite=Strict` Cookie としました。
+- Refresh Token の平文は保存せず、Hash、Family、Rotation 履歴を保存します。
+- Refresh Token Rotation を Transaction で Claim し、再利用検出時は Family 全体を失効します。
+- Active User を確認する Bearer Token Guard を追加しました。
+- API 全体と Auth Endpoint に基本 Rate Limit を追加しました。
+- Credential CORS、統一 API Error Format、Request Validation Pipe を追加しました。
+- `docs/security.md` と `docs/api-conventions.md` に決定事項を記録しました。
+
+### 検証
+
+- Argon2id Hash / Verify、JWT、Refresh Token Rotation、Reuse Detection を Unit Test で確認しました。
+- HTTP Test で Email / Display Name の正規化、Cookie 属性、Validation Error Format を確認しました。
+
+### Phase 2 の次の作業
+
+- Demo User Provisioning
+- Owner-scoped Repository と Authorization Integration Test
+- PDF Upload Validation と MinIO Presigned URL
+- Document / Analysis API と History
+
 ## 2026-07-15
 
 ### Phase 2 Database Design Draft

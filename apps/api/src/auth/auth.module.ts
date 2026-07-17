@@ -1,0 +1,26 @@
+import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+
+import { PrismaService } from '../database/prisma.service';
+import { AccessTokenGuard } from './access-token.guard';
+import { AUTH_CONFIG, getAuthConfig } from './auth.config';
+import { AuthController } from './auth.controller';
+import { AuthRepository } from './auth.repository';
+import { AuthService } from './auth.service';
+import { PasswordHasher } from './password-hasher';
+import { TokenService } from './token.service';
+
+@Module({
+  controllers: [AuthController],
+  imports: [JwtModule.register({})],
+  providers: [
+    { provide: AUTH_CONFIG, useFactory: getAuthConfig },
+    AccessTokenGuard,
+    AuthRepository,
+    AuthService,
+    PasswordHasher,
+    PrismaService,
+    TokenService,
+  ],
+})
+export class AuthModule {}

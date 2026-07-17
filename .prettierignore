@@ -1,5 +1,7 @@
 .next
+.agents
 AGENTS.md
+apps/web/next-env.d.ts
 compose.yaml
 coverage
 dist

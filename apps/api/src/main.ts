@@ -1,5 +1,7 @@
 import { ConsoleLogger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import cookie from '@fastify/cookie';
+import rateLimit from '@fastify/rate-limit';
 import {
   FastifyAdapter,
   type NestFastifyApplication,
@@ -10,8 +12,13 @@ import type { IncomingMessage } from 'node:http';
 import type { Http2ServerRequest } from 'node:http2';
 
 import { AppModule } from './app.module';
+import { getAuthConfig } from './auth/auth.config';
+import { ApiExceptionFilter } from './common/api-exception.filter';
+import { loadLocalEnvironment } from './environment';
 
 async function bootstrap(): Promise<void> {
+  loadLocalEnvironment();
+  const authConfig = getAuthConfig();
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({
@@ -26,8 +33,25 @@ async function bootstrap(): Promise<void> {
     },
   );
 
+  await app.register(cookie);
+  await app.register(rateLimit, {
+    errorResponseBuilder: (request) => ({
+      code: 'RATE_LIMIT_EXCEEDED',
+      details: {},
+      message: 'Too many requests.',
+      requestId: request.id,
+    }),
+    max: 100,
+    timeWindow: '1 minute',
+  });
+
   app.setGlobalPrefix('api');
+  app.enableCors({
+    credentials: true,
+    origin: authConfig.corsOrigin,
+  });
   app.enableShutdownHooks();
+  app.useGlobalFilters(new ApiExceptionFilter());
 
   const openApiConfig = new DocumentBuilder()
     .setTitle('StockLens AI API')
