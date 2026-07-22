@@ -1,5 +1,28 @@
 # StockLens AI 開発進捗
 
+## 2026-07-22
+
+### 承認済み SDD 整改 15 項目
+
+- User が `specs/decision-request.md` の 15 Recommendation をすべて承認し、Decision Log と Deviation Status に反映しました。
+- Authentication は Dummy Argon2id Verify、Atomic Login Audit/Token、HS256 Allowlist、Concrete OpenAPI Contract を追加しました。
+- Request ID Validation と Authorization/Cookie/Password/Token の Structured Log Redaction を追加しました。
+- Demo User は Production Explicit Allow、Default Password Guard、Password Rotation 時の Session Revoke、Concurrent Create Convergence、Sanitized CLI Error を追加しました。
+- `Analysis(ownerId, id)` / `Document(ownerId, analysisId)` Composite FK と Fail-fast Migration Audit を追加しました。
+- Parent Delete/Child Create は Serializable Transaction + 限定 `P2034` Retry で収束させました。
+- Integration Test を Testcontainers に移行し、空 PostgreSQL への Migration、Auth HTTP、Demo、Ownership/Constraint/Concurrency を 2 Suites 9 Tests で検証しました。
+- GitHub Actions は SDD Check、Integration Database Image Build、Integration Test を Quality Gate として実行します。
+- `docs/architecture.md` と `docs/testing-strategy.md` を追加しました。残る Required ADR/AI/Evaluation/Deployment 文書は `DOC-DEV-001` として継続管理します。
+
+### Spec-Driven Development Baseline
+
+- `specs/` に Feature Spec、Technical Plan、Tasks、Verification の Lifecycle と Template を追加しました。
+- Authentication、Demo User、Owner-scoped Data Access を既存 Code/Test から Backfill しました。
+- Requirement ID と `specs/traceability.md` による Code/Test Traceability を導入しました。
+- 不足 Test、Security Risk、Data Integrity Gap、未決定事項を `specs/deviations.md` に記録しました。User Decision 前に挙動は変更しません。
+- 次 Feature の PDF Upload は `Draft` Spec だけを作成し、Open Questions の承認前には Technical Plan/Tasks/Implementation を開始しません。
+- `pnpm spec:check` で必須 Artifact、Requirement Traceability、Acceptance Verification Entry を検証します。
+
 ## 2026-07-17
 
 ### Phase 2 Authentication Foundation
@@ -21,10 +44,25 @@
 
 ### Phase 2 の次の作業
 
-- Demo User Provisioning
-- Owner-scoped Repository と Authorization Integration Test
 - PDF Upload Validation と MinIO Presigned URL
 - Document / Analysis API と History
+
+### Demo User Provisioning
+
+- `pnpm demo:user:provision` で明示的に実行する Demo User Provisioning CLI を追加しました。
+- `DEMO_USER_EMAIL`、`DEMO_USER_PASSWORD`、`DEMO_USER_DISPLAY_NAME` は Zod で検証・正規化します。
+- 再実行時に同じ設定なら Database Write を行わず、設定変更時のみ Demo User を更新します。
+- 通常 User の上書きと、Soft Delete 済み Demo User の暗黙的な復元を拒否します。
+- Password は既存 Auth と同じ Argon2id Hasher を使用し、CLI の構造化出力には Password を含めません。
+
+### Owner-scoped Repository と Authorization Integration Test
+
+- `AnalysisRepository` と `DocumentRepository` を追加し、Active Resource の Read、List、Update、Soft Delete に `ownerId` Scope を必須化しました。
+- Document 作成時は、関連する Analysis が同じ Owner に所属し、Soft Delete されていないことを Transaction 内で確認します。
+- Analysis の Soft Delete と所属 Document の Soft Delete を同一 Transaction で実行します。
+- `DatabaseModule` に Prisma と Repository Provider を集約しました。Controller から Prisma を直接呼び出さない Boundary として使用します。
+- Local PostgreSQL を使用する Integration Test で、Cross-user Read、List、Create、Update、Delete の拒否と、Owner 自身の操作成功を確認しました。
+- Integration Test は Random UUID の Test Data だけを削除し、既存 Local Data を Truncate しません。
 
 ## 2026-07-15
 

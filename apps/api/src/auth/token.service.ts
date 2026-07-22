@@ -17,6 +17,7 @@ export class TokenService {
     return this.jwtService.signAsync(
       { email: claims.email },
       {
+        algorithm: 'HS256',
         audience: this.config.accessTokenAudience,
         expiresIn: this.config.accessTokenExpiresInSeconds,
         issuer: this.config.accessTokenIssuer,
@@ -28,6 +29,7 @@ export class TokenService {
 
   verifyAccessToken(token: string): Promise<AccessTokenClaims> {
     return this.jwtService.verifyAsync<AccessTokenClaims>(token, {
+      algorithms: ['HS256'],
       audience: this.config.accessTokenAudience,
       issuer: this.config.accessTokenIssuer,
       secret: this.config.accessTokenSecret,

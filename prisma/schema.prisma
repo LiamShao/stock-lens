@@ -191,6 +191,7 @@ model Analysis {
   aiUsageLogs   AiUsageLog[]
   chatSessions  ChatSession[]
 
+  @@unique([ownerId, id])
   @@index([ownerId, createdAt(sort: Desc)])
   @@index([ownerId, status])
   @@index([companyId])
@@ -215,7 +216,7 @@ model Document {
   deletedAt     DateTime?    @db.Timestamptz(3)
 
   owner         User            @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  analysis      Analysis        @relation(fields: [analysisId], references: [id], onDelete: Restrict)
+  analysis      Analysis        @relation(fields: [ownerId, analysisId], references: [ownerId, id], onDelete: Restrict)
   pages         DocumentPage[]
   chunks        DocumentChunk[]
   evidences     Evidence[]

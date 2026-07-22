@@ -82,15 +82,17 @@ export class AuthRepository {
     });
   }
 
-  async recordLogin(userId: string, now: Date): Promise<void> {
-    await this.prisma.user.update({
-      data: { lastLoginAt: now },
-      where: { id: userId },
-    });
-  }
-
-  createRefreshToken(token: StoredRefreshToken): Promise<unknown> {
-    return this.prisma.refreshToken.create({ data: token });
+  async createRefreshTokenAndRecordLogin(
+    token: StoredRefreshToken & { userId: string },
+    now: Date,
+  ): Promise<void> {
+    await this.prisma.$transaction([
+      this.prisma.refreshToken.create({ data: token }),
+      this.prisma.user.update({
+        data: { lastLoginAt: now },
+        where: { id: token.userId },
+      }),
+    ]);
   }
 
   findRefreshToken(id: string): Promise<RefreshTokenRecord | null> {

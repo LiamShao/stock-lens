@@ -38,4 +38,19 @@ describe('TokenService', () => {
     expect(token.hash).not.toContain(token.plainText);
     expect(token.expiresAt).toEqual(new Date('2026-08-16T00:00:00.000Z'));
   });
+
+  it('AUTH-SEC-003 rejects a valid token signed with a non-allowlisted algorithm', async () => {
+    const token = await new JwtService().signAsync(
+      { email: 'test@example.com' },
+      {
+        algorithm: 'HS384',
+        audience: config.accessTokenAudience,
+        issuer: config.accessTokenIssuer,
+        secret: config.accessTokenSecret,
+        subject: '2f7cbd41-9fb4-42c6-94b8-e10ee9642947',
+      },
+    );
+
+    await expect(service.verifyAccessToken(token)).rejects.toThrow();
+  });
 });

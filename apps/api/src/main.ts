@@ -1,19 +1,18 @@
 import { ConsoleLogger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import cookie from '@fastify/cookie';
-import rateLimit from '@fastify/rate-limit';
 import {
   FastifyAdapter,
   type NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { randomUUID } from 'node:crypto';
 import type { IncomingMessage } from 'node:http';
 import type { Http2ServerRequest } from 'node:http2';
 
 import { AppModule } from './app.module';
+import { configureApiApplication } from './app-configuration';
 import { getAuthConfig } from './auth/auth.config';
-import { ApiExceptionFilter } from './common/api-exception.filter';
+import { getFastifyLoggerOptions } from './common/logger.config';
+import { resolveRequestId } from './common/request-id';
 import { loadLocalEnvironment } from './environment';
 
 async function bootstrap(): Promise<void> {
@@ -23,40 +22,24 @@ async function bootstrap(): Promise<void> {
     AppModule,
     new FastifyAdapter({
       genReqId: (request: IncomingMessage | Http2ServerRequest) => {
-        const requestId = request.headers['x-request-id'];
-        return typeof requestId === 'string' ? requestId : randomUUID();
+        return resolveRequestId(request.headers['x-request-id']);
       },
-      logger: true,
+      logger: getFastifyLoggerOptions(),
     }),
     {
       logger: new ConsoleLogger({ json: true }),
     },
   );
 
-  await app.register(cookie);
-  await app.register(rateLimit, {
-    errorResponseBuilder: (request) => ({
-      code: 'RATE_LIMIT_EXCEEDED',
-      details: {},
-      message: 'Too many requests.',
-      requestId: request.id,
-    }),
-    max: 100,
-    timeWindow: '1 minute',
-  });
-
-  app.setGlobalPrefix('api');
-  app.enableCors({
-    credentials: true,
-    origin: authConfig.corsOrigin,
-  });
+  await configureApiApplication(app, authConfig);
   app.enableShutdownHooks();
-  app.useGlobalFilters(new ApiExceptionFilter());
 
   const openApiConfig = new DocumentBuilder()
     .setTitle('StockLens AI API')
     .setDescription('Evidence-based company research API for uploaded IR PDFs.')
     .setVersion('0.1.0')
+    .addBearerAuth()
+    .addCookieAuth('stocklens_refresh_token')
     .build();
   const openApiDocument = SwaggerModule.createDocument(app, openApiConfig);
   SwaggerModule.setup('api/docs', app, openApiDocument);

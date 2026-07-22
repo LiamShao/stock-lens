@@ -6,7 +6,7 @@
 
 ## 2. Request ID
 
-すべての Request に Request ID を付与します。Client が `x-request-id` を指定した場合はその値を使用し、指定がない場合は API が UUID を生成します。
+すべての Request に Request ID を付与します。Client の `x-request-id` は 128 文字以内かつ ASCII の英数字、`.`、`_`、`:`、`-` だけを受理します。未指定または不正な値は API が生成した UUID に置換します。
 
 ## 3. Error Format
 
@@ -41,6 +41,8 @@ Error Response は次の形式に統一します。
 | GET    | `/auth/me`       | Bearer Token に紐づく Active User を取得 |
 
 Register と Login は Access Token を Response Body に返し、Refresh Token を `HttpOnly` Cookie に設定します。Password や Refresh Token を Response JSON に含めません。
+
+OpenAPI は Auth Success/Error DTO、Refresh Cookie Response Header、Bearer/Cookie Security Scheme を具体的な Schema として公開します。
 
 ## 5. Validation
 

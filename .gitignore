@@ -31,9 +31,6 @@ yarn-debug.log*
 .idea/
 .vscode/
 
-# Local AI agent instructions
-AGENTS.md
-
 # Runtime files
 tmp/
 uploads/

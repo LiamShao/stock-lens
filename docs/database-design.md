@@ -30,7 +30,7 @@
 - URL や Request Body で受け取った Resource ID だけで検索しません。
 - Child Record にも `ownerId` を保持し、深い Join に依存しない認可を可能にします。
 - `ownerId` は作成後に変更できません。
-- 作成時は Parent Resource と同じ `ownerId` であることを Transaction 内で検証します。
+- 作成時は Parent Resource と同じ `ownerId` であることを Transaction 内で検証し、対応可能な Parent/Child には Composite Foreign Key も設定します。
 
 PostgreSQL Row Level Security は MVP では必須とせず、Repository 層と Authorization Test で保証します。将来 RLS を追加できるよう、User-owned Table に Ownership Column を揃えます。
 
@@ -168,7 +168,7 @@ Refresh Token Rotation と Reuse Detection を支えます。
 | `updatedAt`           | Timestamptz          | 更新日時                           |
 | `deletedAt`           | Timestamptz nullable | Soft Delete                        |
 
-`ownerId, createdAt DESC`、`ownerId, status`、`companyId` に Index を設定します。
+`ownerId, createdAt DESC`、`ownerId, status`、`companyId` に Index を設定します。`ownerId, id` は Owner-consistent Child Relation の Composite Candidate Key です。
 
 AnalysisStatus は次に限定します。
 
@@ -209,7 +209,7 @@ Upload された PDF の Metadata と Storage Location を保持します。
 | `updatedAt`     | Timestamptz          | 更新日時                     |
 | `deletedAt`     | Timestamptz nullable | Soft Delete                  |
 
-`ownerId, analysisId`、`analysisId, createdAt`、`storageKey`、`ownerId, sha256` に Index を設定します。1 Analysis あたり最大 3 Document は Service の Transaction 内で検証します。Database Trigger は MVP では使用しません。
+`ownerId, analysisId`、`analysisId, createdAt`、`storageKey`、`ownerId, sha256` に Index を設定します。`Document(ownerId, analysisId)` は `Analysis(ownerId, id)` を参照する Composite FK により Cross-owner Parent Relation を拒否します。1 Analysis あたり最大 3 Document は Service の Transaction 内で検証します。Database Trigger は MVP では使用しません。
 
 ### 4.6 DocumentPage
 

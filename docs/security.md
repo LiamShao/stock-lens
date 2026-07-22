@@ -11,6 +11,7 @@
 - Password は 12 文字以上 128 文字以下とします。
 - Database には Argon2id Hash のみを保存します。
 - Login 失敗時は Email の存在有無を区別せず、`INVALID_CREDENTIALS` を返します。
+- Unknown Email でも固定 Dummy Argon2id Hash を Verify し、明白な Timing Difference を縮小します。
 - Soft Delete 済み User の Email は MVP では再利用しません。
 
 ### Access Token
@@ -18,6 +19,7 @@
 - Access Token は署名付き JWT とし、`Authorization: Bearer <token>` で送信します。
 - Default 有効期限は 15 分です。
 - `issuer`、`audience`、`subject`、有効期限、署名を検証します。
+- Sign/Verify Algorithm は `HS256` のみ許可します。
 - JWT Payload には User ID と正規化済み Email だけを含めます。
 - Protected Endpoint では Token 検証後に Active User を Database で再確認します。
 
@@ -37,12 +39,14 @@
 - API 全体は Default で 1 IP あたり 1 分 100 Request です。
 - Register は 1 分 5 Request、Login は 1 分 10 Request、Refresh は 1 分 20 Request です。
 - 現在の Store は Process Local です。複数 Instance Deployment 前に Redis-backed Store へ変更します。
+- Rate Limit Error も統一 API Error Format の `429 RATE_LIMIT_EXCEEDED` とします。
 
 ## 4. User Data Isolation
 
 - User-owned Resource は必ず Authenticated User ID を `ownerId` / `userId` 条件として Repository Query に含めます。
 - Controller は Prisma を直接呼び出しません。
 - Phase 2 の Document / Analysis Repository 実装時に、Cross-user Read、Update、Delete の Integration Test を追加します。
+- `Analysis(ownerId, id)` と `Document(ownerId, analysisId)` の Composite FK で Parent/Child Owner Equality を Database でも強制します。
 - PostgreSQL RLS は MVP 必須ではありません。Repository Boundary と Authorization Test で保証します。
 
 ## 5. Error と Log
@@ -50,6 +54,8 @@
 - API Error は `code`、`message`、`requestId`、`details` の統一形式で返します。
 - 予期しない Error は Client に内部 Detail を返しません。
 - Password、Access Token、Refresh Token、PDF 全文を Log に記録しません。
+- Structured Logger は Authorization、Cookie、Set-Cookie、Password、Access/Refresh Token Field を明示的に Redact します。
+- Client Request ID は最大 128 文字の限定文字種だけを受理し、Log Injection/Storage Abuse を抑えます。
 - User-Agent は必要な場合も平文ではなく SHA-256 Hash として Token Record に保存します。
 
 ## 6. 環境変数
@@ -60,10 +66,12 @@
 
 ## 7. Phase 2 の未実装項目
 
-- Demo User Provisioning
 - PDF Extension / MIME / Header Validation
 - 20 MB / 3 File Limit
 - Private Object Storage Bucket と Short-lived Presigned URL
-- Document / Analysis の Owner-scoped Authorization Test
 - Redis-backed Distributed Rate Limit
 - Secret Rotation Runbook
+
+Demo User は明示的な CLI でのみ Provisioning し、API 起動時には作成しません。CLI は通常 User の上書き、Soft Delete 済み User の暗黙的な復元、Password の出力を禁止します。Production では `ALLOW_DEMO_USER_PROVISIONING=true` と Local Default 以外の Password を必須とし、Password 変更時は既存 Active Refresh Token を同一 Transaction で失効します。
+
+Document / Analysis Repository は Read、List、Create、Update、Soft Delete の Query に Authenticated User の `ownerId` を含めます。Cross-user 操作が Resource の存在を推測できないよう、Repository は対象なしとして扱います。この Boundary は Testcontainers PostgreSQL Integration Test で検証します。Analysis/Document HTTP API は未実装のため、Bearer User から Repository までの End-to-end Authorization Test は引き続き Blocked です。

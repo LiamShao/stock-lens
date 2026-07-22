@@ -12,12 +12,17 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiBadRequestResponse,
   ApiBody,
+  ApiConflictResponse,
+  ApiCookieAuth,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiTooManyRequestsResponse,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { RouteConfig } from '@nestjs/platform-fastify';
 import {
@@ -34,12 +39,22 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { AccessTokenGuard } from './access-token.guard';
 import { AUTH_CONFIG, type AuthConfig } from './auth.config';
 import { AuthService, type AuthResult } from './auth.service';
+import {
+  ApiErrorOpenApi,
+  AuthResponseOpenApi,
+  AuthUserOpenApi,
+  REFRESH_COOKIE_RESPONSE_HEADER,
+} from './auth.openapi';
 import { CurrentUser } from './current-user.decorator';
 
 export const REFRESH_TOKEN_COOKIE = 'stocklens_refresh_token';
 
 @Controller('auth')
 @ApiTags('auth')
+@ApiTooManyRequestsResponse({
+  description: 'Rate limit exceeded',
+  type: ApiErrorOpenApi,
+})
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -60,7 +75,19 @@ export class AuthController {
       type: 'object',
     },
   })
-  @ApiCreatedResponse({ description: 'Account created' })
+  @ApiCreatedResponse({
+    description: 'Account created',
+    headers: REFRESH_COOKIE_RESPONSE_HEADER,
+    type: AuthResponseOpenApi,
+  })
+  @ApiBadRequestResponse({
+    description: 'Request validation failed',
+    type: ApiErrorOpenApi,
+  })
+  @ApiConflictResponse({
+    description: 'Email is already registered',
+    type: ApiErrorOpenApi,
+  })
   async register(
     @Body(new ZodValidationPipe(registerRequestSchema)) body: RegisterRequest,
     @Req() request: FastifyRequest,
@@ -88,7 +115,19 @@ export class AuthController {
       type: 'object',
     },
   })
-  @ApiOkResponse({ description: 'Authenticated' })
+  @ApiOkResponse({
+    description: 'Authenticated',
+    headers: REFRESH_COOKIE_RESPONSE_HEADER,
+    type: AuthResponseOpenApi,
+  })
+  @ApiBadRequestResponse({
+    description: 'Request validation failed',
+    type: ApiErrorOpenApi,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Email or password is incorrect',
+    type: ApiErrorOpenApi,
+  })
   async login(
     @Body(new ZodValidationPipe(loginRequestSchema)) body: LoginRequest,
     @Req() request: FastifyRequest,
@@ -105,8 +144,17 @@ export class AuthController {
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @RouteConfig({ rateLimit: { max: 20, timeWindow: '1 minute' } })
+  @ApiCookieAuth(REFRESH_TOKEN_COOKIE)
   @ApiOperation({ summary: 'Rotate the refresh token' })
-  @ApiOkResponse({ description: 'Token rotated' })
+  @ApiOkResponse({
+    description: 'Token rotated',
+    headers: REFRESH_COOKIE_RESPONSE_HEADER,
+    type: AuthResponseOpenApi,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Refresh token is invalid, expired, or reused',
+    type: ApiErrorOpenApi,
+  })
   async refresh(
     @Req() request: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
@@ -121,6 +169,7 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiCookieAuth(REFRESH_TOKEN_COOKIE)
   @ApiOperation({ summary: 'Revoke the current refresh token family' })
   @ApiNoContentResponse({ description: 'Logged out' })
   async logout(
@@ -137,7 +186,14 @@ export class AuthController {
   @UseGuards(AccessTokenGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get the authenticated user' })
-  @ApiOkResponse({ description: 'Authenticated user' })
+  @ApiOkResponse({
+    description: 'Authenticated user',
+    type: AuthUserOpenApi,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Bearer access token is missing or invalid',
+    type: ApiErrorOpenApi,
+  })
   me(@CurrentUser() user: AuthUser): AuthUser {
     return user;
   }

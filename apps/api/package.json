@@ -4,10 +4,12 @@
   "private": true,
   "scripts": {
     "build": "nest build",
+    "demo:user:provision": "nest start --entryFile provision-demo-user",
     "dev": "nest start --watch",
-    "lint": "eslint src --max-warnings=0",
+    "lint": "eslint src test --max-warnings=0",
     "start": "node dist/main.js",
     "test": "jest",
+    "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --config jest.integration.config.cjs --runInBand",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -33,6 +35,7 @@
     "@nestjs/testing": "^11.1.28",
     "@stocklens/config": "workspace:*",
     "@stocklens/eslint-config": "workspace:*",
+    "@testcontainers/postgresql": "^12.0.4",
     "@types/jest": "^29.5.14",
     "@types/node": "^24.10.0",
     "eslint": "^9.39.5",

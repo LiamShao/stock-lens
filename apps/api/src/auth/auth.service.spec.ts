@@ -28,12 +28,11 @@ const config: AuthConfig = {
 
 describe('AuthService', () => {
   const repository = {
-    createRefreshToken: jest.fn(),
+    createRefreshTokenAndRecordLogin: jest.fn(),
     createUserWithRefreshToken: jest.fn(),
     findActiveUserByEmail: jest.fn(),
     findActiveUserById: jest.fn(),
     findRefreshToken: jest.fn(),
-    recordLogin: jest.fn(),
     revokeFamily: jest.fn(),
     rotateRefreshToken: jest.fn(),
   };
@@ -60,6 +59,46 @@ describe('AuthService', () => {
       config,
     );
     tokenService.createAccessToken.mockResolvedValue('access-token');
+  });
+
+  it('AUTH-AC-004 persists the login token and audit timestamp atomically', async () => {
+    repository.findActiveUserByEmail.mockResolvedValue(user);
+    passwordHasher.verify.mockResolvedValue(true);
+    tokenService.createRefreshToken.mockReturnValue({
+      expiresAt: new Date('2026-08-21T00:00:00.000Z'),
+      hash: 'aa'.repeat(32),
+      id: '11111111-1111-4111-8111-111111111111',
+      plainText: 'refresh-token',
+    });
+    tokenService.hashUserAgent.mockReturnValue('user-agent-hash');
+
+    await expect(
+      service.login(
+        { email: user.email, password: 'correct-password' },
+        'test-agent',
+      ),
+    ).resolves.toMatchObject({ refreshToken: 'refresh-token' });
+    expect(repository.createRefreshTokenAndRecordLogin).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: user.id }),
+      expect.any(Date),
+    );
+  });
+
+  it('AUTH-SEC-002 performs dummy password verification for an unknown email', async () => {
+    repository.findActiveUserByEmail.mockResolvedValue(null);
+    passwordHasher.verify.mockResolvedValue(false);
+
+    await expect(
+      service.login(
+        { email: 'unknown@example.com', password: 'incorrect-password' },
+        undefined,
+      ),
+    ).rejects.toMatchObject({ code: 'INVALID_CREDENTIALS' });
+    expect(passwordHasher.verify).toHaveBeenCalledWith(
+      expect.stringMatching(/^\$argon2id\$/),
+      'incorrect-password',
+    );
+    expect(repository.createRefreshTokenAndRecordLogin).not.toHaveBeenCalled();
   });
 
   it('rotates a refresh token without changing its family', async () => {

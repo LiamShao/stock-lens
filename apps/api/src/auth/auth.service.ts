@@ -23,6 +23,9 @@ export interface AuthResult {
   response: AuthResponse;
 }
 
+const DUMMY_PASSWORD_HASH =
+  '$argon2id$v=19$m=19456,t=2,p=1$ibvvNRyp99Z5w2lupIbDpQ$AsmF/N5EUde2MnFBI2z4gT57X0U3th7ayMXoZcTUwbA';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -72,23 +75,26 @@ export class AuthService {
     userAgent: string | undefined,
   ): Promise<AuthResult> {
     const user = await this.repository.findActiveUserByEmail(input.email);
-    if (
-      user === null ||
-      !(await this.passwordHasher.verify(user.passwordHash, input.password))
-    ) {
+    const passwordMatches = await this.passwordHasher.verify(
+      user?.passwordHash ?? DUMMY_PASSWORD_HASH,
+      input.password,
+    );
+    if (user === null || !passwordMatches) {
       throw this.invalidCredentials();
     }
     const now = new Date();
     const refreshToken = this.tokenService.createRefreshToken(now);
-    await this.repository.createRefreshToken({
-      expiresAt: refreshToken.expiresAt,
-      familyId: randomUUID(),
-      id: refreshToken.id,
-      tokenHash: refreshToken.hash,
-      userAgentHash: this.tokenService.hashUserAgent(userAgent),
-      userId: user.id,
-    });
-    await this.repository.recordLogin(user.id, now);
+    await this.repository.createRefreshTokenAndRecordLogin(
+      {
+        expiresAt: refreshToken.expiresAt,
+        familyId: randomUUID(),
+        id: refreshToken.id,
+        tokenHash: refreshToken.hash,
+        userAgentHash: this.tokenService.hashUserAgent(userAgent),
+        userId: user.id,
+      },
+      now,
+    );
     return this.createAuthResult(user, refreshToken.plainText);
   }
 

@@ -34,8 +34,11 @@ docker compose up -d
 pnpm install
 pnpm db:migrate:deploy
 pnpm db:generate
+pnpm demo:user:provision
 pnpm dev
 ```
+
+`demo:user:provision` は `.env` の `DEMO_USER_*` を検証し、Demo User を冪等に作成または更新します。通常 User と同じ Email が存在する場合や、対象 Demo User が Soft Delete 済みの場合は上書きしません。この Command は API 起動時には自動実行されません。
 
 各サービスはデフォルトで次のポートを使用します。
 
@@ -51,14 +54,22 @@ pnpm dev
 
 ```bash
 pnpm format:check
+pnpm spec:check
 pnpm lint
 pnpm typecheck
 pnpm test
+pnpm test:integration
 pnpm build
 pnpm db:validate
 ```
 
+`test:integration` は Docker/Testcontainers で隔離した `stocklens-postgres:16-pgvector` を起動し、空 Database に全 Migration を適用します。共有 Local PostgreSQL や既存 Data は変更しません。Image が未 Build の場合は先に `docker compose build postgres` を実行してください。
+
 Prisma Schema と Migration には、User、Analysis、Document、Evidence、Job などの Domain Model を定義しています。論理設計と Ownership Rule は [docs/database-design.md](./docs/database-design.md) を参照してください。
+
+Feature Development は Spec-Driven Development で進めます。SDD Workflow、Feature Spec、Requirement Traceability、Deviation は [specs/README.md](./specs/README.md) を参照してください。既存実装から Backfill した Authentication/Demo User Spec は承認・検証済みで、Ownership は未実装 HTTP API の Criterion を明示して `Partial` としています。
+
+Cross-cutting Design は [docs/architecture.md](./docs/architecture.md)、Test Layer と CI Gate は [docs/testing-strategy.md](./docs/testing-strategy.md) を参照してください。
 
 Schema を変更して Development Migration を作成する場合は、Local PostgreSQL を起動してから次を実行します。
 

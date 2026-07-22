@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import type { CookieSerializeOptions } from '@fastify/cookie';
 import {
   FastifyAdapter,
@@ -73,6 +74,7 @@ describe('AuthController', () => {
             `${name}=${value}`,
             options?.httpOnly ? 'HttpOnly' : '',
             options?.sameSite ? `SameSite=${options.sameSite}` : '',
+            options?.secure ? 'Secure' : '',
           ].filter(Boolean);
           this.header('set-cookie', attributes.join('; '));
           return this;
@@ -85,6 +87,7 @@ describe('AuthController', () => {
   });
 
   afterEach(async () => {
+    config.isProduction = false;
     await app.close();
   });
 
@@ -142,5 +145,48 @@ describe('AuthController', () => {
       .parse(response.json<unknown>());
     expect(errorResponse.details.issues.length).toBeGreaterThan(0);
     expect(authService.register).not.toHaveBeenCalled();
+  });
+
+  it('AUTH-AC-010 sets Secure on the production refresh cookie', async () => {
+    config.isProduction = true;
+    authService.login.mockResolvedValue(authResult);
+
+    const response = await app.inject({
+      method: 'POST',
+      payload: {
+        email: 'test@example.com',
+        password: 'correct horse battery staple',
+      },
+      url: '/api/auth/login',
+    });
+
+    expect(response.headers['set-cookie']).toEqual(
+      expect.stringContaining('Secure'),
+    );
+  });
+
+  it('AUTH-DEV-004 publishes concrete success and error response schemas', () => {
+    const document = SwaggerModule.createDocument(
+      app,
+      new DocumentBuilder()
+        .setTitle('Test')
+        .setVersion('1')
+        .addBearerAuth()
+        .addCookieAuth('stocklens_refresh_token')
+        .build(),
+    );
+    const registerOperation = document.paths['/api/auth/register']?.post;
+    const meOperation = document.paths['/api/auth/me']?.get;
+
+    expect(registerOperation?.responses['201']).toBeDefined();
+    expect(registerOperation?.responses['400']).toBeDefined();
+    expect(registerOperation?.responses['409']).toBeDefined();
+    expect(registerOperation?.responses['429']).toBeDefined();
+    expect(meOperation?.responses['200']).toBeDefined();
+    expect(meOperation?.responses['401']).toBeDefined();
+    expect(meOperation?.responses['429']).toBeDefined();
+    expect(document.components?.schemas?.ApiErrorOpenApi).toBeDefined();
+    expect(document.components?.schemas?.AuthResponseOpenApi).toBeDefined();
+    expect(document.components?.schemas?.AuthUserOpenApi).toBeDefined();
   });
 });
