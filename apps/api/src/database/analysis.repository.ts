@@ -21,6 +21,11 @@ export type AnalysisRecord = Prisma.AnalysisGetPayload<{
   select: typeof analysisSelection;
 }>;
 
+export interface AnalysisListCursor {
+  createdAt: Date;
+  id: string;
+}
+
 @Injectable()
 export class AnalysisRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -43,15 +48,39 @@ export class AnalysisRepository {
     });
   }
 
+  async companyExists(id: string): Promise<boolean> {
+    const company = await this.prisma.company.findUnique({
+      select: { id: true },
+      where: { id },
+    });
+    return company !== null;
+  }
+
   listActive(
     ownerId: string,
-    options: { limit: number; status?: AnalysisStatus },
+    options: {
+      cursor?: AnalysisListCursor;
+      limit: number;
+      status?: AnalysisStatus;
+    },
   ): Promise<AnalysisRecord[]> {
+    const cursorFilter = options.cursor
+      ? {
+          OR: [
+            { createdAt: { lt: options.cursor.createdAt } },
+            {
+              createdAt: options.cursor.createdAt,
+              id: { lt: options.cursor.id },
+            },
+          ],
+        }
+      : {};
     return this.prisma.analysis.findMany({
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       select: analysisSelection,
       take: options.limit,
       where: {
+        ...cursorFilter,
         deletedAt: null,
         ownerId,
         ...(options.status ? { status: options.status } : {}),
@@ -65,6 +94,26 @@ export class AnalysisRepository {
       where: { deletedAt: null, id, ownerId },
     });
     return result.count === 1;
+  }
+
+  renameActive(
+    ownerId: string,
+    id: string,
+    title: string,
+  ): Promise<AnalysisRecord | null> {
+    return this.prisma.$transaction(async (transaction) => {
+      const result = await transaction.analysis.updateMany({
+        data: { title },
+        where: { deletedAt: null, id, ownerId },
+      });
+      if (result.count !== 1) {
+        return null;
+      }
+      return transaction.analysis.findFirst({
+        select: analysisSelection,
+        where: { deletedAt: null, id, ownerId },
+      });
+    });
   }
 
   async softDelete(

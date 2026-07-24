@@ -4,27 +4,28 @@
 
 ## Summary
 
-| ID                 | Area           | Severity | Status                 | Recommended disposition                                       |
-| ------------------ | -------------- | -------: | ---------------------- | ------------------------------------------------------------- |
-| `SDD-DEV-001`      | Process        |   Medium | Resolved 2026-07-22    | Backfilled Spec を Review して Baseline 承認                  |
-| `SDD-DEV-002`      | Governance     |   Medium | Resolved 2026-07-22    | `AGENTS.md` を Git 管理して SDD Agent Rule を共有             |
-| `AUTH-DEV-001`     | Test           |     High | Resolved 2026-07-22    | Auth PostgreSQL / HTTP Integration Test を次作業で追加        |
-| `AUTH-DEV-002`     | Security       |   Medium | Resolved 2026-07-22    | Unknown Email でも Dummy Argon2 Verify を実行                 |
-| `AUTH-DEV-003`     | Consistency    |      Low | Resolved 2026-07-22    | Login Token 作成と `lastLoginAt` を Transaction 化            |
-| `AUTH-DEV-004`     | API Contract   |   Medium | Resolved 2026-07-22    | OpenAPI Response / Error Schema を具体化                      |
-| `AUTH-DEV-005`     | Security       |   Medium | Resolved 2026-07-22    | JWT Sign/Verify を `HS256` Allowlist に固定                   |
-| `PLATFORM-DEV-001` | Logging        |   Medium | Resolved 2026-07-22    | Client Request ID を長さ・文字種で検証                        |
-| `PLATFORM-DEV-002` | Logging        |     High | Resolved 2026-07-22    | Authorization/Cookie/Secret の明示的 Log Redaction を設定     |
-| `DEMO-DEV-001`     | Security       |     High | Resolved 2026-07-22    | Production で明示的 Allow Flag と非 Default Password を必須化 |
-| `DEMO-DEV-002`     | Security       |   Medium | Resolved 2026-07-22    | Password 更新時に既存 Refresh Token Family を失効             |
-| `DEMO-DEV-003`     | Consistency    |      Low | Resolved 2026-07-22    | Concurrent Provision の Unique Conflict を再読込して収束      |
-| `DEMO-DEV-004`     | Logging        |   Medium | Resolved 2026-07-22    | Unknown CLI Error を Stable Sanitized Message に変換          |
-| `OWN-DEV-001`      | Data integrity |     High | Resolved 2026-07-22    | Composite Ownership Constraint を Migration で追加            |
-| `OWN-DEV-002`      | Test isolation |   Medium | Resolved 2026-07-22    | Testcontainers PostgreSQL に移行                              |
-| `OWN-DEV-003`      | Concurrency    |      Low | Resolved 2026-07-22    | Parent Check/Create の Isolation Strategy を明示              |
-| `OWN-DEV-004`      | Authorization  |     High | Blocked by planned API | Resource API 完成時に HTTP Cross-user Test を必須化           |
-| `DOC-DEV-001`      | Documentation  |   Medium | Partial                | Architecture/Testing は追加、残り Required Docs/ADR は未作成  |
-| `CI-DEV-001`       | CI             |   Medium | Resolved 2026-07-22    | Integration Test を CI Quality Gate に追加                    |
+| ID                 | Area           | Severity | Status              | Recommended disposition                                       |
+| ------------------ | -------------- | -------: | ------------------- | ------------------------------------------------------------- |
+| `SDD-DEV-001`      | Process        |   Medium | Resolved 2026-07-22 | Backfilled Spec を Review して Baseline 承認                  |
+| `SDD-DEV-002`      | Governance     |   Medium | Resolved 2026-07-22 | `AGENTS.md` を Git 管理して SDD Agent Rule を共有             |
+| `AUTH-DEV-001`     | Test           |     High | Resolved 2026-07-22 | Auth PostgreSQL / HTTP Integration Test を次作業で追加        |
+| `AUTH-DEV-002`     | Security       |   Medium | Resolved 2026-07-22 | Unknown Email でも Dummy Argon2 Verify を実行                 |
+| `AUTH-DEV-003`     | Consistency    |      Low | Resolved 2026-07-22 | Login Token 作成と `lastLoginAt` を Transaction 化            |
+| `AUTH-DEV-004`     | API Contract   |   Medium | Resolved 2026-07-22 | OpenAPI Response / Error Schema を具体化                      |
+| `AUTH-DEV-005`     | Security       |   Medium | Resolved 2026-07-22 | JWT Sign/Verify を `HS256` Allowlist に固定                   |
+| `PLATFORM-DEV-001` | Logging        |   Medium | Resolved 2026-07-22 | Client Request ID を長さ・文字種で検証                        |
+| `PLATFORM-DEV-002` | Logging        |     High | Resolved 2026-07-22 | Authorization/Cookie/Secret の明示的 Log Redaction を設定     |
+| `DEMO-DEV-001`     | Security       |     High | Resolved 2026-07-22 | Production で明示的 Allow Flag と非 Default Password を必須化 |
+| `DEMO-DEV-002`     | Security       |   Medium | Resolved 2026-07-22 | Password 更新時に既存 Refresh Token Family を失効             |
+| `DEMO-DEV-003`     | Consistency    |      Low | Resolved 2026-07-22 | Concurrent Provision の Unique Conflict を再読込して収束      |
+| `DEMO-DEV-004`     | Logging        |   Medium | Resolved 2026-07-22 | Unknown CLI Error を Stable Sanitized Message に変換          |
+| `OWN-DEV-001`      | Data integrity |     High | Resolved 2026-07-22 | Composite Ownership Constraint を Migration で追加            |
+| `OWN-DEV-002`      | Test isolation |   Medium | Resolved 2026-07-22 | Testcontainers PostgreSQL に移行                              |
+| `OWN-DEV-003`      | Concurrency    |      Low | Resolved 2026-07-22 | Parent Check/Create の Isolation Strategy を明示              |
+| `OWN-DEV-004`      | Authorization  |     High | Partial             | Analysis HTTP は検証済み、Document HTTP は PDF Feature で検証 |
+| `ANALYSIS-DEV-001` | Status model   |     High | Resolved 2026-07-24 | `DRAFT` Status と Default を Migration/Test で検証            |
+| `DOC-DEV-001`      | Documentation  |   Medium | Partial             | Architecture/Testing は追加、残り Required Docs/ADR は未作成  |
+| `CI-DEV-001`       | CI             |   Medium | Resolved 2026-07-22 | Integration Test を CI Quality Gate に追加                    |
 
 ## Resolution Evidence
 
@@ -36,6 +37,7 @@
 | `PLATFORM-DEV-001`, `PLATFORM-DEV-002` | Request ID Validator と Pino Secret Redaction の Unit/Emitted Log Test                                            |
 | `DEMO-DEV-001`〜`DEMO-DEV-004`         | Production Guard、Transactional Session Revoke、`P2002` Convergence、Stable Error Mapper の Unit/Integration Test |
 | `OWN-DEV-001`〜`OWN-DEV-003`           | Fail-fast Migration、Composite FK、Serializable `P2034` Retry、Testcontainers Concurrency/Direct FK Test          |
+| `ANALYSIS-DEV-001`                     | Split Enum/Default Migrations、`DRAFT` Create HTTP Test、空 PostgreSQL への全 Migration                           |
 | `CI-DEV-001`                           | Tracked GitHub Actions が `spec:check` と Docker-based `test:integration` を必須 Step として実行                  |
 
 ## Detail
@@ -154,7 +156,15 @@
 
 - Evidence: Analysis / Document Endpoint と Service は未実装のため、Authenticated User ID が Request Body ではなく Access Token から渡ることを HTTP Test できません。
 - Impact: Repository Boundary は検証済みですが、End-to-end Authorization は未証明です。
-- Required disposition: Resource API Spec の Acceptance Criteria として必須化します。現在は Planned API により Blocked です。
+- Current status: Analysis Create/List/Get/Rename/Delete は Bearer User A/B の Testcontainers HTTP Test で検証済みです。Document HTTP API は PDF Upload Feature まで Blocked のため、Deviation 全体は Partial です。
+
+### ANALYSIS-DEV-001 — Pre-upload Analysis has no valid status
+
+- Evidence: Approved `PDF-Q-006` は Analysis を Upload Intent より前に作成しますが、`AnalysisStatus` と `AGENTS.md` の Async Status Machine は `UPLOADED` から始まり、Pre-upload State を持ちません。
+- Impact: Document が存在しない Analysis を `UPLOADED` と保存すると API、History、Worker の Status Interpretation が事実と一致しません。
+- Options: `A` `DRAFT` Status を追加して最初の Document Finalize 後に `UPLOADED` へ遷移、`B` `UPLOADED` を「Analysis Container Created」の意味に拡張、`C` 別 Draft Entity を追加して Upload 後に Analysis を作成。
+- Recommendation: `A`。Approved PDF Flow を保ちつつ、Status の意味と遷移を明示できます。
+- Decision: User は 2026-07-24 に `DRAFT` Status の追加と最初の Document Finalize 後の `UPLOADED` 遷移を承認しました。
 
 ### DOC-DEV-001 — Required cross-cutting documents are incomplete
 
@@ -173,11 +183,12 @@
 
 2026-07-22 に User が Recommended Disposition 15 項目をすべて承認しました。
 
-| Date       | Deviation ID                           | Decision                         | Consequence                                                                  |
-| ---------- | -------------------------------------- | -------------------------------- | ---------------------------------------------------------------------------- |
-| 2026-07-22 | `SDD-DEV-001`, `SDD-DEV-002`           | Recommended disposition approved | Backfilled Baseline を承認し、`AGENTS.md` と CI Workflow を Track する       |
-| 2026-07-22 | `AUTH-DEV-001`〜`AUTH-DEV-005`         | Recommended disposition approved | Auth Hardening、OpenAPI、Integration Coverage を実装する                     |
-| 2026-07-22 | `PLATFORM-DEV-001`, `PLATFORM-DEV-002` | Recommended disposition approved | Request ID Validation と Log Redaction を実装する                            |
-| 2026-07-22 | `DEMO-DEV-001`〜`DEMO-DEV-004`         | Recommended disposition approved | Production Guard、Session Revoke、Concurrency、Error Sanitization を実装する |
-| 2026-07-22 | `OWN-DEV-001`〜`OWN-DEV-003`           | Recommended disposition approved | Composite FK、Testcontainers、Serializable Retry を実装する                  |
-| 2026-07-22 | `CI-DEV-001`                           | Recommended disposition approved | Integration Test を CI Gate に追加する                                       |
+| Date       | Deviation ID                           | Decision                         | Consequence                                                                     |
+| ---------- | -------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------- |
+| 2026-07-22 | `SDD-DEV-001`, `SDD-DEV-002`           | Recommended disposition approved | Backfilled Baseline を承認し、`AGENTS.md` と CI Workflow を Track する          |
+| 2026-07-22 | `AUTH-DEV-001`〜`AUTH-DEV-005`         | Recommended disposition approved | Auth Hardening、OpenAPI、Integration Coverage を実装する                        |
+| 2026-07-22 | `PLATFORM-DEV-001`, `PLATFORM-DEV-002` | Recommended disposition approved | Request ID Validation と Log Redaction を実装する                               |
+| 2026-07-22 | `DEMO-DEV-001`〜`DEMO-DEV-004`         | Recommended disposition approved | Production Guard、Session Revoke、Concurrency、Error Sanitization を実装する    |
+| 2026-07-22 | `OWN-DEV-001`〜`OWN-DEV-003`           | Recommended disposition approved | Composite FK、Testcontainers、Serializable Retry を実装する                     |
+| 2026-07-22 | `CI-DEV-001`                           | Recommended disposition approved | Integration Test を CI Gate に追加する                                          |
+| 2026-07-24 | `ANALYSIS-DEV-001`                     | `DRAFT` Status approved          | Pre-upload Analysis を `DRAFT`、最初の Document Finalize 後を `UPLOADED` とする |

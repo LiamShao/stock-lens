@@ -67,7 +67,7 @@ pnpm db:validate
 
 Prisma Schema と Migration には、User、Analysis、Document、Evidence、Job などの Domain Model を定義しています。論理設計と Ownership Rule は [docs/database-design.md](./docs/database-design.md) を参照してください。
 
-Feature Development は Spec-Driven Development で進めます。SDD Workflow、Feature Spec、Requirement Traceability、Deviation は [specs/README.md](./specs/README.md) を参照してください。既存実装から Backfill した Authentication/Demo User Spec は承認・検証済みで、Ownership は未実装 HTTP API の Criterion を明示して `Partial` としています。
+Feature Development は Spec-Driven Development で進めます。SDD Workflow、Feature Spec、Requirement Traceability、Deviation は [specs/README.md](./specs/README.md) を参照してください。Authentication、Demo User、Analysis Management は承認・検証済みです。Ownership は Document HTTP API の Criterion を明示して `Partial` としています。
 
 Cross-cutting Design は [docs/architecture.md](./docs/architecture.md)、Test Layer と CI Gate は [docs/testing-strategy.md](./docs/testing-strategy.md) を参照してください。
 

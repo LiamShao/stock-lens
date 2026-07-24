@@ -44,20 +44,39 @@ Register と Login は Access Token を Response Body に返し、Refresh Token 
 
 OpenAPI は Auth Success/Error DTO、Refresh Cookie Response Header、Bearer/Cookie Security Scheme を具体的な Schema として公開します。
 
-## 5. Validation
+## 5. Analysis Management Endpoint
+
+すべて Bearer Authentication を必須とします。
+
+| Method | Path                    | 説明                                       |
+| ------ | ----------------------- | ------------------------------------------ |
+| POST   | `/analyses`             | `DRAFT` Analysis を作成                    |
+| GET    | `/analyses`             | Owner-scoped History を Cursor Pagination  |
+| GET    | `/analyses/:analysisId` | Owner-scoped Metadata を取得               |
+| PATCH  | `/analyses/:analysisId` | Title を変更                               |
+| DELETE | `/analyses/:analysisId` | Analysis と Active Document を Soft Delete |
+
+Create は Trim 後 1〜120 文字の `title` と Optional `companyId` を受け取ります。History は `createdAt DESC, id DESC`、Default 20、Maximum 50 の Opaque Cursor Pagination です。Response は Metadata のみに限定し、`ownerId`、Document、AI Output を含めません。
+
+Cross-user、Missing、Soft-deleted Analysis は同じ HTTP 404 / `ANALYSIS_NOT_FOUND` とし、Unknown Company は `COMPANY_NOT_FOUND` とします。
+
+## 6. Validation
 
 - 外部入力は Controller Boundary で Zod Schema により検証します。
 - Email は trim と lowercase を適用してから保存・検索します。
+- Analysis Title は trim し、C0/DEL Control Character を拒否します。
+- Analysis Body、Path、Query は Unknown Field を拒否します。
 - 不正な入力は HTTP 400 / `VALIDATION_ERROR` とします。
 - File Upload の Validation Rule は Phase 2 の Upload API 実装時に追記します。
 
-## 6. Status Code
+## 7. Status Code
 
 - `200 OK`: Login、Refresh、通常の取得
 - `201 Created`: Register、Resource 作成
 - `204 No Content`: Logout、Response Body のない削除
 - `400 Bad Request`: Validation Error
 - `401 Unauthorized`: Credential / Token Error
+- `404 Not Found`: Missing または Cross-user Resource
 - `409 Conflict`: Email などの Unique Conflict
 - `429 Too Many Requests`: Rate Limit
 - `500 Internal Server Error`: Sanitized Unexpected Error

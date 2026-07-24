@@ -12,6 +12,7 @@ import { TokenService } from './token.service';
 
 @Module({
   controllers: [AuthController],
+  exports: [AccessTokenGuard, AuthService],
   imports: [DatabaseModule, JwtModule.register({})],
   providers: [
     { provide: AUTH_CONFIG, useFactory: getAuthConfig },

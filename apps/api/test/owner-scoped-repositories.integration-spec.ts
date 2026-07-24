@@ -184,7 +184,244 @@ describe('owner-scoped repositories', () => {
       documentRepository.listActiveForAnalysis(ownerA, analysis.id),
     ).resolves.toEqual([]);
   });
+
+  it('PDF-FR-009 scopes upload sessions to the analysis owner', async () => {
+    const [ownerA, ownerB] = await createOwners(prisma, testRunId);
+    const analysis = await analysisRepository.create({
+      ownerId: ownerA,
+      title: 'Upload ownership analysis',
+    });
+    const upload = await prisma.documentUpload.create({
+      data: createUploadData(ownerA, analysis.id, testRunId),
+    });
+
+    expect(upload).toMatchObject({
+      analysisId: analysis.id,
+      ownerId: ownerA,
+      status: 'PENDING',
+    });
+    await expect(
+      prisma.documentUpload.create({
+        data: createUploadData(ownerB, analysis.id, testRunId),
+      }),
+    ).rejects.toMatchObject({ code: 'P2003' });
+  });
+
+  it('PDF-FR-003 and PDF-FR-009 enforce upload metadata and lifecycle constraints', async () => {
+    const [ownerA] = await createOwners(prisma, testRunId);
+    const analysis = await analysisRepository.create({
+      ownerId: ownerA,
+      title: 'Upload constraint analysis',
+    });
+    const baseData = createUploadData(ownerA, analysis.id, testRunId);
+
+    await expect(
+      prisma.documentUpload.create({
+        data: {
+          ...baseData,
+          declaredSizeBytes: 1n,
+          storageKey: `${testRunId}/${randomUUID()}.pdf`,
+        },
+      }),
+    ).resolves.toMatchObject({ declaredSizeBytes: 1n });
+    await expect(
+      prisma.documentUpload.create({
+        data: {
+          ...baseData,
+          declaredSizeBytes: 20n * 1024n * 1024n,
+          storageKey: `${testRunId}/${randomUUID()}.pdf`,
+        },
+      }),
+    ).resolves.toMatchObject({ declaredSizeBytes: 20n * 1024n * 1024n });
+    await expect(
+      prisma.documentUpload.create({
+        data: {
+          ...baseData,
+          declaredSizeBytes: 0n,
+          storageKey: `${testRunId}/${randomUUID()}.pdf`,
+        },
+      }),
+    ).rejects.toThrow('DocumentUpload_declaredSizeBytes_check');
+    await expect(
+      prisma.documentUpload.create({
+        data: {
+          ...baseData,
+          declaredSizeBytes: 20n * 1024n * 1024n + 1n,
+          storageKey: `${testRunId}/${randomUUID()}.pdf`,
+        },
+      }),
+    ).rejects.toThrow('DocumentUpload_declaredSizeBytes_check');
+    await expect(
+      prisma.documentUpload.create({
+        data: {
+          ...baseData,
+          claimedSha256: 'A'.repeat(64),
+          storageKey: `${testRunId}/${randomUUID()}.pdf`,
+        },
+      }),
+    ).rejects.toThrow('DocumentUpload_claimedSha256_check');
+    await expect(
+      prisma.documentUpload.create({
+        data: {
+          ...baseData,
+          originalName: '',
+          storageKey: `${testRunId}/${randomUUID()}.pdf`,
+        },
+      }),
+    ).rejects.toThrow('DocumentUpload_requiredMetadata_check');
+    await expect(
+      prisma.documentUpload.create({
+        data: {
+          ...baseData,
+          expiresAt: new Date('2020-01-01T00:00:00.000Z'),
+          storageKey: `${testRunId}/${randomUUID()}.pdf`,
+        },
+      }),
+    ).rejects.toThrow('DocumentUpload_expiresAt_check');
+    await expect(
+      prisma.documentUpload.create({
+        data: {
+          ...baseData,
+          status: 'REJECTED',
+          storageKey: `${testRunId}/${randomUUID()}.pdf`,
+        },
+      }),
+    ).rejects.toThrow('DocumentUpload_failureState_check');
+    await expect(
+      prisma.documentUpload.create({
+        data: {
+          ...baseData,
+          completedAt: new Date(),
+          status: 'COMPLETED',
+          storageKey: `${testRunId}/${randomUUID()}.pdf`,
+        },
+      }),
+    ).rejects.toThrow('DocumentUpload_completionState_check');
+  });
+
+  it('PDF-FR-009 installs ownership, expiry, and duplicate lookup indexes', async () => {
+    const indexes = await prisma.$queryRaw<Array<{ indexname: string }>>`
+      SELECT indexname
+      FROM pg_indexes
+      WHERE schemaname = current_schema()
+        AND tablename = 'DocumentUpload'
+    `;
+    const indexNames = indexes.map(({ indexname }) => indexname);
+
+    expect(indexNames).toEqual(
+      expect.arrayContaining([
+        'DocumentUpload_ownerId_analysisId_status_idx',
+        'DocumentUpload_status_expiresAt_idx',
+        'DocumentUpload_ownerId_analysisId_claimedSha256_idx',
+        'DocumentUpload_ownerId_analysisId_finalizedDocumentId_key',
+      ]),
+    );
+  });
+
+  it('PDF-FR-009 finalizes one upload session to one owner-consistent document', async () => {
+    const [ownerA] = await createOwners(prisma, testRunId);
+    const analysis = await analysisRepository.create({
+      ownerId: ownerA,
+      title: 'Upload finalization analysis',
+    });
+    const upload = await prisma.documentUpload.create({
+      data: createUploadData(ownerA, analysis.id, testRunId),
+    });
+    const document = await documentRepository.createForAnalysis({
+      analysisId: analysis.id,
+      mimeType: 'application/pdf',
+      originalName: 'finalized.pdf',
+      ownerId: ownerA,
+      sha256: 'd'.repeat(64),
+      sizeBytes: 8192n,
+      storageBucket: 'stocklens-test',
+      storageKey: `${testRunId}/${randomUUID()}.pdf`,
+    });
+    expect(document).not.toBeNull();
+    if (document === null) {
+      throw new Error('Expected the finalized document to be created.');
+    }
+
+    await expect(
+      prisma.documentUpload.update({
+        data: {
+          completedAt: new Date(),
+          finalizedDocumentId: document.id,
+          status: 'COMPLETED',
+        },
+        where: { id: upload.id },
+      }),
+    ).resolves.toMatchObject({
+      finalizedDocumentId: document.id,
+      status: 'COMPLETED',
+    });
+
+    const duplicateUpload = await prisma.documentUpload.create({
+      data: createUploadData(ownerA, analysis.id, testRunId),
+    });
+    await expect(
+      prisma.documentUpload.update({
+        data: {
+          completedAt: new Date(),
+          finalizedDocumentId: document.id,
+          status: 'COMPLETED',
+        },
+        where: { id: duplicateUpload.id },
+      }),
+    ).rejects.toMatchObject({ code: 'P2002' });
+
+    const otherAnalysis = await analysisRepository.create({
+      ownerId: ownerA,
+      title: 'Other upload finalization analysis',
+    });
+    const otherDocument = await documentRepository.createForAnalysis({
+      analysisId: otherAnalysis.id,
+      mimeType: 'application/pdf',
+      originalName: 'other.pdf',
+      ownerId: ownerA,
+      sha256: 'e'.repeat(64),
+      sizeBytes: 8192n,
+      storageBucket: 'stocklens-test',
+      storageKey: `${testRunId}/${randomUUID()}.pdf`,
+    });
+    expect(otherDocument).not.toBeNull();
+    if (otherDocument === null) {
+      throw new Error('Expected the other document to be created.');
+    }
+    const crossAnalysisUpload = await prisma.documentUpload.create({
+      data: createUploadData(ownerA, analysis.id, testRunId),
+    });
+
+    await expect(
+      prisma.documentUpload.update({
+        data: {
+          completedAt: new Date(),
+          finalizedDocumentId: otherDocument.id,
+          status: 'COMPLETED',
+        },
+        where: { id: crossAnalysisUpload.id },
+      }),
+    ).rejects.toMatchObject({ code: 'P2003' });
+  });
 });
+
+function createUploadData(
+  ownerId: string,
+  analysisId: string,
+  testRunId: string,
+) {
+  return {
+    analysisId,
+    claimedSha256: 'f'.repeat(64),
+    declaredMimeType: 'application/pdf',
+    declaredSizeBytes: 1024n,
+    expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+    originalName: 'upload.pdf',
+    ownerId,
+    storageBucket: 'stocklens-test',
+    storageKey: `${testRunId}/${randomUUID()}.pdf`,
+  };
+}
 
 async function createOwners(
   prisma: PrismaClient,

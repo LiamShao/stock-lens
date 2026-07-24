@@ -20,7 +20,7 @@ Next.js Web ─────► NestJS + Fastify API ─────► PostgreSQ
 ```
 
 - `apps/web`: UI、TanStack Query、Form Validation、Evidence Drawer、PDF Page Navigation を担当します。現時点では Skeleton です。
-- `apps/api`: HTTP、Authentication、Authorization Boundary、Validation、OpenAPI、Job Enqueue を担当します。Controller は Prisma を直接呼びません。
+- `apps/api`: HTTP、Authentication、Analysis Management、Authorization Boundary、Validation、OpenAPI、Job Enqueue を担当します。Controller は Prisma を直接呼びません。
 - `apps/worker`: PDF Parse、Chunking、Embedding、Structured Extraction、Evidence Validation、View Generation を担当する予定です。現時点の Core Pipeline は未実装です。
 - PostgreSQL: Transactional Data、Owner Scope、JSONB Output、Full Text Search、pgvector を一つの整合性境界で管理します。
 - Redis/BullMQ: Retry 可能で冪等な非同期 Step を実行します。
@@ -73,7 +73,7 @@ PostgreSQL constraint
 
 ## 6. Async Analysis Target
 
-Analysis は `UPLOADED → PARSING → CHUNKING → EMBEDDING → EXTRACTING → VALIDATING → COMPLETED` を基本経路とし、各 Step に専用 Failure Status を持ちます。
+Analysis は Upload 前に `DRAFT` で作成し、最初の Document Finalize 後に `UPLOADED` へ遷移します。その後は `PARSING → CHUNKING → EMBEDDING → EXTRACTING → VALIDATING → COMPLETED` を基本経路とし、各 Step に専用 Failure Status を持ちます。
 
 - Job は Idempotency Key を持ち、Retry で Chunk、Finding、Evidence、Output を重複作成しません。
 - Page Text、Chunk、Page Number、検出可能な Section Metadata を保存します。
@@ -82,7 +82,7 @@ Analysis は `UPLOADED → PARSING → CHUNKING → EMBEDDING → EXTRACTING →
 - 重要 Finding は `Document → Page → Chunk → Excerpt` の Evidence を必須とします。
 - Uploaded Text は命令ではなく Untrusted Data として明確に Delimit します。
 
-この Pipeline、Upload API、Object Storage Integration は未実装であり、`specs/features/pdf-upload/spec.md` の承認後に段階実装します。
+この Pipeline、Upload API、Object Storage Integration は未実装です。PDF Upload Spec と Technical Plan は承認済みで、Analysis Management の検証後に段階実装します。
 
 ## 7. Deployment Target
 
@@ -90,7 +90,7 @@ Target は AWS-oriented Architecture です。Web/API/Worker を独立 Deployabl
 
 ## 8. 現在の既知 Gap
 
-- Analysis/Document HTTP API がないため、Repository より外側の Cross-user Authorization は未検証です。
+- Analysis HTTP API の Cross-user Authorization は検証済みです。Document HTTP API は PDF Upload Feature まで未実装です。
 - PDF Upload、Presigned URL、Parsing、LLM/RAG、Evidence UI は未実装です。
 - Rate Limit Store は Process Local であり、Multi-instance 前に Redis-backed Store が必要です。
 - Required ADR、AI Pipeline、Evidence、Evaluation、Deployment の詳細文書は段階的に追加します。

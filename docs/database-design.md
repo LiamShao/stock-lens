@@ -66,6 +66,8 @@ erDiagram
   User ||--o{ RefreshToken : owns
   User ||--o{ Analysis : owns
   Company ||--o{ Analysis : classifies
+  Analysis ||--o{ DocumentUpload : reserves
+  DocumentUpload |o--o| Document : finalizes
   Analysis ||--o{ Document : contains
   Document ||--o{ DocumentPage : has
   DocumentPage ||--o{ DocumentChunk : splits_into
@@ -173,6 +175,7 @@ Refresh Token Rotation と Reuse Detection を支えます。
 AnalysisStatus は次に限定します。
 
 ```text
+DRAFT
 UPLOADED
 PARSING
 CHUNKING
@@ -186,6 +189,8 @@ FAILED_EMBEDDING
 FAILED_EXTRACTION
 FAILED_VALIDATION
 ```
+
+新規 Analysis は `DRAFT` で作成し、最初の Document Finalize 後に `UPLOADED` へ遷移します。`DRAFT` 追加時の既存 Row は Data Migration せず、現在の Status を維持します。
 
 ### 4.5 Document
 
@@ -210,6 +215,37 @@ Upload された PDF の Metadata と Storage Location を保持します。
 | `deletedAt`     | Timestamptz nullable | Soft Delete                  |
 
 `ownerId, analysisId`、`analysisId, createdAt`、`storageKey`、`ownerId, sha256` に Index を設定します。`Document(ownerId, analysisId)` は `Analysis(ownerId, id)` を参照する Composite FK により Cross-owner Parent Relation を拒否します。1 Analysis あたり最大 3 Document は Service の Transaction 内で検証します。Database Trigger は MVP では使用しません。
+
+### 4.5.1 DocumentUpload
+
+Direct Presigned Upload の発行から Trusted Finalize までを追跡する一時 Session です。不完全または不正な Object を `Document` として扱いません。
+
+| Column                | Type                 | Constraint / Purpose                   |
+| --------------------- | -------------------- | -------------------------------------- |
+| `id`                  | UUID                 | Primary Key                            |
+| `ownerId`             | UUID                 | `User.id`、認可 Boundary               |
+| `analysisId`          | UUID                 | `Analysis.id`                          |
+| `finalizedDocumentId` | UUID nullable        | Completed 時の Finalized `Document.id` |
+| `originalName`        | Text                 | Client が宣言した Original Filename    |
+| `documentType`        | DocumentType         | Client が宣言した Document Type        |
+| `declaredMimeType`    | Text                 | Client が宣言した MIME Type            |
+| `declaredSizeBytes`   | BigInt               | 1 byte 以上 20 MB 以下                 |
+| `claimedSha256`       | Text                 | 64 文字 Lowercase Hex                  |
+| `storageBucket`       | Text                 | Private Bucket                         |
+| `storageKey`          | Text                 | Unique Random Object Key               |
+| `status`              | DocumentUploadStatus | Upload/Validation Lifecycle            |
+| `expiresAt`           | Timestamptz          | Orphan Cleanup 判定時刻                |
+| `failureCode`         | Text nullable        | `REJECTED` 時の Stable Error           |
+| `failureMessage`      | Text nullable        | Sanitized Failure Detail               |
+| `completedAt`         | Timestamptz nullable | `COMPLETED` 時刻                       |
+| `createdAt`           | Timestamptz          | 作成日時                               |
+| `updatedAt`           | Timestamptz          | 更新日時                               |
+
+`DocumentUploadStatus` は `PENDING`、`VALIDATING`、`COMPLETED`、`REJECTED`、`EXPIRED` に限定します。Database `CHECK` は Size、SHA-256、Expiry、必須 Metadata、Completion/Failure State の整合性を強制します。
+
+`DocumentUpload(ownerId, analysisId)` は `Analysis(ownerId, id)`、`DocumentUpload(ownerId, analysisId, finalizedDocumentId)` は `Document(ownerId, analysisId, id)` を参照します。後者は Composite Unique Constraint を持ち、同じ Finalized Document を複数 Session が完了扱いにすることを拒否します。Cleanup Scan 用 `(status, expiresAt)`、Ownership/List 用 `(ownerId, analysisId, status)`、Duplicate Lookup 用 `(ownerId, analysisId, claimedSha256)` に Index を設定します。
+
+Session と Active Document の合計最大 3 件、重複 SHA-256、Finalization Transaction は API/Repository の Serializable Transaction で実装します。Database Trigger は使用しません。
 
 ### 4.6 DocumentPage
 
@@ -433,6 +469,7 @@ PostgreSQL の標準 Parser だけで日本語検索品質が不十分な場合�
 - 全 User-owned Root: `(ownerId, createdAt)`
 - Status List: `(ownerId, status)`
 - Foreign Key Column: 個別 Index
+- DocumentUpload: Unique `(ownerId, analysisId, finalizedDocumentId)`、Index `(status, expiresAt)`、`(ownerId, analysisId, status)`、`(ownerId, analysisId, claimedSha256)`
 - DocumentPage: Unique `(documentId, pageNumber)`
 - DocumentChunk: Unique `(documentId, chunkIndex)`、Index `(documentId, contentSha256)`
 - AnalysisFinding: Unique `(analysisId, findingKey)`
@@ -448,6 +485,8 @@ PostgreSQL の標準 Parser だけで日本語検索品質が不十分な場合�
 最初の Migration と Repository 実装時に、少なくとも次を Test します。
 
 - 別 User の Analysis、Document、Chunk、Evidence を取得・更新・削除できない
+- 別 User の Analysis に DocumentUpload を作成できず、別 Analysis の Document に Finalize できない
+- DocumentUpload の Size、SHA-256、Expiry、Completion/Failure State が Database Constraint に従う
 - Soft-deleted Resource が通常 Query に現れない
 - Analysis に 4 件目の Document を追加できない
 - `documentId, pageNumber` と Chunk Stable Key が重複しない

@@ -2,13 +2,13 @@
 
 ## Metadata
 
-| Field                 | Value                                |
-| --------------------- | ------------------------------------ |
-| Spec status           | `Approved`                           |
-| Implementation status | `Implemented at repository boundary` |
-| Verification status   | `Partial`                            |
-| Approval              | `Approved 2026-07-22`                |
-| Last updated          | `2026-07-22`                         |
+| Field                 | Value                        |
+| --------------------- | ---------------------------- |
+| Spec status           | `Approved`                   |
+| Implementation status | `Repository + Analysis HTTP` |
+| Verification status   | `Partial`                    |
+| Approval              | `Approved 2026-07-22`        |
+| Last updated          | `2026-07-22`                 |
 
 ## Goal
 
@@ -17,7 +17,7 @@ Analysis と Document の Data Access で User A が User B の Resource を Rea
 ## Non-goals
 
 - PostgreSQL RLS
-- 未実装の Analysis/Document HTTP API
+- 未実装の Document HTTP API
 - Object Storage Authorization と Object Delete Job
 - Phase 3 以降の Child Repository
 
@@ -61,12 +61,12 @@ Analysis と Document の Data Access で User A が User B の Resource を Rea
 
 ## Open Questions
 
-| ID          | Question                                                          | Status                          |
-| ----------- | ----------------------------------------------------------------- | ------------------------------- |
-| `OWN-Q-001` | Parent/Child Owner Equality を Database Composite FK で強制するか | `Resolved` — Composite FK       |
-| `OWN-Q-002` | PostgreSQL Integration を Testcontainers に移行する時期           | `Resolved` — CI Gate として導入 |
-| `OWN-Q-003` | Concurrent Parent Soft Delete と Child Create の Serialization    | `Resolved` — Serializable Retry |
-| `OWN-Q-004` | HTTP Authorization Contract                                       | `Blocked` — Planned API         |
+| ID          | Question                                                          | Status                                          |
+| ----------- | ----------------------------------------------------------------- | ----------------------------------------------- |
+| `OWN-Q-001` | Parent/Child Owner Equality を Database Composite FK で強制するか | `Resolved` — Composite FK                       |
+| `OWN-Q-002` | PostgreSQL Integration を Testcontainers に移行する時期           | `Resolved` — CI Gate として導入                 |
+| `OWN-Q-003` | Concurrent Parent Soft Delete と Child Create の Serialization    | `Resolved` — Serializable Retry                 |
+| `OWN-Q-004` | HTTP Authorization Contract                                       | `Partial` — Analysis Verified、Document Blocked |
 
 ## Dependencies
 

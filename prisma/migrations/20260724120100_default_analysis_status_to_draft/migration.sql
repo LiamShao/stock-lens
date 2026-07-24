@@ -1,0 +1,2 @@
+ALTER TABLE "Analysis"
+ALTER COLUMN "status" SET DEFAULT 'DRAFT';

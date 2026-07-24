@@ -1,5 +1,33 @@
 # StockLens AI 開発進捗
 
+## 2026-07-24
+
+### PDF Upload Database Foundation
+
+- Approved `PDF-TASK-003` として `DocumentUploadStatus`、`DocumentUpload` Entity、Migration を追加しました。
+- Upload Session は Owner/Analysis Composite FK と Finalized Document Composite FK/Unique Constraint を持ち、Cross-owner/Cross-analysis Relation と同一 Document の重複 Finalize を Database で拒否します。
+- Database `CHECK` で 1〜20 MB、Lowercase SHA-256、Expiry、Required Metadata、Completion/Failure Lifecycle を強制します。
+- Cleanup Scan、Ownership/List、Duplicate Lookup 用 Index を追加しました。
+- Testcontainers PostgreSQL で Migration、Constraint、Index、One-to-one Finalization を検証しました。
+- Storage Adapter、Cleanup Queue、Upload API、Streaming Finalize は次 Task 以降であり、PDF Upload Feature 全体は `Implementing` / `Partial` です。
+
+### Analysis Management
+
+- User が Analysis Management Spec と PDF Upload Technical Plan を承認しました。
+- Pre-upload Analysis 用の `DRAFT` Status を追加し、最初の Document Finalize 後に `UPLOADED` へ遷移する Contract を確定しました。
+- Bearer Authentication 必須の Analysis Create、History、Detail、Rename、Soft Delete API を追加しました。
+- History は `createdAt DESC, id DESC` の Opaque Cursor Pagination、Default 20、Maximum 50 としました。
+- Optional `companyId` は指定時に存在を検証し、Unknown Company を Stable `COMPANY_NOT_FOUND` として扱います。
+- Cross-user、Missing、Soft-deleted Analysis は同じ `ANALYSIS_NOT_FOUND` とし、Response は Metadata のみに限定しました。
+- Analysis Delete は所有する Active Document も同一 Serializable Transaction で Soft Delete します。
+- PostgreSQL Enum 追加と Default 変更は、PostgreSQL の Safe Enum Use 制約に合わせて二つの Migration に分割しました。
+
+### 検証
+
+- Unit Test 13 Suites / 44 Tests が成功しました。
+- Testcontainers Integration Test 3 Suites / 17 Tests が成功しました。
+- 空 PostgreSQL への全 Migration、Analysis CRUD、Cursor Pagination、Cross-user HTTP Authorization、Transactional Delete、OpenAPI Contract を確認しました。
+
 ## 2026-07-22
 
 ### 承認済み SDD 整改 15 項目

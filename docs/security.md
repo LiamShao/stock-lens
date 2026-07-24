@@ -45,7 +45,8 @@
 
 - User-owned Resource は必ず Authenticated User ID を `ownerId` / `userId` 条件として Repository Query に含めます。
 - Controller は Prisma を直接呼び出しません。
-- Phase 2 の Document / Analysis Repository 実装時に、Cross-user Read、Update、Delete の Integration Test を追加します。
+- Analysis HTTP API は Bearer User から Repository まで `ownerId` を伝播し、Cross-user Read、Update、Delete を同じ `404 ANALYSIS_NOT_FOUND` とする Testcontainers HTTP Test を持ちます。
+- Document HTTP API は PDF Upload Feature で同じ End-to-end Authorization Test を追加します。
 - `Analysis(ownerId, id)` と `Document(ownerId, analysisId)` の Composite FK で Parent/Child Owner Equality を Database でも強制します。
 - PostgreSQL RLS は MVP 必須ではありません。Repository Boundary と Authorization Test で保証します。
 
@@ -74,4 +75,4 @@
 
 Demo User は明示的な CLI でのみ Provisioning し、API 起動時には作成しません。CLI は通常 User の上書き、Soft Delete 済み User の暗黙的な復元、Password の出力を禁止します。Production では `ALLOW_DEMO_USER_PROVISIONING=true` と Local Default 以外の Password を必須とし、Password 変更時は既存 Active Refresh Token を同一 Transaction で失効します。
 
-Document / Analysis Repository は Read、List、Create、Update、Soft Delete の Query に Authenticated User の `ownerId` を含めます。Cross-user 操作が Resource の存在を推測できないよう、Repository は対象なしとして扱います。この Boundary は Testcontainers PostgreSQL Integration Test で検証します。Analysis/Document HTTP API は未実装のため、Bearer User から Repository までの End-to-end Authorization Test は引き続き Blocked です。
+Document / Analysis Repository は Read、List、Create、Update、Soft Delete の Query に Authenticated User の `ownerId` を含めます。Cross-user 操作が Resource の存在を推測できないよう、Repository は対象なしとして扱います。この Boundary は Testcontainers PostgreSQL Integration Test で検証します。Analysis HTTP API の End-to-end Authorization は検証済みです。Document HTTP API と Object Storage Authorization は PDF Upload Feature の実装まで Blocked です。

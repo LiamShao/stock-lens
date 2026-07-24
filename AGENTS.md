@@ -252,6 +252,7 @@ Design principles:
 Analysis statuses:
 
 ```text
+DRAFT
 UPLOADED
 PARSING
 CHUNKING

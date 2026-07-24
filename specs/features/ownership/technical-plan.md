@@ -27,7 +27,7 @@
 
 ## API Changes
 
-なし。HTTP API は未実装で、`OWN-SEC-001` と `OWN-AC-007` は Blocked です。
+Analysis Create/List/Get/Rename/Delete API は実装済みで、Bearer User A/B の HTTP Authorization を検証しました。Document HTTP API は PDF Upload Feature まで Blocked です。
 
 ## Database Changes
 
@@ -38,14 +38,14 @@
 | Requirement                | Evidence                                           | Result    |
 | -------------------------- | -------------------------------------------------- | --------- |
 | `OWN-AC-001`〜`OWN-AC-006` | Testcontainers PostgreSQL Integration Test 4 Cases | `Passed`  |
-| `OWN-AC-007`               | None                                               | `Blocked` |
+| `OWN-AC-007`               | Analysis HTTP Integration                          | `Partial` |
 
 各 Suite は隔離 Container を起動し、空 Database に全 Migration を適用します。Container 停止で Test Data を破棄し、共有 Local Database は変更しません。
 
 ## Risks and Decisions
 
 - Database Bypass、Test Isolation、Concurrency Race の整改は `OWN-DEV-001`〜`OWN-DEV-003` として解消済みです。
-- HTTP Boundary は `OWN-DEV-004` として明示的に Blocked です。
+- Analysis HTTP Boundary は検証済みです。Document HTTP Boundary は `OWN-DEV-004` として Partial です。
 
 ## Approved Remediation Plan — 2026-07-22
 

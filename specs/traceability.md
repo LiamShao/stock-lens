@@ -48,13 +48,54 @@ Status は Requirement の実装・検証状況を表します。`Partial` は C
 | `OWN-FR-003`  | Parent Check + Composite FK + Serializable Retry | Cross-owner FK + Concurrency Test      | `Passed`  |
 | `OWN-FR-004`  | Transactional Parent/Child Soft Delete           | Integration + Concurrent Create/Delete | `Passed`  |
 | `OWN-FR-005`  | `null`/`false`/Empty Contract                    | Cross-user Integration                 | `Passed`  |
-| `OWN-SEC-001` | HTTP Service 未実装                              | Planned API により Evidence なし       | `Blocked` |
-| `OWN-SEC-002` | `DatabaseModule` / Repository Boundary           | Module/Code Review                     | `Partial` |
+| `OWN-SEC-001` | Analysis HTTP 実装、Document HTTP は Planned     | Analysis Bearer Owner HTTP Passed      | `Partial` |
+| `OWN-SEC-002` | Analysis Service + `DatabaseModule` Boundary     | Code Review + Analysis HTTP Test       | `Passed`  |
 | `OWN-SEC-003` | Composite Owner FK + Repository Parent Check     | Direct Cross-owner Insert Reject       | `Passed`  |
 | `OWN-SEC-004` | `deletedAt: null` Filters                        | Integration Test                       | `Passed`  |
-| `OWN-SEC-005` | Testcontainers PostgreSQL + Future HTTP Test     | Repository/DB Passed、HTTP Blocked     | `Partial` |
+| `OWN-SEC-005` | Testcontainers PostgreSQL + Analysis HTTP Test   | Analysis Passed、Document HTTP Blocked | `Partial` |
 
 ## Cross-cutting Gaps
 
 - User 承認と解消 Evidence は `specs/deviations.md` を参照してください。
 - PDF Upload 以降は Code 作成前に Draft Spec を承認します。
+
+## PDF Upload
+
+| Requirement   | Implementation                                           | Verification                             | Status    |
+| ------------- | -------------------------------------------------------- | ---------------------------------------- | --------- |
+| `PDF-FR-001`  | Upload Composite Owner FK、Service/API は Planned        | DB Cross-owner Insert Reject             | `Partial` |
+| `PDF-FR-002`  | Planned Serializable Slot Reservation                    | `PDF-AC-002` + concurrency test planned  | `Blocked` |
+| `PDF-FR-003`  | Upload Size DB Check、Zod/Streaming は Planned           | 0/20 MB 超 DB Constraint Test            | `Partial` |
+| `PDF-FR-004`  | Planned Extension/MIME/Header Validation                 | `PDF-AC-004`, `PDF-AC-005` planned       | `Blocked` |
+| `PDF-FR-005`  | Planned Random Private Storage Key + S3 Adapter          | Presign/Storage integration planned      | `Blocked` |
+| `PDF-FR-006`  | Planned 5-minute Presigned URL                           | `PDF-AC-001` planned                     | `Blocked` |
+| `PDF-FR-007`  | Planned Streaming Finalize + Transactional Document      | `PDF-AC-007` planned                     | `Blocked` |
+| `PDF-FR-008`  | Planned Soft Delete + Object Cleanup Job                 | `PDF-AC-008` planned                     | `Blocked` |
+| `PDF-FR-009`  | `DocumentUpload` Status/Constraint/Index、Job は Planned | PostgreSQL Lifecycle/Relation/Index Test | `Partial` |
+| `PDF-SEC-001` | Planned case-insensitive `.pdf` Validation               | `PDF-AC-004` planned                     | `Blocked` |
+| `PDF-SEC-002` | Planned exact `application/pdf` Validation               | `PDF-AC-004` planned                     | `Blocked` |
+| `PDF-SEC-003` | Planned Trusted `%PDF-` Streaming Check                  | `PDF-AC-005` planned                     | `Blocked` |
+| `PDF-SEC-004` | Planned constrained Presigned Operation                  | Presign integration planned              | `Blocked` |
+| `PDF-SEC-005` | Planned Random Key + Log Redaction                       | Security regression test planned         | `Blocked` |
+| `PDF-SEC-006` | Planned HTTP Owner Isolation                             | `PDF-AC-006` planned                     | `Blocked` |
+| `PDF-SEC-007` | Planned Untrusted PDF Content Boundary                   | Service/Prompt boundary review planned   | `Blocked` |
+
+## Analysis Management
+
+| Requirement        | Implementation                               | Verification                            | Status   |
+| ------------------ | -------------------------------------------- | --------------------------------------- | -------- |
+| `ANALYSIS-FR-001`  | Shared Schema + Service + Repository         | `ANALYSIS-AC-001`, `ANALYSIS-AC-002`    | `Passed` |
+| `ANALYSIS-FR-002`  | Split `DRAFT` Enum/Default Migrations        | Empty DB Migration + `ANALYSIS-AC-001`  | `Passed` |
+| `ANALYSIS-FR-003`  | Cursor Repository + List API                 | `ANALYSIS-AC-003`, `ANALYSIS-AC-004`    | `Passed` |
+| `ANALYSIS-FR-004`  | Status Query Schema                          | DRAFT Filter HTTP Test                  | `Passed` |
+| `ANALYSIS-FR-005`  | Owner-scoped Detail API                      | `ANALYSIS-AC-005`, `ANALYSIS-AC-006`    | `Passed` |
+| `ANALYSIS-FR-006`  | Owner-scoped Rename API                      | `ANALYSIS-AC-005`, `ANALYSIS-AC-006`    | `Passed` |
+| `ANALYSIS-FR-007`  | Owner-scoped Delete API + Repository         | Owner/Delete/Repeat Delete HTTP         | `Passed` |
+| `ANALYSIS-FR-008`  | Transactional Analysis/Document Soft Delete  | HTTP + Repository `ANALYSIS-AC-009`     | `Passed` |
+| `ANALYSIS-SEC-001` | AccessTokenGuard on Analysis Controller      | Missing Bearer HTTP Test                | `Passed` |
+| `ANALYSIS-SEC-002` | CurrentUser-only Owner Input                 | Unknown Field + Cross-user HTTP Test    | `Passed` |
+| `ANALYSIS-SEC-003` | Stable `ANALYSIS_NOT_FOUND`                  | Get/Patch/Delete Owner A/B HTTP Test    | `Passed` |
+| `ANALYSIS-SEC-004` | Analysis Service + DatabaseModule Boundary   | Code Review + HTTP Integration          | `Passed` |
+| `ANALYSIS-SEC-005` | Shared Zod Body/Path/Query Schema            | Invalid Input Matrix HTTP Test          | `Passed` |
+| `ANALYSIS-SEC-006` | Metadata-only Projection                     | Response omits `ownerId` + Schema Parse | `Passed` |
+| `ANALYSIS-SEC-007` | ApiException + Stable Analysis/Company Codes | HTTP Error Format Assertions            | `Passed` |

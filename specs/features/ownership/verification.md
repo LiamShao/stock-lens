@@ -21,7 +21,7 @@
 | `OWN-AC-001`, `OWN-AC-002`, `OWN-AC-005` | `isolates analysis reads, updates, lists, and deletes by owner`    | `Passed` at Repository/DB Boundary |
 | `OWN-AC-003`, `OWN-AC-004`, `OWN-AC-005` | `isolates document creation, reads, updates, and deletes by owner` | `Passed` at Repository/DB Boundary |
 | `OWN-AC-006`                             | `soft-deletes an owned analysis and its active documents together` | `Passed`                           |
-| `OWN-AC-007`                             | No HTTP API                                                        | `Blocked`                          |
+| `OWN-AC-007`                             | Analysis HTTP Owner A/B Test、Document HTTP 未実装                 | `Partial`                          |
 
 Database-level Evidence:
 
@@ -35,12 +35,12 @@ Database-level Evidence:
 pnpm test:integration
 ```
 
-Result: 全 Integration 2 Suites、9 Tests Passed。Ownership Suite は 4 Tests で、Container 停止により Test Database 全体を破棄しました。
+Result: 全 Integration 3 Suites、13 Tests Passed。Ownership Suite は 4 Tests、Analysis HTTP Suite は 4 Tests で、Container 停止により各 Test Database 全体を破棄しました。
 
 ## Deviations and Residual Risks
 
-- `OWN-DEV-004` — Analysis/Document HTTP API 未実装のため Blocked
+- `OWN-DEV-004` — Analysis HTTP は検証済み、Document HTTP は PDF Upload Feature まで Blocked
 
 ## Conclusion
 
-Repository、PostgreSQL Constraint、Concurrency Boundary の Cross-user Isolation は検証済みです。HTTP Authorization は Planned API が存在しないため Feature 全体は意図的に `Partial` のままです。
+Repository、PostgreSQL Constraint、Concurrency Boundary と Analysis HTTP の Cross-user Isolation は検証済みです。Document HTTP Authorization は Planned API が存在しないため Feature 全体は意図的に `Partial` のままです。

@@ -2,13 +2,13 @@
 
 ## Metadata
 
-| Field                 | Value                                     |
-| --------------------- | ----------------------------------------- |
-| Spec status           | `Draft`                                   |
-| Implementation status | `Not started`                             |
-| Verification status   | `Not started`                             |
-| Approval              | `Pending clarification and user approval` |
-| Last updated          | `2026-07-22`                              |
+| Field                 | Value                 |
+| --------------------- | --------------------- |
+| Spec status           | `Approved`            |
+| Implementation status | `Implementing`        |
+| Verification status   | `Partial`             |
+| Approval              | `Approved 2026-07-24` |
+| Last updated          | `2026-07-24`          |
 
 ## Goal
 
@@ -26,7 +26,7 @@ Authenticated User が最大 3 件の Public IR PDF を自分の Analysis に安
 ## Actors and Preconditions
 
 - User は有効な Bearer Access Token で認証済みです。
-- Analysis/Document API と MinIO/S3 Private Bucket が利用可能です。
+- Analysis Resource API と MinIO/S3 Private Bucket が利用可能です。Analysis Resource API は `PDF-Q-007` の決定により独立 Feature として先行実装します。
 - `ownerId` は Authenticated User から導出し、Request Body では受け取りません。
 
 ## Functional Requirements
@@ -55,25 +55,39 @@ Authenticated User が最大 3 件の Public IR PDF を自分の Analysis に安
 | `PDF-SEC-006` | Cross-user Analysis/Document は Not Found と同等に扱う                                 |
 | `PDF-SEC-007` | Uploaded PDF Content を Instruction として扱わない                                     |
 
-## Provisional API Contract
+## Approved Upload Flow
 
-Material Decision が未解決のため未承認です。候補は次の Two-step Flow です。
+User は 2026-07-24 に次の Two-step Flow を承認しました。具体的な Endpoint Path と Schema は Technical Plan で確定します。
 
-1. Authenticated Client が Filename、MIME、Size、SHA-256 を送信して Upload Intent と Short-lived Presigned URL を取得します。
+1. Authenticated Client が Filename、MIME、Size、SHA-256 を送信して Upload Session と Short-lived Presigned URL を取得します。
 2. Client が Object Storage に直接 PUT します。
-3. Client が Completion API を呼び、Server が Object Metadata と File Header を検証して Document を Finalize します。
+3. Client が Completion API を呼び、Server が Object Metadata、File Header、Size、SHA-256 を検証して Document を Finalize します。
+
+Analysis の作成・履歴・取得・削除は独立した Analysis Management Feature とし、PDF Upload より先に Approved/Implemented します。Document の Upload、Finalize、List、Delete と Object Cleanup は本 Feature の Scope とします。
 
 ## Error and Edge Cases
 
-| Case                                     | Expected behavior                                   |
-| ---------------------------------------- | --------------------------------------------------- |
-| 4 件目の Active Document                 | Stable Limit Error、URL/Document を作成しない       |
-| `.pdf` だが MIME 不一致                  | Validation Error                                    |
-| Extension/MIME は PDF だが Header 不一致 | Object を無効化・削除し Document を Finalize しない |
-| Presigned URL Expired                    | 新しい Intent/URL を安全に再発行できる              |
-| Completion 未実行                        | TTL 後に Orphan Cleanup 対象とする                  |
-| Cross-user Analysis ID                   | Not Found 相当                                      |
-| 同じ SHA-256                             | Product Decision に従う                             |
+| Case                                      | Expected behavior                                   |
+| ----------------------------------------- | --------------------------------------------------- |
+| 4 件目の Active Document                  | Stable Limit Error、URL/Document を作成しない       |
+| `.pdf` だが MIME 不一致                   | Validation Error                                    |
+| Extension/MIME は PDF だが Header 不一致  | Object を無効化・削除し Document を Finalize しない |
+| Presigned URL Expired                     | 新しい Intent/URL を安全に再発行できる              |
+| Completion 未実行                         | TTL 後に Orphan Cleanup 対象とする                  |
+| Cross-user Analysis ID                    | Not Found 相当                                      |
+| 同一 Analysis の Active Duplicate SHA-256 | Stable Duplicate Error とし Finalize しない         |
+
+## Approved Decisions
+
+User は 2026-07-24 に以下を承認しました。
+
+1. API Process を通して File 本体を Proxy せず、Direct Presigned Upload + Finalize を採用します。
+2. Incomplete/Invalid Object を `Document` として扱わないため、明示的な Lifecycle を持つ `DocumentUpload` Session Entity を追加します。Session は少なくとも `PENDING`、`VALIDATING`、`COMPLETED`、`REJECTED`、`EXPIRED` を区別し、Completed Session から Finalized `Document` を一意に追跡します。
+3. Client SHA-256 と Object Storage Metadata は Hint とし、Finalize 時に Trusted Server-side Code が Object を Streaming Read して SHA-256、Size、`%PDF-` Header を再検証します。
+4. 同一 User/Analysis 内の Active Duplicate SHA-256 は Finalize せず Stable Error で拒否します。同じ File の別 Analysis への Upload は許可し、User/Analysis 間で Object を共有しません。
+5. Presigned URL TTL は 5 分、未 Finalize Object/Session の Expiry は 24 時間とし、Retry 可能な Cleanup Job で削除します。
+6. Analysis は Upload Intent より前に Owner が作成します。Finalize 時の暗黙作成は行いません。
+7. Analysis Management を独立 Feature として先に Spec/Implement し、Analysis 作成・履歴・取得・削除と HTTP Owner Isolation を検証します。Document Storage Lifecycle は PDF Upload Feature に残します。
 
 ## Acceptance Criteria
 
@@ -90,20 +104,22 @@ Material Decision が未解決のため未承認です。候補は次の Two-ste
 
 ## Open Questions
 
-| ID          | Question                                                                                 | Impact                | Status                                   |
-| ----------- | ---------------------------------------------------------------------------------------- | --------------------- | ---------------------------------------- |
-| `PDF-Q-001` | Direct Presigned Upload + Post-upload Validation を採用するか、API Proxy Upload にするか | Architecture/Security | `Open` — Presigned Two-step を推奨       |
-| `PDF-Q-002` | Upload Intent 用に Document Status / Upload Session Entity を追加するか                  | Database/Status       | `Open` — Dedicated Upload Status を推奨  |
-| `PDF-Q-003` | SHA-256 は Client Claim を Server が Streaming 再計算するか、S3 Checksum を信頼するか    | Integrity/Cost        | `Open` — Server-side Verification を推奨 |
-| `PDF-Q-004` | 同一 User/Analysis の Duplicate SHA-256 を拒否、再利用、許可のどれにするか               | Product/Data          | `Open`                                   |
-| `PDF-Q-005` | Presigned URL と Orphan Object の TTL/Cleanup Timing                                     | Operation/Cost        | `Open` — URL 5 min、Orphan 24 h を初期案 |
-| `PDF-Q-006` | Analysis は Upload Intent 前に作成するか、Finalize 時に作成するか                        | API/Status Machine    | `Open`                                   |
+| ID          | Question                                                                                 | Impact                | Status                                          |
+| ----------- | ---------------------------------------------------------------------------------------- | --------------------- | ----------------------------------------------- |
+| `PDF-Q-001` | Direct Presigned Upload + Post-upload Validation を採用するか、API Proxy Upload にするか | Architecture/Security | `Resolved` — Presigned Two-step                 |
+| `PDF-Q-002` | Upload Intent 用に Document Status / Upload Session Entity を追加するか                  | Database/Status       | `Resolved` — Dedicated `DocumentUpload` Session |
+| `PDF-Q-003` | SHA-256 は Client Claim を Server が Streaming 再計算するか、S3 Checksum を信頼するか    | Integrity/Cost        | `Resolved` — Server-side Streaming Verification |
+| `PDF-Q-004` | 同一 User/Analysis の Duplicate SHA-256 を拒否、再利用、許可のどれにするか               | Product/Data          | `Resolved` — Active Duplicate を拒否            |
+| `PDF-Q-005` | Presigned URL と Orphan Object の TTL/Cleanup Timing                                     | Operation/Cost        | `Resolved` — URL 5 min、Orphan 24 h             |
+| `PDF-Q-006` | Analysis は Upload Intent 前に作成するか、Finalize 時に作成するか                        | API/Status Machine    | `Resolved` — Intent 前に明示的作成              |
+| `PDF-Q-007` | Analysis Management API を独立 Feature として先行実装するか、本 Feature に含めるか       | Scope/Sequence        | `Resolved` — 独立 Feature として先行実装        |
 
 ## Dependencies
 
 - Authentication Specification
 - Owner-scoped Data Access Specification
+- Analysis Management Specification (`PDF-Q-007` の承認後に作成)
 - MinIO / AWS S3 Adapter
 - `docs/security.md`, `docs/database-design.md`
 
-Technical Plan と Tasks は Open Questions の User Approval 後に作成します。
+Analysis Management Feature の API Contract を承認後、本 Feature の Technical Plan と Tasks を作成します。
