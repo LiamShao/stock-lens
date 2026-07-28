@@ -1,5 +1,23 @@
 # StockLens AI 開発進捗
 
+## 2026-07-28
+
+### PDF Upload Object Storage Foundation
+
+- Approved `PDF-TASK-004` として API/Worker 共通の `@stocklens/object-storage` Package を追加しました。
+- AWS S3 と S3-compatible MinIO に対する Presigned PUT、Head、Streaming Read、Idempotent Delete Interface を実装しました。
+- Object Key は Owner/Analysis/Upload Session Prefix と Random UUID で生成し、Original Filename を使用しません。
+- Presigned PUT は最大 5 分、1〜20 MB、`application/pdf`、Claimed SHA-256 Metadata に制限し、必要 Header を AWS Signature に含めます。
+- AWS Runtime は Default Credential Provider Chain、Local MinIO は Custom Endpoint、Static Credential、Path-style Access を使用できます。
+- AWS SDK v3 は S3 Client と Presigner の最小 2 Package のみを追加し、Automatic Empty-body Checksum を無効化して Actual Upload Body と競合しないようにしました。
+
+### 検証
+
+- Object Storage Unit Test 3 Suites / 13 Tests が成功しました。
+- Project-owned MinIO で Presigned PUT `200`、Head Metadata、Streaming Body、Delete、Delete 後 Not Found を確認しました。Temporary Object は削除済みで、検証前に停止していた MinIO Container も停止状態へ戻しました。
+- Full Workspace の Format、Spec Check、Lint、Typecheck、61 Unit Tests、17 PostgreSQL Integration Tests、Build、Prisma Validate が成功しました。
+- Cleanup Queue、Upload/Finalize API、Automated MinIO Acceptance Test は次 Task 以降であり、PDF Upload Feature 全体は `Implementing` / `Partial` です。
+
 ## 2026-07-24
 
 ### PDF Upload Database Foundation

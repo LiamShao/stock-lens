@@ -82,7 +82,7 @@ Analysis は Upload 前に `DRAFT` で作成し、最初の Document Finalize �
 - 重要 Finding は `Document → Page → Chunk → Excerpt` の Evidence を必須とします。
 - Uploaded Text は命令ではなく Untrusted Data として明確に Delimit します。
 
-この Pipeline、Upload API、Object Storage Integration は未実装です。PDF Upload Spec と Technical Plan は承認済みで、Analysis Management の検証後に段階実装します。
+S3-compatible Object Storage Interface と MinIO/AWS Adapter は `@stocklens/object-storage` に実装済みです。Upload API、Cleanup Queue と、この Adapter を接続する Pipeline は未実装です。PDF Upload Spec と Technical Plan に従って段階実装します。
 
 ## 7. Deployment Target
 
@@ -91,6 +91,6 @@ Target は AWS-oriented Architecture です。Web/API/Worker を独立 Deployabl
 ## 8. 現在の既知 Gap
 
 - Analysis HTTP API の Cross-user Authorization は検証済みです。Document HTTP API は PDF Upload Feature まで未実装です。
-- PDF Upload、Presigned URL、Parsing、LLM/RAG、Evidence UI は未実装です。
+- Object Storage Adapter は実装済みですが、PDF Upload API、Cleanup Queue、Parsing、LLM/RAG、Evidence UI は未実装です。
 - Rate Limit Store は Process Local であり、Multi-instance 前に Redis-backed Store が必要です。
 - Required ADR、AI Pipeline、Evidence、Evaluation、Deployment の詳細文書は段階的に追加します。

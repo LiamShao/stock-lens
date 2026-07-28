@@ -13,6 +13,7 @@ packages/
   config/         共通 TypeScript 設定
   database/       Prisma データアクセスパッケージ
   eslint-config/  共通 ESLint Flat Config
+  object-storage/ AWS S3 / MinIO 共通 Private Object Storage Adapter
   shared/         共通 Zod スキーマと TypeScript 型
   ui/             共通 React コンポーネント
 prisma/            Prisma スキーマ
@@ -66,6 +67,8 @@ pnpm db:validate
 `test:integration` は Docker/Testcontainers で隔離した `stocklens-postgres:16-pgvector` を起動し、空 Database に全 Migration を適用します。共有 Local PostgreSQL や既存 Data は変更しません。Image が未 Build の場合は先に `docker compose build postgres` を実行してください。
 
 Prisma Schema と Migration には、User、Analysis、Document、Evidence、Job などの Domain Model を定義しています。論理設計と Ownership Rule は [docs/database-design.md](./docs/database-design.md) を参照してください。
+
+`@stocklens/object-storage` は AWS S3 と Local MinIO を共通 Interface で扱います。S3 Operation には `@aws-sdk/client-s3`、短命 Presigned PUT には `@aws-sdk/s3-request-presigner` のみを追加し、API/Worker から Provider 固有処理を分離しています。詳細は [packages/object-storage/README.md](./packages/object-storage/README.md) を参照してください。
 
 Feature Development は Spec-Driven Development で進めます。SDD Workflow、Feature Spec、Requirement Traceability、Deviation は [specs/README.md](./specs/README.md) を参照してください。Authentication、Demo User、Analysis Management は承認・検証済みです。Ownership は Document HTTP API の Criterion を明示して `Partial` としています。
 

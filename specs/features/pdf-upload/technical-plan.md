@@ -5,8 +5,8 @@
 | Field        | Value                                   |
 | ------------ | --------------------------------------- |
 | Related Spec | `specs/features/pdf-upload/spec.md`     |
-| Plan status  | `Implementing — PDF-TASK-003 completed` |
-| Last updated | `2026-07-24`                            |
+| Plan status  | `Implementing — PDF-TASK-004 completed` |
+| Last updated | `2026-07-28`                            |
 
 ## Approach
 

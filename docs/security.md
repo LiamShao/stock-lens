@@ -76,3 +76,5 @@
 Demo User は明示的な CLI でのみ Provisioning し、API 起動時には作成しません。CLI は通常 User の上書き、Soft Delete 済み User の暗黙的な復元、Password の出力を禁止します。Production では `ALLOW_DEMO_USER_PROVISIONING=true` と Local Default 以外の Password を必須とし、Password 変更時は既存 Active Refresh Token を同一 Transaction で失効します。
 
 Document / Analysis Repository は Read、List、Create、Update、Soft Delete の Query に Authenticated User の `ownerId` を含めます。Cross-user 操作が Resource の存在を推測できないよう、Repository は対象なしとして扱います。この Boundary は Testcontainers PostgreSQL Integration Test で検証します。Analysis HTTP API の End-to-end Authorization は検証済みです。Document HTTP API と Object Storage Authorization は PDF Upload Feature の実装まで Blocked です。
+
+Object Storage Boundary は `@stocklens/object-storage` に集約します。Presigned PUT は Private Bucket の単一 Object Key に限定し、`Content-Length`、`Content-Type: application/pdf`、Claimed SHA-256 Metadata を署名します。有効期限は最大 300 秒です。Object Key は Owner/Analysis/Upload Session Prefix と Random UUID で作成し、Original Filename を含めません。AWS SDK Credential、Presigned URL、Bucket、Object Key は Log に記録しません。Storage Metadata は Hint であり、Finalize 時には Trusted Server-side Code が Size、SHA-256 と `%PDF-` Header を Streaming 再検証します。

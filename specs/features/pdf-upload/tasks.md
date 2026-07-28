@@ -14,7 +14,7 @@
 ## Database and Storage
 
 - [x] `PDF-TASK-003` (`PDF-FR-009`) `DocumentUpload` Status/Entity、Constraint、Index、Migration を追加
-- [ ] `PDF-TASK-004` (`PDF-FR-005`, `PDF-FR-006`) S3-compatible Storage Interface と MinIO/AWS Adapter を追加
+- [x] `PDF-TASK-004` (`PDF-FR-005`, `PDF-FR-006`) S3-compatible Storage Interface と MinIO/AWS Adapter を追加
 - [ ] `PDF-TASK-005` (`PDF-FR-008`, `PDF-FR-009`) Idempotent Object Cleanup Queue、Worker、Retry Tracking を追加
 
 ## API
