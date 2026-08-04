@@ -1,5 +1,17 @@
 # StockLens AI 開発進捗
 
+## 2026-08-04
+
+### PDF Upload Object Cleanup Queue
+
+- Approved `PDF-TASK-005` として `OBJECT_CLEANUP` JobStep、Upload Cleanup Relation、Target Constraint Migration を追加しました。
+- PostgreSQL の `JobExecution` を Durable Source、BullMQ を Dispatch Layer とし、Queue Payload を `jobExecutionId` のみに限定しました。
+- Worker は Database から Object Target を解決し、Idempotent Delete、最大 3 回の Exponential Backoff、Attempt History、Sanitized Failure を実装しました。
+- Redis Dispatch Failure は `QUEUED` State を失わず、Worker が Startup と 60 秒 Interval で再送します。最終失敗 Job の Manual Retry にも対応しました。
+- Full Workspace の Format、Spec Check、Lint、Typecheck、72 Unit Tests、Build、Prisma Validate が成功しました。
+- Testcontainers PostgreSQL 3 Suites / 18 Tests が成功し、空 Database への Split Migration、Cleanup Target Constraint、Stable Idempotency を確認しました。Real Redis/MinIO Cleanup Integration は後続 Task です。
+- Upload/Finalize/Delete API との接続は `PDF-TASK-006`〜`PDF-TASK-009`、Real Redis/MinIO Cleanup Acceptance は `PDF-TASK-014` に残ります。
+
 ## 2026-07-28
 
 ### PDF Upload Object Storage Foundation

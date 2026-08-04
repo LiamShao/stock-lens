@@ -11,7 +11,11 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "bullmq": "^5.80.2"
+    "@prisma/client": "^6.19.0",
+    "@stocklens/object-storage": "workspace:*",
+    "@stocklens/shared": "workspace:*",
+    "bullmq": "^5.80.2",
+    "dotenv": "^17.4.2"
   },
   "devDependencies": {
     "@stocklens/config": "workspace:*",

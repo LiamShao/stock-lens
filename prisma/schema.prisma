@@ -78,6 +78,7 @@ enum ChatMessageStatus {
 }
 
 enum JobStep {
+  OBJECT_CLEANUP
   PARSE
   DETECT_SECTIONS
   CHUNK
@@ -261,11 +262,13 @@ model DocumentUpload {
   createdAt           DateTime             @default(now()) @db.Timestamptz(3)
   updatedAt           DateTime             @updatedAt @db.Timestamptz(3)
 
-  owner             User      @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  analysis          Analysis  @relation(fields: [ownerId, analysisId], references: [ownerId, id], onDelete: Restrict)
-  finalizedDocument Document? @relation("FinalizedDocumentUpload", fields: [ownerId, analysisId, finalizedDocumentId], references: [ownerId, analysisId, id], onDelete: Restrict)
+  owner             User           @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  analysis          Analysis       @relation(fields: [ownerId, analysisId], references: [ownerId, id], onDelete: Restrict)
+  finalizedDocument Document?      @relation("FinalizedDocumentUpload", fields: [ownerId, analysisId, finalizedDocumentId], references: [ownerId, analysisId, id], onDelete: Restrict)
+  jobExecutions     JobExecution[]
 
   @@unique([ownerId, analysisId, finalizedDocumentId])
+  @@unique([ownerId, analysisId, id])
   @@index([ownerId, analysisId, status])
   @@index([status, expiresAt])
   @@index([ownerId, analysisId, claimedSha256])
@@ -486,31 +489,34 @@ model ChatMessageEvidence {
 }
 
 model JobExecution {
-  id             String    @id @default(uuid()) @db.Uuid
-  ownerId        String    @db.Uuid
-  analysisId     String    @db.Uuid
-  documentId     String?   @db.Uuid
-  step           JobStep
-  status         JobStatus @default(QUEUED)
-  currentAttempt Int       @default(0)
-  idempotencyKey String    @unique
-  startedAt      DateTime? @db.Timestamptz(3)
-  finishedAt     DateTime? @db.Timestamptz(3)
-  errorCode      String?
-  errorMessage   String?
-  errorDetails   Json?     @db.JsonB
-  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
-  updatedAt      DateTime  @updatedAt @db.Timestamptz(3)
+  id               String    @id @default(uuid()) @db.Uuid
+  ownerId          String    @db.Uuid
+  analysisId       String    @db.Uuid
+  documentId       String?   @db.Uuid
+  documentUploadId String?   @db.Uuid
+  step             JobStep
+  status           JobStatus @default(QUEUED)
+  currentAttempt   Int       @default(0)
+  idempotencyKey   String    @unique
+  startedAt        DateTime? @db.Timestamptz(3)
+  finishedAt       DateTime? @db.Timestamptz(3)
+  errorCode        String?
+  errorMessage     String?
+  errorDetails     Json?     @db.JsonB
+  createdAt        DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime  @updatedAt @db.Timestamptz(3)
 
-  owner       User         @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  analysis    Analysis     @relation(fields: [analysisId], references: [id], onDelete: Restrict)
-  document    Document?    @relation(fields: [documentId], references: [id], onDelete: Restrict)
-  attempts    JobAttempt[]
-  aiUsageLogs AiUsageLog[]
+  owner          User            @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  analysis       Analysis        @relation(fields: [analysisId], references: [id], onDelete: Restrict)
+  document       Document?       @relation(fields: [ownerId, analysisId, documentId], references: [ownerId, analysisId, id], onDelete: Restrict)
+  documentUpload DocumentUpload? @relation(fields: [ownerId, analysisId, documentUploadId], references: [ownerId, analysisId, id], onDelete: Restrict)
+  attempts       JobAttempt[]
+  aiUsageLogs    AiUsageLog[]
 
   @@index([ownerId, analysisId])
   @@index([analysisId, step, status])
   @@index([documentId])
+  @@index([documentUploadId])
 }
 
 model JobAttempt {

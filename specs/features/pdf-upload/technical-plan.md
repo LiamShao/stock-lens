@@ -5,8 +5,8 @@
 | Field        | Value                                   |
 | ------------ | --------------------------------------- |
 | Related Spec | `specs/features/pdf-upload/spec.md`     |
-| Plan status  | `Implementing — PDF-TASK-004 completed` |
-| Last updated | `2026-07-28`                            |
+| Plan status  | `Implementing — PDF-TASK-005 completed` |
+| Last updated | `2026-08-04`                            |
 
 ## Approach
 
@@ -72,6 +72,15 @@ Active Document と未期限切れ Upload Session の合計が 3 を超えない
 - Concurrent Finalize、Repeated Finalize、Delete/Finalize Race は Idempotent Result または Stable Conflict に収束させます。
 - Validation Failure、Expired Session、Document Delete は Object Cleanup Job を Enqueue し、Object Not Found は成功扱いにします。
 - Upload URL、Credential、Authorization、Full Object Content、Full PDF Text は Log に記録しません。
+
+## Object Cleanup Queue Contract
+
+- Queue 名は `object-cleanup`、Job 名は `delete-object` とし、Queue Payload は `jobExecutionId` UUID のみに限定します。Bucket、Object Key、Owner ID は Redis に複製しません。
+- `JobExecution.step = OBJECT_CLEANUP` とし、`documentId` または `documentUploadId` のちょうど一方を Target とします。Database `CHECK` と Owner/Analysis Composite Foreign Key で Target を強制します。
+- API は Storage 操作前に Stable Idempotency Key で `JobExecution` を Upsert し、その後 BullMQ へ Dispatch します。Redis Failure 時も `QUEUED` Record を残します。
+- Worker は 60 秒ごとに未 Dispatch の `QUEUED` Cleanup を再送します。BullMQ Job ID は `JobExecution.id` とし、重複 Dispatch を同じ Job に収束させます。
+- Automatic Retry は最大 3 回の Exponential Backoff とし、各試行を `JobAttempt` に保存します。最終失敗後は既存 BullMQ Job の `retry()` と Database Status Reset により手動再実行できます。
+- Object Storage の Delete は Missing Object を含め成功として扱います。Provider Error Detail は保存・出力せず、Stable `OBJECT_STORAGE_DELETE_FAILED` のみを記録します。
 
 ## Dependencies
 

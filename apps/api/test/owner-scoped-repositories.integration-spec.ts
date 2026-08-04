@@ -5,6 +5,7 @@ import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 
 import { AnalysisRepository } from '../src/database/analysis.repository';
 import { DocumentRepository } from '../src/database/document.repository';
+import { ObjectCleanupRepository } from '../src/database/object-cleanup.repository';
 import { PrismaService } from '../src/database/prisma.service';
 import { startMigratedPostgres } from './support/postgres-test-container';
 
@@ -15,6 +16,7 @@ describe('owner-scoped repositories', () => {
   let prisma: PrismaService;
   let analysisRepository: AnalysisRepository;
   let documentRepository: DocumentRepository;
+  let objectCleanupRepository: ObjectCleanupRepository;
   const testRunId = randomUUID();
 
   beforeAll(async () => {
@@ -22,6 +24,7 @@ describe('owner-scoped repositories', () => {
     prisma = new PrismaService();
     analysisRepository = new AnalysisRepository(prisma);
     documentRepository = new DocumentRepository(prisma);
+    objectCleanupRepository = new ObjectCleanupRepository(prisma);
     await prisma.$connect();
   });
 
@@ -400,6 +403,64 @@ describe('owner-scoped repositories', () => {
           status: 'COMPLETED',
         },
         where: { id: crossAnalysisUpload.id },
+      }),
+    ).rejects.toMatchObject({ code: 'P2003' });
+  });
+
+  it('PDF-FR-008 and PDF-FR-009 persist one idempotent cleanup execution per target', async () => {
+    const [ownerA, ownerB] = await createOwners(prisma, testRunId);
+    const analysis = await analysisRepository.create({
+      ownerId: ownerA,
+      title: 'Object cleanup analysis',
+    });
+    const upload = await prisma.documentUpload.create({
+      data: createUploadData(ownerA, analysis.id, testRunId),
+    });
+    const input = {
+      analysisId: analysis.id,
+      ownerId: ownerA,
+      target: { id: upload.id, kind: 'document-upload' as const },
+    };
+
+    const first = await objectCleanupRepository.createOrFind(input);
+    const repeated = await objectCleanupRepository.createOrFind(input);
+
+    expect(first).toMatchObject({ status: 'QUEUED' });
+    expect(repeated).toEqual(first);
+    expect(
+      await prisma.jobExecution.count({
+        where: {
+          idempotencyKey: `object-cleanup:document-upload:${upload.id}:v1`,
+        },
+      }),
+    ).toBe(1);
+    await expect(
+      prisma.jobExecution.create({
+        data: {
+          analysisId: analysis.id,
+          idempotencyKey: `invalid-object-cleanup-${randomUUID()}`,
+          ownerId: ownerA,
+          step: 'OBJECT_CLEANUP',
+        },
+      }),
+    ).rejects.toThrow('JobExecution_objectCleanupTarget_check');
+
+    const otherAnalysis = await analysisRepository.create({
+      ownerId: ownerB,
+      title: 'Cross-owner cleanup target',
+    });
+    const otherUpload = await prisma.documentUpload.create({
+      data: createUploadData(ownerB, otherAnalysis.id, testRunId),
+    });
+    await expect(
+      prisma.jobExecution.create({
+        data: {
+          analysisId: analysis.id,
+          documentUploadId: otherUpload.id,
+          idempotencyKey: `cross-owner-object-cleanup-${randomUUID()}`,
+          ownerId: ownerA,
+          step: 'OBJECT_CLEANUP',
+        },
       }),
     ).rejects.toMatchObject({ code: 'P2003' });
   });

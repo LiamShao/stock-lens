@@ -354,25 +354,28 @@ Anonymous Chat は作成しません。すべての Session と Message は User
 
 BullMQ Job の実行履歴と Step 単位の状態を保持します。
 
-| Column           | Type                 | Constraint / Purpose               |
-| ---------------- | -------------------- | ---------------------------------- |
-| `id`             | UUID                 | Primary Key                        |
-| `ownerId`        | UUID                 | `User.id`                          |
-| `analysisId`     | UUID                 | `Analysis.id`                      |
-| `documentId`     | UUID nullable        | Document Scope の Step 用          |
-| `step`           | JobStep              | PARSE、CHUNK、EMBED など           |
-| `status`         | JobStatus            | QUEUED、RUNNING、SUCCEEDED、FAILED |
-| `currentAttempt` | Integer              | 最新の Attempt Number              |
-| `idempotencyKey` | Text                 | Unique                             |
-| `startedAt`      | Timestamptz nullable | 開始日時                           |
-| `finishedAt`     | Timestamptz nullable | 終了日時                           |
-| `errorCode`      | Text nullable        | Stable Error Code                  |
-| `errorMessage`   | Text nullable        | Sanitized Error                    |
-| `errorDetails`   | JSONB nullable       | 非機密の構造化 Detail              |
-| `createdAt`      | Timestamptz          | 作成日時                           |
-| `updatedAt`      | Timestamptz          | 更新日時                           |
+| Column             | Type                 | Constraint / Purpose               |
+| ------------------ | -------------------- | ---------------------------------- |
+| `id`               | UUID                 | Primary Key                        |
+| `ownerId`          | UUID                 | `User.id`                          |
+| `analysisId`       | UUID                 | `Analysis.id`                      |
+| `documentId`       | UUID nullable        | Document Scope の Step 用          |
+| `documentUploadId` | UUID nullable        | Incomplete Upload Cleanup Scope    |
+| `step`             | JobStep              | PARSE、CHUNK、EMBED など           |
+| `status`           | JobStatus            | QUEUED、RUNNING、SUCCEEDED、FAILED |
+| `currentAttempt`   | Integer              | 最新の Attempt Number              |
+| `idempotencyKey`   | Text                 | Unique                             |
+| `startedAt`        | Timestamptz nullable | 開始日時                           |
+| `finishedAt`       | Timestamptz nullable | 終了日時                           |
+| `errorCode`        | Text nullable        | Stable Error Code                  |
+| `errorMessage`     | Text nullable        | Sanitized Error                    |
+| `errorDetails`     | JSONB nullable       | 非機密の構造化 Detail              |
+| `createdAt`        | Timestamptz          | 作成日時                           |
+| `updatedAt`        | Timestamptz          | 更新日時                           |
 
 `idempotencyKey` は `analysisId:documentId-or-analysis:step:inputVersion` から生成します。同一 Key の成功済み Job は派生 Record を再作成しません。
+
+Object Cleanup は `step = OBJECT_CLEANUP` とし、`documentId` または `documentUploadId` のちょうど一方を Target にします。Database `CHECK` と Owner/Analysis Composite Foreign Key がこの条件を強制し、Worker は Relation から Private Storage Location を取得します。Queue Payload 自体には Storage Location を保存しません。
 
 各 Retry は `JobAttempt` に保存します。`JobAttempt` は `ownerId`、`jobExecutionId`、`attempt`、`bullmqJobId`、`status`、`startedAt`、`finishedAt`、失敗情報を持ち、`jobExecutionId, attempt` を Unique とします。これにより、論理 Job の冪等性を保ちながら各試行の履歴を失いません。既存の成功結果は Upsert または置換 Transaction で扱います。
 

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export * from './analysis';
+export * from './object-cleanup';
 
 export const healthResponseSchema = z.object({
   service: z.string().min(1),
