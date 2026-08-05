@@ -22,6 +22,7 @@
     "@nestjs/platform-fastify": "^11.1.28",
     "@nestjs/swagger": "^11.4.5",
     "@prisma/client": "^6.19.0",
+    "@stocklens/object-storage": "workspace:*",
     "@stocklens/shared": "workspace:*",
     "argon2": "^0.44.0",
     "bullmq": "^5.80.2",

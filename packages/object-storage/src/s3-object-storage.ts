@@ -15,6 +15,7 @@ import {
   type ObjectStorageConfig,
 } from './config';
 import {
+  CLAIMED_SHA256_METADATA_KEY,
   MAX_PDF_SIZE_BYTES,
   PDF_CONTENT_TYPE,
   type ObjectStorage,
@@ -25,8 +26,6 @@ import {
 
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const MAX_OBJECT_KEY_LENGTH = 1024;
-const CLAIMED_SHA256_METADATA_KEY = 'stocklens-sha256';
-
 interface S3ObjectStorageOptions {
   client?: S3Client;
   now?: () => Date;

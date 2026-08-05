@@ -8,7 +8,7 @@
 | Implementation status | `Implementing`        |
 | Verification status   | `Partial`             |
 | Approval              | `Approved 2026-07-24` |
-| Last updated          | `2026-07-28`          |
+| Last updated          | `2026-08-05`          |
 
 ## Goal
 

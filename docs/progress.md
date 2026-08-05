@@ -1,5 +1,25 @@
 # StockLens AI 開発進捗
 
+## 2026-08-05
+
+### PDF Upload Trusted Streaming Validator
+
+- Approved `PDF-TASK-007` として Object Head と Readable Stream を用いる Internal `PdfObjectValidator` を追加しました。
+- Exact Content Type、Content Length、Signed SHA Metadata、Actual Size、Actual SHA-256、先頭 `%PDF-` を相互検証します。
+- Full Object を保持せず、20 MB + 1 byte、Invalid Header を検出した時点で Stream を破棄します。
+- Missing Object と Provider/Stream Failure は Retryable Storage Failure、Content Mismatch は Invalid Result として構造化・脱敏しました。
+- Public Finalize と Status/Document/Cleanup Transaction は `PDF-TASK-008`、Automated MinIO Acceptance は `PDF-TASK-012` に残ります。
+- Full Workspace の Format、Spec Check、Lint、Typecheck、102 Unit Tests、Build、Prisma Validate と、PostgreSQL Integration 3 Suites / 18 Tests が成功しました。
+
+### PDF Upload Start / Presign API
+
+- Approved `PDF-TASK-006` として Owner-scoped Upload Session Start と Active Session Re-presign Endpoint を追加しました。
+- Shared Zod Schema は 1〜20 MB、case-insensitive `.pdf`、exact `application/pdf`、lowercase SHA-256、safe Filename を URL 発行前に検証します。
+- Active Document、未期限 `PENDING`、実行中 `VALIDATING` の合計 3 枠を Serializable Transaction で予約します。
+- Response から Bucket、Storage Key、Credential を除外し、5 分の PUT URL と必要な Signed Header のみを返します。
+- 初回 Presign Failure は `REJECTED` と Stable Error に収束して枠を解放し、再 Presign Failure は `PENDING` を維持します。
+- Full Workspace の Format、Spec Check、Lint、Typecheck、90 Unit Tests、Build、Prisma Validate が成功しました。既存 PostgreSQL Integration 3 Suites / 18 Tests も成功しました。Upload HTTP/Concurrency/MinIO Acceptance は後続 Verification Task に残ります。
+
 ## 2026-08-04
 
 ### PDF Upload Object Cleanup Queue

@@ -5,8 +5,8 @@
 | Field        | Value                                   |
 | ------------ | --------------------------------------- |
 | Related Spec | `specs/features/pdf-upload/spec.md`     |
-| Plan status  | `Implementing — PDF-TASK-005 completed` |
-| Last updated | `2026-08-04`                            |
+| Plan status  | `Implementing — PDF-TASK-007 completed` |
+| Last updated | `2026-08-05`                            |
 
 ## Approach
 
@@ -48,7 +48,7 @@ Start Request は `originalName`、`mimeType`、`sizeBytes`、Lowercase Hex `sha
 
 Finalize は初回成功時に Finalized Document を返します。Completed Session への同一 Finalize は同じ Document を返す Idempotent Operation とし、Rejected/Expired Session は Stable Conflict Error とします。
 
-主な Stable Error は `ANALYSIS_NOT_FOUND`、`DOCUMENT_UPLOAD_NOT_FOUND`、`DOCUMENT_LIMIT_EXCEEDED`、`INVALID_PDF`、`UPLOAD_EXPIRED`、`DUPLICATE_DOCUMENT`、`STORAGE_VALIDATION_FAILED` です。Validation Error は共通 `VALIDATION_ERROR` を使用します。
+主な Stable Error は `ANALYSIS_NOT_FOUND`、`DOCUMENT_UPLOAD_NOT_FOUND`、`DOCUMENT_UPLOAD_NOT_ACTIVE`、`DOCUMENT_LIMIT_EXCEEDED`、`INVALID_PDF`、`UPLOAD_EXPIRED`、`DUPLICATE_DOCUMENT`、`OBJECT_STORAGE_UNAVAILABLE`、`STORAGE_VALIDATION_FAILED` です。Validation Error は共通 `VALIDATION_ERROR` を使用します。
 
 ## Database Changes
 
@@ -71,7 +71,15 @@ Active Document と未期限切れ Upload Session の合計が 3 を超えない
 - Cross-user Analysis/Session/Document は同じ Not Found Response とします。
 - Concurrent Finalize、Repeated Finalize、Delete/Finalize Race は Idempotent Result または Stable Conflict に収束させます。
 - Validation Failure、Expired Session、Document Delete は Object Cleanup Job を Enqueue し、Object Not Found は成功扱いにします。
+- 初回 Presign Failure は Session を `REJECTED` にして予約枠を解放します。再 Presign Failure は `PENDING` を維持して再試行可能にします。
 - Upload URL、Credential、Authorization、Full Object Content、Full PDF Text は Log に記録しません。
+
+### TASK-007 / TASK-008 Boundary
+
+- `PDF-TASK-007` は Object Head と Readable Stream から Content Type、Claimed SHA Metadata、Actual Size、SHA-256、先頭 `%PDF-` を検証する Internal Validator を実装します。
+- Validator は Full Body を保持せず、最大 20 MB + 1 byte で打ち切り、Invalid Content と Retryable Storage Failure を構造化して区別します。
+- Public Finalize Endpoint、`PENDING → VALIDATING` Claim、Document 作成、Duplicate/Limit 再確認、`COMPLETED`/`REJECTED` 永続化、Cleanup Enqueue は一つの整合した Flow として `PDF-TASK-008` で接続します。
+- したがって `PDF-TASK-007` 単独では Upload Session Status を変更せず、公開 Finalize Response も追加しません。
 
 ## Object Cleanup Queue Contract
 
@@ -84,7 +92,7 @@ Active Document と未期限切れ Upload Session の合計が 3 を超えない
 
 ## Dependencies
 
-実装時に S3-compatible Operation と Presigning のため AWS SDK v3 の最小 Package を追加する予定です。API から Cleanup Job を発行するため `bullmq` も API Dependency に追加します。追加時は Lockfile と README に理由を記録します。
+S3-compatible Operation と Presigning のため AWS SDK v3 の最小 Package を `@stocklens/object-storage` に追加済みです。`PDF-TASK-006` では API から同 Package を再利用する Workspace Dependency を追加しました。Cleanup Job 発行用の `bullmq` も API Dependency として追加済みです。
 
 ## Test Strategy
 

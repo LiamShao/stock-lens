@@ -61,24 +61,24 @@ Status は Requirement の実装・検証状況を表します。`Partial` は C
 
 ## PDF Upload
 
-| Requirement   | Implementation                                              | Verification                              | Status    |
-| ------------- | ----------------------------------------------------------- | ----------------------------------------- | --------- |
-| `PDF-FR-001`  | Upload Composite Owner FK、Service/API は Planned           | DB Cross-owner Insert Reject              | `Partial` |
-| `PDF-FR-002`  | Planned Serializable Slot Reservation                       | `PDF-AC-002` + concurrency test planned   | `Blocked` |
-| `PDF-FR-003`  | Upload Size DB Check、Zod/Streaming は Planned              | 0/20 MB 超 DB Constraint Test             | `Partial` |
-| `PDF-FR-004`  | Planned Extension/MIME/Header Validation                    | `PDF-AC-004`, `PDF-AC-005` planned        | `Blocked` |
-| `PDF-FR-005`  | Random Private Key + `@stocklens/object-storage`            | Unit + MinIO Adapter Smoke                | `Partial` |
-| `PDF-FR-006`  | Signed PUT max 300 seconds、API は Planned                  | Signed Header Unit + MinIO Smoke          | `Partial` |
-| `PDF-FR-007`  | Streaming Read Primitive、Finalize は Planned               | Stream Unit + MinIO Smoke                 | `Partial` |
-| `PDF-FR-008`  | S3 Delete、Cleanup Queue/Worker、Soft Delete API は Planned | Queue/Worker Unit + MinIO Smoke           | `Partial` |
-| `PDF-FR-009`  | Upload Lifecycle + Cleanup Job/Attempt Retry Tracking       | PostgreSQL Constraint + Queue/Worker Unit | `Partial` |
-| `PDF-SEC-001` | Planned case-insensitive `.pdf` Validation                  | `PDF-AC-004` planned                      | `Blocked` |
-| `PDF-SEC-002` | Planned exact `application/pdf` Validation                  | `PDF-AC-004` planned                      | `Blocked` |
-| `PDF-SEC-003` | Planned Trusted `%PDF-` Streaming Check                     | `PDF-AC-005` planned                      | `Blocked` |
-| `PDF-SEC-004` | Size/Type/SHA Header-constrained Signed PUT                 | Signature Unit + MinIO Smoke              | `Partial` |
-| `PDF-SEC-005` | Random Owner Key、API Log Redaction は Planned              | Key Unit、Log Test planned                | `Partial` |
-| `PDF-SEC-006` | Planned HTTP Owner Isolation                                | `PDF-AC-006` planned                      | `Blocked` |
-| `PDF-SEC-007` | Planned Untrusted PDF Content Boundary                      | Service/Prompt boundary review planned    | `Blocked` |
+| Requirement   | Implementation                                              | Verification                                | Status    |
+| ------------- | ----------------------------------------------------------- | ------------------------------------------- | --------- |
+| `PDF-FR-001`  | Owner-scoped Start Controller/Service/Repository + FK       | Service Unit + DB FK、HTTP planned          | `Partial` |
+| `PDF-FR-002`  | Serializable 3-slot Start Reservation                       | Service Unit、concurrency test planned      | `Partial` |
+| `PDF-FR-003`  | DB/Zod Boundary + Streaming 20 MB Cutoff                    | DB/Zod/Validator Unit、HTTP planned         | `Partial` |
+| `PDF-FR-004`  | Filename/MIME Start Zod + Trusted `%PDF-` Validator         | Start/Header Unit、Finalize planned         | `Partial` |
+| `PDF-FR-005`  | Random Private Key + `@stocklens/object-storage`            | Unit + MinIO Adapter Smoke                  | `Partial` |
+| `PDF-FR-006`  | Start/Re-presign API + Signed PUT max 300 seconds           | Service/Signature Unit + MinIO Smoke        | `Partial` |
+| `PDF-FR-007`  | Head Metadata + Actual Size/SHA Streaming Validator         | Validator Unit + MinIO Primitive Smoke      | `Partial` |
+| `PDF-FR-008`  | S3 Delete、Cleanup Queue/Worker、Soft Delete API は Planned | Queue/Worker Unit + MinIO Smoke             | `Partial` |
+| `PDF-FR-009`  | Lifecycle、Presign Failure Reject、Cleanup Retry Tracking   | Service + Queue/Worker Unit、DB Constraint  | `Partial` |
+| `PDF-SEC-001` | Case-insensitive `.pdf` Shared Zod Validation               | Schema Unit、HTTP planned                   | `Partial` |
+| `PDF-SEC-002` | Exact `application/pdf` Shared Zod Validation               | Schema Unit、HTTP planned                   | `Partial` |
+| `PDF-SEC-003` | Trusted chunk-safe `%PDF-` Streaming Check                  | Validator Unit、Cleanup Integration planned | `Partial` |
+| `PDF-SEC-004` | Size/Type/SHA Header-constrained Signed PUT                 | Signature Unit + MinIO Smoke                | `Partial` |
+| `PDF-SEC-005` | Random Key + Bounded Stream + No Content Log                | Key/Validator Unit、Log Test planned        | `Partial` |
+| `PDF-SEC-006` | Owner-scoped Start/Presign、HTTP Isolation Test Planned     | Service/DB Unit、`PDF-AC-006` planned       | `Partial` |
+| `PDF-SEC-007` | Planned Untrusted PDF Content Boundary                      | Service/Prompt boundary review planned      | `Blocked` |
 
 ## Analysis Management
 

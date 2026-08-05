@@ -37,6 +37,12 @@ describe('authentication HTTP integration', () => {
       CORS_ORIGIN: 'http://localhost:3000',
       NODE_ENV: 'test',
       REFRESH_TOKEN_EXPIRES_IN_DAYS: '30',
+      S3_ACCESS_KEY_ID: 'integration-access-key',
+      S3_BUCKET: 'integration-private',
+      S3_FORCE_PATH_STYLE: 'false',
+      S3_PRESIGN_EXPIRES_IN_SECONDS: '300',
+      S3_REGION: 'ap-northeast-1',
+      S3_SECRET_ACCESS_KEY: 'integration-secret-key',
     });
     const module = await Test.createTestingModule({
       imports: [AppModule],

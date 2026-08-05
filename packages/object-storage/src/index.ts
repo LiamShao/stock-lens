@@ -6,6 +6,7 @@ export {
 } from './config';
 export { createPdfObjectKey, type PdfObjectKeyInput } from './object-key';
 export {
+  CLAIMED_SHA256_METADATA_KEY,
   MAX_PDF_SIZE_BYTES,
   PDF_CONTENT_TYPE,
   type ObjectStorage,

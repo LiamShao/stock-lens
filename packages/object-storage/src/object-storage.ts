@@ -2,6 +2,7 @@ import type { Readable } from 'node:stream';
 
 export const PDF_CONTENT_TYPE = 'application/pdf';
 export const MAX_PDF_SIZE_BYTES = 20 * 1024 * 1024;
+export const CLAIMED_SHA256_METADATA_KEY = 'stocklens-sha256';
 
 export interface PresignPdfUploadInput {
   contentLength: number;
