@@ -21,8 +21,8 @@
 
 - [x] `PDF-TASK-006` (`PDF-FR-001`〜`PDF-FR-006`) Upload Session Start/Presign API、Zod Validation、OpenAPI を実装
 - [x] `PDF-TASK-007` (`PDF-FR-003`, `PDF-FR-004`, `PDF-FR-007`, `PDF-SEC-001`〜`PDF-SEC-005`) Streaming Finalize Validation を実装
-- [ ] `PDF-TASK-008` (`PDF-FR-002`, `PDF-FR-007`, `PDF-FR-009`) Transactional Limit、Duplicate、Idempotent Finalize を実装
-- [ ] `PDF-TASK-009` (`PDF-FR-008`, `PDF-SEC-006`) Document List/Delete と Cleanup Enqueue を実装
+- [x] `PDF-TASK-008` (`PDF-FR-002`, `PDF-FR-007`, `PDF-FR-009`) Transactional Limit、Duplicate、Idempotent Finalize を実装
+- [x] `PDF-TASK-009` (`PDF-FR-008`, `PDF-SEC-006`) Document List/Delete と Cleanup Enqueue を実装
 - [ ] `PDF-TASK-010` (`PDF-SEC-006`, `PDF-SEC-007`) Cross-user Not Found、Log Redaction、Untrusted Content Boundary を実装
 
 ## Verification and Documentation

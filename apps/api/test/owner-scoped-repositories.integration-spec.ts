@@ -4,6 +4,7 @@ import type { PrismaClient } from '@prisma/client';
 import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 
 import { AnalysisRepository } from '../src/database/analysis.repository';
+import { DocumentUploadRepository } from '../src/database/document-upload.repository';
 import { DocumentRepository } from '../src/database/document.repository';
 import { ObjectCleanupRepository } from '../src/database/object-cleanup.repository';
 import { PrismaService } from '../src/database/prisma.service';
@@ -15,6 +16,7 @@ describe('owner-scoped repositories', () => {
   let container: StartedPostgreSqlContainer;
   let prisma: PrismaService;
   let analysisRepository: AnalysisRepository;
+  let documentUploadRepository: DocumentUploadRepository;
   let documentRepository: DocumentRepository;
   let objectCleanupRepository: ObjectCleanupRepository;
   const testRunId = randomUUID();
@@ -23,6 +25,7 @@ describe('owner-scoped repositories', () => {
     container = await startMigratedPostgres();
     prisma = new PrismaService();
     analysisRepository = new AnalysisRepository(prisma);
+    documentUploadRepository = new DocumentUploadRepository(prisma);
     documentRepository = new DocumentRepository(prisma);
     objectCleanupRepository = new ObjectCleanupRepository(prisma);
     await prisma.$connect();
@@ -463,6 +466,383 @@ describe('owner-scoped repositories', () => {
         },
       }),
     ).rejects.toMatchObject({ code: 'P2003' });
+  });
+
+  it('PDF-FR-007 atomically finalizes a claimed upload and returns it idempotently', async () => {
+    const [ownerA] = await createOwners(prisma, testRunId);
+    const analysis = await analysisRepository.create({
+      ownerId: ownerA,
+      title: 'Transactional finalize analysis',
+    });
+    const upload = await prisma.documentUpload.create({
+      data: createUploadData(ownerA, analysis.id, testRunId),
+    });
+    const now = new Date();
+
+    await expect(
+      documentUploadRepository.claimForFinalize({
+        analysisId: analysis.id,
+        id: upload.id,
+        now,
+        ownerId: ownerA,
+      }),
+    ).resolves.toMatchObject({ kind: 'claimed' });
+    const completed = await documentUploadRepository.completeFinalize({
+      analysisId: analysis.id,
+      id: upload.id,
+      now,
+      ownerId: ownerA,
+      sha256: upload.claimedSha256,
+      sizeBytes: Number(upload.declaredSizeBytes),
+    });
+    expect(completed).toMatchObject({ kind: 'completed' });
+    if (completed.kind !== 'completed') {
+      throw new Error('Expected upload finalization to complete.');
+    }
+
+    await expect(
+      prisma.documentUpload.findUnique({ where: { id: upload.id } }),
+    ).resolves.toMatchObject({
+      completedAt: now,
+      finalizedDocumentId: completed.document.id,
+      status: 'COMPLETED',
+    });
+    await expect(
+      analysisRepository.findActiveById(ownerA, analysis.id),
+    ).resolves.toMatchObject({ status: 'UPLOADED' });
+    await expect(
+      documentUploadRepository.claimForFinalize({
+        analysisId: analysis.id,
+        id: upload.id,
+        now: new Date(now.getTime() + 1_000),
+        ownerId: ownerA,
+      }),
+    ).resolves.toMatchObject({
+      document: { id: completed.document.id },
+      kind: 'completed',
+    });
+    expect(
+      await prisma.document.count({
+        where: { analysisId: analysis.id, ownerId: ownerA },
+      }),
+    ).toBe(1);
+  });
+
+  it('PDF-FR-009 rejects invalid and expired uploads with durable cleanup', async () => {
+    const [ownerA] = await createOwners(prisma, testRunId);
+    const analysis = await analysisRepository.create({
+      ownerId: ownerA,
+      title: 'Rejected finalize analysis',
+    });
+    const invalidUpload = await prisma.documentUpload.create({
+      data: createUploadData(ownerA, analysis.id, testRunId),
+    });
+    await documentUploadRepository.claimForFinalize({
+      analysisId: analysis.id,
+      id: invalidUpload.id,
+      now: new Date(),
+      ownerId: ownerA,
+    });
+    await expect(
+      documentUploadRepository.rejectInvalidFinalize({
+        analysisId: analysis.id,
+        failureCode: 'INVALID_PDF_HEADER',
+        failureMessage: 'Uploaded object failed validation.',
+        id: invalidUpload.id,
+        ownerId: ownerA,
+      }),
+    ).resolves.toBe(true);
+
+    const expiredUpload = await prisma.documentUpload.create({
+      data: {
+        ...createUploadData(ownerA, analysis.id, testRunId),
+        status: 'VALIDATING',
+      },
+    });
+    await expect(
+      documentUploadRepository.claimForFinalize({
+        analysisId: analysis.id,
+        id: expiredUpload.id,
+        now: new Date(expiredUpload.expiresAt.getTime() + 1),
+        ownerId: ownerA,
+      }),
+    ).resolves.toEqual({ kind: 'expired' });
+    await expect(
+      prisma.documentUpload.findMany({
+        orderBy: { id: 'asc' },
+        where: { id: { in: [invalidUpload.id, expiredUpload.id] } },
+      }),
+    ).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          failureCode: 'INVALID_PDF_HEADER',
+          id: invalidUpload.id,
+          status: 'REJECTED',
+        }),
+        expect.objectContaining({
+          failureCode: null,
+          id: expiredUpload.id,
+          status: 'EXPIRED',
+        }),
+      ]),
+    );
+    expect(
+      await prisma.jobExecution.count({
+        where: {
+          documentUploadId: { in: [invalidUpload.id, expiredUpload.id] },
+          status: 'QUEUED',
+          step: 'OBJECT_CLEANUP',
+        },
+      }),
+    ).toBe(2);
+  });
+
+  it('PDF-FR-002 rejects duplicate SHA and a fourth active document transactionally', async () => {
+    const [ownerA] = await createOwners(prisma, testRunId);
+    const duplicateAnalysis = await analysisRepository.create({
+      ownerId: ownerA,
+      title: 'Duplicate finalize analysis',
+    });
+    const duplicateUpload = await prisma.documentUpload.create({
+      data: createUploadData(ownerA, duplicateAnalysis.id, testRunId),
+    });
+    await documentRepository.createForAnalysis({
+      analysisId: duplicateAnalysis.id,
+      mimeType: 'application/pdf',
+      originalName: 'existing.pdf',
+      ownerId: ownerA,
+      sha256: duplicateUpload.claimedSha256,
+      sizeBytes: 1024n,
+      storageBucket: 'stocklens-test',
+      storageKey: `${testRunId}/${randomUUID()}.pdf`,
+    });
+    await documentUploadRepository.claimForFinalize({
+      analysisId: duplicateAnalysis.id,
+      id: duplicateUpload.id,
+      now: new Date(),
+      ownerId: ownerA,
+    });
+    await expect(
+      documentUploadRepository.completeFinalize({
+        analysisId: duplicateAnalysis.id,
+        id: duplicateUpload.id,
+        now: new Date(),
+        ownerId: ownerA,
+        sha256: duplicateUpload.claimedSha256,
+        sizeBytes: 1024,
+      }),
+    ).resolves.toEqual({ kind: 'duplicate' });
+
+    const limitAnalysis = await analysisRepository.create({
+      ownerId: ownerA,
+      title: 'Finalize limit analysis',
+    });
+    for (let index = 0; index < 3; index += 1) {
+      await documentRepository.createForAnalysis({
+        analysisId: limitAnalysis.id,
+        mimeType: 'application/pdf',
+        originalName: `existing-${index}.pdf`,
+        ownerId: ownerA,
+        sha256: String(index).repeat(64),
+        sizeBytes: 1024n,
+        storageBucket: 'stocklens-test',
+        storageKey: `${testRunId}/${randomUUID()}.pdf`,
+      });
+    }
+    const limitUpload = await prisma.documentUpload.create({
+      data: createUploadData(ownerA, limitAnalysis.id, testRunId),
+    });
+    await documentUploadRepository.claimForFinalize({
+      analysisId: limitAnalysis.id,
+      id: limitUpload.id,
+      now: new Date(),
+      ownerId: ownerA,
+    });
+    await expect(
+      documentUploadRepository.completeFinalize({
+        analysisId: limitAnalysis.id,
+        id: limitUpload.id,
+        now: new Date(),
+        ownerId: ownerA,
+        sha256: limitUpload.claimedSha256,
+        sizeBytes: 1024,
+      }),
+    ).resolves.toEqual({ kind: 'limit-exceeded' });
+
+    await expect(
+      prisma.documentUpload.findMany({
+        where: { id: { in: [duplicateUpload.id, limitUpload.id] } },
+      }),
+    ).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          failureCode: 'DUPLICATE_DOCUMENT',
+          id: duplicateUpload.id,
+          status: 'REJECTED',
+        }),
+        expect.objectContaining({
+          failureCode: 'DOCUMENT_LIMIT_EXCEEDED',
+          id: limitUpload.id,
+          status: 'REJECTED',
+        }),
+      ]),
+    );
+    expect(
+      await prisma.jobExecution.count({
+        where: {
+          documentUploadId: { in: [duplicateUpload.id, limitUpload.id] },
+          step: 'OBJECT_CLEANUP',
+        },
+      }),
+    ).toBe(2);
+  });
+
+  it('PDF-FR-008 lists only active finalized documents for an owned analysis', async () => {
+    const [ownerA, ownerB] = await createOwners(prisma, testRunId);
+    const analysis = await analysisRepository.create({
+      ownerId: ownerA,
+      title: 'Document list analysis',
+    });
+    const finalized = await documentRepository.createForAnalysis({
+      analysisId: analysis.id,
+      mimeType: 'application/pdf',
+      originalName: 'finalized.pdf',
+      ownerId: ownerA,
+      sha256: '1'.repeat(64),
+      sizeBytes: 1024n,
+      storageBucket: 'stocklens-test',
+      storageKey: `${testRunId}/${randomUUID()}.pdf`,
+    });
+    const notFinalized = await documentRepository.createForAnalysis({
+      analysisId: analysis.id,
+      mimeType: 'application/pdf',
+      originalName: 'not-finalized.pdf',
+      ownerId: ownerA,
+      sha256: '2'.repeat(64),
+      sizeBytes: 1024n,
+      storageBucket: 'stocklens-test',
+      storageKey: `${testRunId}/${randomUUID()}.pdf`,
+    });
+    const deleted = await documentRepository.createForAnalysis({
+      analysisId: analysis.id,
+      mimeType: 'application/pdf',
+      originalName: 'deleted.pdf',
+      ownerId: ownerA,
+      sha256: '3'.repeat(64),
+      sizeBytes: 1024n,
+      storageBucket: 'stocklens-test',
+      storageKey: `${testRunId}/${randomUUID()}.pdf`,
+    });
+    expect(finalized).not.toBeNull();
+    expect(notFinalized).not.toBeNull();
+    expect(deleted).not.toBeNull();
+    if (finalized === null || deleted === null) {
+      throw new Error('Expected document fixtures to be created.');
+    }
+    await documentRepository.markUploaded(ownerA, finalized.id);
+    await documentRepository.markUploaded(ownerA, deleted.id);
+    await documentRepository.softDelete(ownerA, deleted.id);
+
+    await expect(
+      documentRepository.listFinalizedForAnalysis(ownerA, analysis.id),
+    ).resolves.toMatchObject({
+      documents: [{ id: finalized.id }],
+      kind: 'found',
+    });
+    await expect(
+      documentRepository.listFinalizedForAnalysis(ownerB, analysis.id),
+    ).resolves.toEqual({ kind: 'analysis-not-found' });
+  });
+
+  it('PDF-AC-008 soft-deletes a finalized document with one durable cleanup execution', async () => {
+    const [ownerA, ownerB] = await createOwners(prisma, testRunId);
+    const analysis = await analysisRepository.create({
+      ownerId: ownerA,
+      title: 'Document delete analysis',
+    });
+    const document = await documentRepository.createForAnalysis({
+      analysisId: analysis.id,
+      mimeType: 'application/pdf',
+      originalName: 'delete-finalized.pdf',
+      ownerId: ownerA,
+      sha256: '4'.repeat(64),
+      sizeBytes: 1024n,
+      storageBucket: 'stocklens-test',
+      storageKey: `${testRunId}/${randomUUID()}.pdf`,
+    });
+    expect(document).not.toBeNull();
+    if (document === null) {
+      throw new Error('Expected the delete fixture to be created.');
+    }
+    await documentRepository.markUploaded(ownerA, document.id);
+    const deletedAt = new Date();
+
+    await expect(
+      documentRepository.deleteFinalizedForAnalysis({
+        analysisId: analysis.id,
+        deletedAt,
+        id: document.id,
+        ownerId: ownerB,
+      }),
+    ).resolves.toEqual({ kind: 'analysis-not-found' });
+    await expect(
+      documentRepository.findActiveById(ownerA, document.id),
+    ).resolves.toMatchObject({ id: document.id });
+
+    const otherAnalysis = await analysisRepository.create({
+      ownerId: ownerA,
+      title: 'Cross-analysis document delete',
+    });
+    await expect(
+      documentRepository.deleteFinalizedForAnalysis({
+        analysisId: otherAnalysis.id,
+        deletedAt,
+        id: document.id,
+        ownerId: ownerA,
+      }),
+    ).resolves.toEqual({ kind: 'document-not-found' });
+    await expect(
+      documentRepository.findActiveById(ownerA, document.id),
+    ).resolves.toMatchObject({ id: document.id });
+
+    await expect(
+      documentRepository.deleteFinalizedForAnalysis({
+        analysisId: analysis.id,
+        deletedAt,
+        id: document.id,
+        ownerId: ownerA,
+      }),
+    ).resolves.toEqual({ kind: 'deleted' });
+    await expect(
+      documentRepository.findActiveById(ownerA, document.id),
+    ).resolves.toBeNull();
+    await expect(
+      prisma.document.findUnique({ where: { id: document.id } }),
+    ).resolves.toMatchObject({ deletedAt });
+    expect(
+      await prisma.jobExecution.count({
+        where: {
+          documentId: document.id,
+          idempotencyKey: `object-cleanup:document:${document.id}:v1`,
+          status: 'QUEUED',
+          step: 'OBJECT_CLEANUP',
+        },
+      }),
+    ).toBe(1);
+
+    await expect(
+      documentRepository.deleteFinalizedForAnalysis({
+        analysisId: analysis.id,
+        deletedAt: new Date(deletedAt.getTime() + 1_000),
+        id: document.id,
+        ownerId: ownerA,
+      }),
+    ).resolves.toEqual({ kind: 'document-not-found' });
+    expect(
+      await prisma.jobExecution.count({
+        where: { documentId: document.id, step: 'OBJECT_CLEANUP' },
+      }),
+    ).toBe(1);
   });
 });
 

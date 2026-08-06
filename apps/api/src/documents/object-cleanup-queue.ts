@@ -1,3 +1,4 @@
+import type { OnModuleDestroy } from '@nestjs/common';
 import type { JobsOptions, Queue } from 'bullmq';
 import {
   OBJECT_CLEANUP_BACKOFF_DELAY_MS,
@@ -11,7 +12,8 @@ import type { ObjectCleanupRepository } from '../database/object-cleanup.reposit
 
 const PENDING_DISPATCH_LIMIT = 100;
 
-type CleanupQueue = Pick<Queue<ObjectCleanupJobData>, 'add' | 'getJob'>;
+export type CleanupQueue = Pick<Queue<ObjectCleanupJobData>, 'add' | 'getJob'> &
+  Partial<Pick<Queue<ObjectCleanupJobData>, 'close'>>;
 
 export interface EnqueueObjectCleanupInput {
   analysisId: string;
@@ -35,11 +37,20 @@ const cleanupJobOptions = (jobExecutionId: string): JobsOptions => ({
   removeOnFail: false,
 });
 
-export class ObjectCleanupQueuePublisher {
+export class ObjectCleanupQueuePublisher implements OnModuleDestroy {
+  private readonly queueFactory: (() => CleanupQueue) | undefined;
+  private queue: CleanupQueue | undefined;
+
   constructor(
     private readonly repository: ObjectCleanupRepository,
-    private readonly queue: CleanupQueue,
-  ) {}
+    queue: CleanupQueue | (() => CleanupQueue),
+  ) {
+    if (typeof queue === 'function') {
+      this.queueFactory = queue;
+    } else {
+      this.queue = queue;
+    }
+  }
 
   async enqueue(
     input: EnqueueObjectCleanupInput,
@@ -69,16 +80,21 @@ export class ObjectCleanupQueuePublisher {
     return results.filter(Boolean).length;
   }
 
+  async onModuleDestroy(): Promise<void> {
+    await this.queue?.close?.();
+  }
+
   private async dispatch(jobExecutionId: string): Promise<boolean> {
     try {
-      const existingJob = await this.queue.getJob(jobExecutionId);
+      const queue = this.getQueue();
+      const existingJob = await queue.getJob(jobExecutionId);
       if (existingJob !== undefined) {
         if (await existingJob.isFailed()) {
           await existingJob.retry();
         }
         return true;
       }
-      await this.queue.add(
+      await queue.add(
         OBJECT_CLEANUP_JOB_NAME,
         { jobExecutionId },
         cleanupJobOptions(jobExecutionId),
@@ -89,5 +105,13 @@ export class ObjectCleanupQueuePublisher {
       // retry dispatch without reconstructing storage coordinates.
       return false;
     }
+  }
+
+  private getQueue(): CleanupQueue {
+    this.queue ??= this.queueFactory?.();
+    if (this.queue === undefined) {
+      throw new Error('Object cleanup queue is not configured.');
+    }
+    return this.queue;
   }
 }

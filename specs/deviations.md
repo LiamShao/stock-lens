@@ -22,7 +22,7 @@
 | `OWN-DEV-001`      | Data integrity |     High | Resolved 2026-07-22 | Composite Ownership Constraint を Migration で追加            |
 | `OWN-DEV-002`      | Test isolation |   Medium | Resolved 2026-07-22 | Testcontainers PostgreSQL に移行                              |
 | `OWN-DEV-003`      | Concurrency    |      Low | Resolved 2026-07-22 | Parent Check/Create の Isolation Strategy を明示              |
-| `OWN-DEV-004`      | Authorization  |     High | Partial             | Analysis HTTP は検証済み、Document HTTP は PDF Feature で検証 |
+| `OWN-DEV-004`      | Authorization  |     High | Partial             | Document API 実装済み、Bearer A/B HTTP は `PDF-TASK-013`      |
 | `ANALYSIS-DEV-001` | Status model   |     High | Resolved 2026-07-24 | `DRAFT` Status と Default を Migration/Test で検証            |
 | `DOC-DEV-001`      | Documentation  |   Medium | Partial             | Architecture/Testing は追加、残り Required Docs/ADR は未作成  |
 | `CI-DEV-001`       | CI             |   Medium | Resolved 2026-07-22 | Integration Test を CI Quality Gate に追加                    |
@@ -154,9 +154,9 @@
 
 ### OWN-DEV-004 — HTTP authorization is not yet verifiable
 
-- Evidence: Analysis / Document Endpoint と Service は未実装のため、Authenticated User ID が Request Body ではなく Access Token から渡ることを HTTP Test できません。
+- Evidence: 発見時は Analysis / Document Endpoint と Service が未実装で、Authenticated User ID が Request Body ではなく Access Token から渡ることを HTTP Test できませんでした。
 - Impact: Repository Boundary は検証済みですが、End-to-end Authorization は未証明です。
-- Current status: Analysis Create/List/Get/Rename/Delete は Bearer User A/B の Testcontainers HTTP Test で検証済みです。Document HTTP API は PDF Upload Feature まで Blocked のため、Deviation 全体は Partial です。
+- Current status: Analysis Create/List/Get/Rename/Delete は Bearer User A/B の Testcontainers HTTP Test で検証済みです。Document Start/Finalize/List/Delete API と Owner-scoped Service/Repository は実装済みですが、Bearer User A/B の Document HTTP Test は `PDF-TASK-013` に残るため、Deviation 全体は Partial です。
 
 ### ANALYSIS-DEV-001 — Pre-upload Analysis has no valid status
 

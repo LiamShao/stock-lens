@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, type DocumentType } from '@prisma/client';
+import { createObjectCleanupIdempotencyKey } from '@stocklens/shared';
 
 import { PrismaService } from './prisma.service';
 import { runSerializableTransaction } from './serializable-transaction';
@@ -36,6 +37,15 @@ export interface CreateDocumentInput {
   storageBucket: string;
   storageKey: string;
 }
+
+export type ListFinalizedDocumentsResult =
+  | { documents: DocumentRecord[]; kind: 'found' }
+  | { kind: 'analysis-not-found' };
+
+export type DeleteDocumentResult =
+  | { kind: 'analysis-not-found' }
+  | { kind: 'deleted' }
+  | { kind: 'document-not-found' };
 
 @Injectable()
 export class DocumentRepository {
@@ -79,6 +89,85 @@ export class DocumentRepository {
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       select: documentSelection,
       where: { analysisId, deletedAt: null, ownerId },
+    });
+  }
+
+  listFinalizedForAnalysis(
+    ownerId: string,
+    analysisId: string,
+  ): Promise<ListFinalizedDocumentsResult> {
+    return runSerializableTransaction(this.prisma, async (transaction) => {
+      const analysis = await transaction.analysis.findFirst({
+        select: { id: true },
+        where: { deletedAt: null, id: analysisId, ownerId },
+      });
+      if (analysis === null) {
+        return { kind: 'analysis-not-found' };
+      }
+      const documents = await transaction.document.findMany({
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        select: documentSelection,
+        where: {
+          analysisId,
+          deletedAt: null,
+          ownerId,
+          uploadedAt: { not: null },
+        },
+      });
+      return { documents, kind: 'found' };
+    });
+  }
+
+  deleteFinalizedForAnalysis(input: {
+    analysisId: string;
+    deletedAt: Date;
+    id: string;
+    ownerId: string;
+  }): Promise<DeleteDocumentResult> {
+    return runSerializableTransaction(this.prisma, async (transaction) => {
+      const analysis = await transaction.analysis.findFirst({
+        select: { id: true },
+        where: {
+          deletedAt: null,
+          id: input.analysisId,
+          ownerId: input.ownerId,
+        },
+      });
+      if (analysis === null) {
+        return { kind: 'analysis-not-found' };
+      }
+      const document = await transaction.document.findFirst({
+        select: documentSelection,
+        where: {
+          analysisId: input.analysisId,
+          deletedAt: null,
+          id: input.id,
+          ownerId: input.ownerId,
+          uploadedAt: { not: null },
+        },
+      });
+      if (document === null) {
+        return { kind: 'document-not-found' };
+      }
+
+      await transaction.document.update({
+        data: { deletedAt: input.deletedAt },
+        where: { id: document.id },
+      });
+      const target = { id: document.id, kind: 'document' as const };
+      await transaction.jobExecution.upsert({
+        create: {
+          analysisId: document.analysisId,
+          documentId: document.id,
+          idempotencyKey: createObjectCleanupIdempotencyKey(target),
+          ownerId: document.ownerId,
+          status: 'QUEUED',
+          step: 'OBJECT_CLEANUP',
+        },
+        update: {},
+        where: { idempotencyKey: createObjectCleanupIdempotencyKey(target) },
+      });
+      return { kind: 'deleted' };
     });
   }
 

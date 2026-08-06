@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export * from './analysis';
+export * from './document';
 export * from './document-upload';
 export * from './object-cleanup';
 

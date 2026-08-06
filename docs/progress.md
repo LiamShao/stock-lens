@@ -1,5 +1,24 @@
 # StockLens AI 開発進捗
 
+## 2026-08-06
+
+### PDF Upload Document List / Delete API
+
+- Approved `PDF-TASK-009` として Owner-scoped Document List/Delete Endpoint と `{ items: DocumentResource[] }` Contract を追加しました。
+- List は Active Finalized Document だけを返し、Owner ID、Bucket、Storage Key を Response に含めません。Cross-user/Missing Analysis は `ANALYSIS_NOT_FOUND` に収束します。
+- Delete は Document Soft Delete と Stable `OBJECT_CLEANUP` JobExecution を同一 Serializable Transaction に保存し、Redis Dispatch Failure 時も Durable `QUEUED` State を保持します。
+- Cross-user Analysis、Cross-analysis/Missing/Deleted Document、Repeated Delete を Stable Not Found に収束させました。
+- Full Workspace の Format、Spec Check、Lint、Typecheck、121 Unit Tests、Build、Prisma Validate と、PostgreSQL Integration 3 Suites / 23 Tests が成功しました。HTTP Bearer A/B と Real Redis/MinIO Cleanup Acceptance は `PDF-TASK-013`、`PDF-TASK-014` に残ります。
+
+### PDF Upload Transactional Finalize API
+
+- Approved `PDF-TASK-008` として Owner-scoped Finalize Endpoint と storage-safe `DocumentResource` Contract を追加しました。
+- Upload Session を Serializable Transaction で `PENDING → VALIDATING` に Claim し、Valid Object は Document 作成、Upload `COMPLETED`、`uploadedAt`、Analysis `DRAFT → UPLOADED` を原子的に保存します。
+- Completed Session の再 Finalize は Storage を再読込せず同じ Document を返します。Active Duplicate SHA と 3 Document Limit は Finalize Transaction で再確認します。
+- Invalid、Expired、Duplicate、Limit は終端 Status と Durable `OBJECT_CLEANUP` JobExecution を同一 Transaction に保存します。Redis Delivery Failure は Worker の Pending Scan から回復できます。
+- Storage Read Failure は Provider Detail を返さず `PENDING` に戻して `STORAGE_VALIDATION_FAILED` とし、再 Finalize 可能にしました。
+- Full Workspace の Format、Spec Check、Lint、Typecheck、111 Unit Tests、Build、Prisma Validate と、PostgreSQL Integration 3 Suites / 21 Tests が成功しました。Concurrent/HTTP/MinIO Acceptance は `PDF-TASK-011`〜`PDF-TASK-015` に残ります。
+
 ## 2026-08-05
 
 ### PDF Upload Trusted Streaming Validator

@@ -21,12 +21,14 @@ import {
   ApiTags,
   ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import {
   documentUploadItemPathParamsSchema,
   documentUploadPathParamsSchema,
   startDocumentUploadRequestSchema,
   type AuthUser,
+  type DocumentResource,
   type DocumentUploadItemPathParams,
   type DocumentUploadPathParams,
   type PresignedPdfUploadResponse,
@@ -43,6 +45,7 @@ import {
   StartDocumentUploadOpenApi,
   StartDocumentUploadResponseOpenApi,
 } from './document-uploads.openapi';
+import { DocumentResourceOpenApi } from './documents.openapi';
 import { DocumentUploadsService } from './document-uploads.service';
 
 @Controller('analyses/:analysisId/document-uploads')
@@ -129,5 +132,43 @@ export class DocumentUploadsController {
       params.analysisId,
       params.uploadId,
     );
+  }
+
+  @Post(':uploadId/finalize')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Validate and finalize an uploaded PDF' })
+  @ApiParam({ format: 'uuid', name: 'analysisId' })
+  @ApiParam({ format: 'uuid', name: 'uploadId' })
+  @ApiOkResponse({
+    description: 'The upload was finalized or had already been finalized',
+    type: DocumentResourceOpenApi,
+  })
+  @ApiBadRequestResponse({
+    description: 'Path validation failed',
+    type: ApiErrorOpenApi,
+  })
+  @ApiNotFoundResponse({
+    description: 'Upload session was not found for this owner and analysis',
+    type: ApiErrorOpenApi,
+  })
+  @ApiConflictResponse({
+    description:
+      'Upload is inactive/expired, duplicates an active document, or exceeds the document limit',
+    type: ApiErrorOpenApi,
+  })
+  @ApiUnprocessableEntityResponse({
+    description: 'Uploaded object failed trusted PDF validation',
+    type: ApiErrorOpenApi,
+  })
+  @ApiServiceUnavailableResponse({
+    description: 'Uploaded object could not be read for trusted validation',
+    type: ApiErrorOpenApi,
+  })
+  finalize(
+    @CurrentUser() user: AuthUser,
+    @Param(new ZodValidationPipe(documentUploadItemPathParamsSchema))
+    params: DocumentUploadItemPathParams,
+  ): Promise<DocumentResource> {
+    return this.service.finalize(user.id, params.analysisId, params.uploadId);
   }
 }

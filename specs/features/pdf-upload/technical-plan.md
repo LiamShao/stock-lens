@@ -5,8 +5,8 @@
 | Field        | Value                                   |
 | ------------ | --------------------------------------- |
 | Related Spec | `specs/features/pdf-upload/spec.md`     |
-| Plan status  | `Implementing — PDF-TASK-007 completed` |
-| Last updated | `2026-08-05`                            |
+| Plan status  | `Implementing — PDF-TASK-009 completed` |
+| Last updated | `2026-08-06`                            |
 
 ## Approach
 
@@ -48,7 +48,9 @@ Start Request は `originalName`、`mimeType`、`sizeBytes`、Lowercase Hex `sha
 
 Finalize は初回成功時に Finalized Document を返します。Completed Session への同一 Finalize は同じ Document を返す Idempotent Operation とし、Rejected/Expired Session は Stable Conflict Error とします。
 
-主な Stable Error は `ANALYSIS_NOT_FOUND`、`DOCUMENT_UPLOAD_NOT_FOUND`、`DOCUMENT_UPLOAD_NOT_ACTIVE`、`DOCUMENT_LIMIT_EXCEEDED`、`INVALID_PDF`、`UPLOAD_EXPIRED`、`DUPLICATE_DOCUMENT`、`OBJECT_STORAGE_UNAVAILABLE`、`STORAGE_VALIDATION_FAILED` です。Validation Error は共通 `VALIDATION_ERROR` を使用します。
+Document List は最大 3 件の Active Finalized Document を `{ items: DocumentResource[] }` で返します。Document Delete は `204 No Content` とし、Soft Delete と Durable Cleanup Execution を同一 Serializable Transaction に保存してから Redis Dispatch を試行します。
+
+主な Stable Error は `ANALYSIS_NOT_FOUND`、`DOCUMENT_NOT_FOUND`、`DOCUMENT_UPLOAD_NOT_FOUND`、`DOCUMENT_UPLOAD_NOT_ACTIVE`、`DOCUMENT_LIMIT_EXCEEDED`、`INVALID_PDF`、`UPLOAD_EXPIRED`、`DUPLICATE_DOCUMENT`、`OBJECT_STORAGE_UNAVAILABLE`、`STORAGE_VALIDATION_FAILED` です。Validation Error は共通 `VALIDATION_ERROR` を使用します。
 
 ## Database Changes
 
