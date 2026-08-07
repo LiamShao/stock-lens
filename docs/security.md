@@ -56,6 +56,7 @@
 - 予期しない Error は Client に内部 Detail を返しません。
 - Password、Access Token、Refresh Token、PDF 全文を Log に記録しません。
 - Structured Logger は Authorization、Cookie、Set-Cookie、Password、Access/Refresh Token Field を明示的に Redact します。
+- PDF Upload の Presigned URL、Storage Bucket/Key、Object Key、Original Filename、Object Body、Full PDF/Page/Chunk Text も既知の Nested Field を含めて Redact します。
 - Client Request ID は最大 128 文字の限定文字種だけを受理し、Log Injection/Storage Abuse を抑えます。
 - User-Agent は必要な場合も平文ではなく SHA-256 Hash として Token Record に保存します。
 
@@ -65,13 +66,13 @@
 - Repository の `.env.example` は Local Development 専用です。
 - `.env`、Credential、Production Secret は Commit しません。
 
-## 7. Phase 2 の未実装項目
+## 7. 残存 Security 項目
 
-- PDF Extension / MIME / Header Validation
-- 20 MB / 3 File Limit
-- Private Object Storage Bucket と Short-lived Presigned URL
+- Automated MinIO/Redis/BullMQ Storage/Cleanup Integration Acceptance
+- Browser CORS、Production Private Bucket Policy、IAM Policy
 - Redis-backed Distributed Rate Limit
 - Secret Rotation Runbook
+- Parse/LLM Provider への Untrusted PDF Context Boundary 接続と End-to-end Prompt Injection Evaluation
 
 Demo User は明示的な CLI でのみ Provisioning し、API 起動時には作成しません。CLI は通常 User の上書き、Soft Delete 済み User の暗黙的な復元、Password の出力を禁止します。Production では `ALLOW_DEMO_USER_PROVISIONING=true` と Local Default 以外の Password を必須とし、Password 変更時は既存 Active Refresh Token を同一 Transaction で失効します。
 
@@ -80,3 +81,5 @@ Document / Analysis Repository は Read、List、Create、Update、Soft Delete �
 Object Storage Boundary は `@stocklens/object-storage` に集約します。Presigned PUT は Private Bucket の単一 Object Key に限定し、`Content-Length`、`Content-Type: application/pdf`、Claimed SHA-256 Metadata を署名します。有効期限は最大 300 秒です。Object Key は Owner/Analysis/Upload Session Prefix と Random UUID で作成し、Original Filename を含めません。AWS SDK Credential、Presigned URL、Bucket、Object Key は Log に記録しません。Storage Metadata は Hint であり、Finalize 時には Trusted Server-side Code が Size、SHA-256 と `%PDF-` Header を Streaming 再検証します。
 
 Object Cleanup Queue の Payload は `jobExecutionId` UUID のみに限定し、Bucket、Object Key、Credential を Redis に複製しません。Worker は Owner-consistent Database Relation から Target を解決します。Provider の Error Detail は Log や Job History に保存せず、Stable Error Code と Sanitized Message のみを記録します。
+
+Uploaded PDF から将来抽出する Text は `@stocklens/shared` の Trust Boundary を通し、`source: uploaded-pdf`、`trust: untrusted`、`role: user`、`instructionsAllowed: false` を固定します。Text 内の Delimiter と Markup は Escape し、System/Developer Instruction には昇格させません。現在は Boundary と Prompt Injection Regression Unit Test まで実装済みで、Parse/LLM Provider への実接続と End-to-end Evaluation は Phase 4 の対象です。

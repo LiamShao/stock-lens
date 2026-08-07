@@ -43,7 +43,7 @@ StockLens AI の Test は、Build が通ることだけでなく、Security Boun
 - Cookie Attribute、CORS、CSRF 前提、Rate Limit、Deleted User を検証する。
 - Logger の実出力を Capture し、Password、Authorization、Cookie、Token が Redact されることを検証する。
 - Upload は Extension、MIME、`%PDF-` Header、File Count、Size、Cross-user Object Access を検証する。
-- Uploaded PDF 内の Prompt Injection を命令として扱わない Test Case を持つ。
+- Uploaded PDF 内の Prompt Injection Delimiter を Escape し、`role: user` / `trust: untrusted` の Context に固定する Unit Test を持つ。Provider 接続後に End-to-end Evaluation を追加する。
 
 ## 5. Async Job Tests
 

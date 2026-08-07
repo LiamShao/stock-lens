@@ -174,7 +174,7 @@ describe('DocumentUploadsService (PDF-TASK-006)', () => {
     [string, CreatePendingDocumentUploadResult, string]
   > = [
     [
-      'cross-user or missing analysis',
+      'PDF-SEC-006 cross-user or missing analysis',
       { kind: 'analysis-not-found' },
       'ANALYSIS_NOT_FOUND',
     ],
@@ -220,7 +220,7 @@ describe('DocumentUploadsService (PDF-TASK-006)', () => {
   });
 
   it.each([
-    ['missing', null, 'DOCUMENT_UPLOAD_NOT_FOUND'],
+    ['PDF-SEC-006 missing or cross-user', null, 'DOCUMENT_UPLOAD_NOT_FOUND'],
     ['expired', { ...uploadRecord, expiresAt: fixedNow }, 'UPLOAD_EXPIRED'],
     [
       'non-pending',
@@ -386,7 +386,11 @@ describe('DocumentUploadsService (PDF-TASK-006)', () => {
   );
 
   it.each([
-    ['missing', { kind: 'not-found' }, 'DOCUMENT_UPLOAD_NOT_FOUND'],
+    [
+      'PDF-SEC-006 missing or cross-user',
+      { kind: 'not-found' },
+      'DOCUMENT_UPLOAD_NOT_FOUND',
+    ],
     ['expired', { kind: 'expired' }, 'UPLOAD_EXPIRED'],
     ['in progress', { kind: 'inactive' }, 'DOCUMENT_UPLOAD_NOT_ACTIVE'],
   ] as Array<[string, ClaimDocumentUploadResult, string]>)(

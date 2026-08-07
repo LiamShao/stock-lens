@@ -102,7 +102,7 @@ describe('DocumentsService (PDF-TASK-009)', () => {
     });
   });
 
-  it('maps a missing or cross-user analysis list to ANALYSIS_NOT_FOUND', async () => {
+  it('PDF-SEC-006 maps a missing or cross-user analysis list to ANALYSIS_NOT_FOUND', async () => {
     repository.listFinalizedForAnalysis.mockResolvedValue({
       kind: 'analysis-not-found',
     });
@@ -137,7 +137,7 @@ describe('DocumentsService (PDF-TASK-009)', () => {
     ['analysis', { kind: 'analysis-not-found' }, 'ANALYSIS_NOT_FOUND'],
     ['document', { kind: 'document-not-found' }, 'DOCUMENT_NOT_FOUND'],
   ] as Array<[string, DeleteDocumentResult, string]>)(
-    'maps a missing or cross-user %s without dispatching cleanup',
+    'PDF-SEC-006 maps a missing or cross-user %s without dispatching cleanup',
     async (_name, result, code) => {
       repository.deleteFinalizedForAnalysis.mockResolvedValue(result);
 

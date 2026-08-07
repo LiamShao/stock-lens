@@ -6,11 +6,12 @@
 | ------------------- | ----------------------------------- |
 | Related Spec        | `specs/features/pdf-upload/spec.md` |
 | Verification status | `Partial`                           |
-| Verified at         | `Partial verification 2026-08-06`   |
+| Verified at         | `Partial verification 2026-08-07`   |
 
 ## Environment
 
-- `PDF-TASK-003` の Database Foundation、`PDF-TASK-004` の S3-compatible Storage Adapter、`PDF-TASK-005` の Cleanup Queue/Worker/Retry Tracking、`PDF-TASK-006` の Upload Start/Presign API、`PDF-TASK-007` の Trusted Streaming Validator、`PDF-TASK-008` の Transactional Finalize API、`PDF-TASK-009` の Document List/Delete API を実装済みです。
+- `PDF-TASK-003` の Database Foundation、`PDF-TASK-004` の S3-compatible Storage Adapter、`PDF-TASK-005` の Cleanup Queue/Worker/Retry Tracking、`PDF-TASK-006` の Upload Start/Presign API、`PDF-TASK-007` の Trusted Streaming Validator、`PDF-TASK-008` の Transactional Finalize API、`PDF-TASK-009` の Document List/Delete API、`PDF-TASK-010` の Security Boundary を実装済みです。
+- `PDF-TASK-011` の Start/Validation HTTP Integration は Testcontainers PostgreSQL と deterministic fake Storage を使用して Passed しました。Real Provider Acceptance は `PDF-TASK-012` に残ります。
 - Analysis Management Feature と `ANALYSIS-DEV-001` は Verified です。
 - Testcontainers PostgreSQL で全 Migration と `DocumentUpload` Constraint を検証済みです。
 - Project-owned MinIO に対する Presigned PUT、Head、Streaming Read、Delete の Manual Smoke Test は成功しました。Cleanup Processor/Dispatch/Retry は Unit Test 済みですが、Automated MinIO/Redis/BullMQ Integration は `PDF-TASK-014` まで未実施です。
@@ -19,10 +20,10 @@
 
 | Acceptance Criterion | Evidence                                                                   | Result    |
 | -------------------- | -------------------------------------------------------------------------- | --------- |
-| `PDF-AC-001`         | Start/Presign Service Unit は Passed、HTTP/Storage Integration は未実施    | `Partial` |
-| `PDF-AC-002`         | Start/Finalize Limit Transaction 実装済み、Concurrency Test は未実施       | `Partial` |
-| `PDF-AC-003`         | DB Boundary と Shared Zod Size Boundary Unit は Passed、HTTP は未実施      | `Partial` |
-| `PDF-AC-004`         | Start Zod と Trusted Header Validator/Finalize Service Unit は Passed      | `Partial` |
+| `PDF-AC-001`         | Start HTTP + DB は Passed、Real Storage Presign Acceptance は未実施        | `Partial` |
+| `PDF-AC-002`         | 4th Slot HTTP、DB Count、No Presign を Testcontainers で検証               | `Passed`  |
+| `PDF-AC-003`         | Inclusive Unit + 0/20 MB 超 HTTP、No DB/Presign を検証                     | `Passed`  |
+| `PDF-AC-004`         | Invalid Extension/MIME HTTP、No DB/Presign を検証                          | `Passed`  |
 | `PDF-AC-005`         | Invalid Header Reject と Durable Cleanup DB Test は Passed、MinIO は未実施 | `Partial` |
 | `PDF-AC-006`         | Start/Finalize/List/Delete の Owner Scope 実装済み、HTTP A/B は未実施      | `Partial` |
 | `PDF-AC-007`         | Trusted Stream、Document Persist、Repeated Finalize Unit/DB Test は Passed | `Partial` |
@@ -63,7 +64,16 @@
 - Object Key は Owner/Analysis/Upload UUID/Random UUID から生成し、Filename を含めません。API Service は Bucket 名だけを受け取り、Response は Bucket、Key、Credential を返しません。
 - Start と Active `PENDING` Session の再 Presign Endpoint、Bearer Guard、Zod Path/Body Pipe、Concrete OpenAPI Success/Error Schema を追加しました。
 - 初回 Presign Failure は Stable `OBJECT_STORAGE_UNAVAILABLE` と `REJECTED` Status に収束して枠を解放し、再 Presign Failure は再試行用に `PENDING` を維持します。
-- Shared 11 Tests と API 57 Tests が成功しました。Start/Validation HTTP Integration、Cross-user HTTP、Concurrent Slot Reservation は `PDF-TASK-011`、`PDF-TASK-013`、`PDF-TASK-015` に残ります。
+- Initial Shared/API Unit Evidence に加え、Start/Validation HTTP Integration は `PDF-TASK-011` で完了しました。Cross-user HTTP と Concurrent Slot Reservation は `PDF-TASK-013`、`PDF-TASK-015` に残ります。
+
+## Upload Start and Validation HTTP Evidence
+
+- `POST /api/analyses/:analysisId/document-uploads` を Bearer Access Token、Global Zod Pipe、Controller、Service、Repository、Testcontainers PostgreSQL の実経路で検証しました。
+- Valid Start は `201`、Storage-safe `PENDING` Session、Expected Content Length/Type/SHA Headers、5 分 Expiry、Owner-scoped Database Record、Filename を含まない Random Storage Key を返しました。
+- 3 Active Upload 後の 4 件目は `409 DOCUMENT_LIMIT_EXCEEDED` となり、`DocumentUpload` は 3 件、`Document` は 0 件、Presign Call は 3 回のまま増えませんでした。
+- Size 0 と 20 MB + 1、Invalid Extension/MIME は `400 VALIDATION_ERROR` となり、Database Write と Presign Call は 0 でした。
+- Shared Schema Unit Test は 1 byte と 20 MB を Inclusive に受理し、既存 Matrix と合わせて Boundary を検証しました。
+- Storage は deterministic fake のため、Real MinIO Presign/PUT/Finalize Acceptance は `PDF-TASK-012` に残します。
 
 ## Trusted Streaming Validation Evidence
 
@@ -94,6 +104,15 @@
 - Shared Contract 3 Tests と API Service 7 Tests は UUID Path、3 Document Response Limit、Storage-safe Response、Not Found Mapping、Persist-before-dispatch、Redis Failure を検証しました。
 - PostgreSQL Integration Test は Finalized/Active Filter、Cross-user List/Delete、Soft Delete、Stable Cleanup Idempotency、Repeated Delete を検証しました。Real Redis/MinIO Worker Delete と HTTP Bearer A/B は `PDF-TASK-013`、`PDF-TASK-014` に残ります。
 
+## Security Boundary Evidence
+
+- Start、Re-presign、Finalize、List、Delete は Owner-scoped Repository Result を Stable `ANALYSIS_NOT_FOUND`、`DOCUMENT_UPLOAD_NOT_FOUND`、`DOCUMENT_NOT_FOUND` に収束させ、Service Unit Test を `PDF-SEC-006` に紐付けました。Bearer User A/B HTTP Acceptance は `PDF-TASK-013` に残ります。
+- Fastify/Pino Redaction は Presigned Upload URL、Storage Bucket/Key、Object Key、Original Filename、Full PDF/Page/Chunk Text、Object Body を既知の Nested Path でも Redact します。
+- Emitted JSON Log Regression Test は上記 Secret/Sensitive Value が Serialized Log に残らないことを検証しました。
+- `@stocklens/shared` の `buildUntrustedPdfContext` は入力 Metadata を Zod で検証し、`source: uploaded-pdf`、`trust: untrusted`、`role: user`、`instructionsAllowed: false` を固定します。
+- Uploaded Text 内の偽 `</untrusted_pdf_content>`、`<system>`、特殊文字を Escape し、一つの Untrusted Data Block に閉じ込める Unit Test を追加しました。
+- Parse/LLM Provider は未実装のため、`PDF-SEC-007` の Provider 接続と End-to-end Prompt Injection Evaluation は Phase 4 まで Partial です。
+
 ## Quality Gates
 
 | Command                 | Result                                  |
@@ -103,8 +122,8 @@
 | `pnpm db:validate`      | Passed                                  |
 | `pnpm lint`             | Passed — Full Workspace                 |
 | `pnpm typecheck`        | Passed — Full Workspace                 |
-| `pnpm test`             | Passed — Full Workspace 121 Tests       |
-| `pnpm test:integration` | Passed — PostgreSQL 3 Suites / 23 Tests |
+| `pnpm test`             | Passed — Full Workspace 127 Tests       |
+| `pnpm test:integration` | Passed — PostgreSQL 4 Suites / 27 Tests |
 | `pnpm build`            | Passed — Full Workspace                 |
 
 ## Deviations and Residual Risks

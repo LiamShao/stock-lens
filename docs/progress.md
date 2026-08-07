@@ -1,5 +1,25 @@
 # StockLens AI 開発進捗
 
+## 2026-08-07
+
+### PDF Upload Start / Validation HTTP Acceptance
+
+- Approved `PDF-TASK-011` として Upload Start を Bearer Guard、Global Zod Pipe、Controller、Service、Repository、Testcontainers PostgreSQL の HTTP 実経路で検証しました。
+- Valid Start は Storage-safe `PENDING` Session、Expected PUT Headers、5 分 Expiry、Owner-scoped Database Record、Random Storage Key を返します。
+- 4 件目は `DOCUMENT_LIMIT_EXCEEDED` となり Intent/Presign が増えず、Size 0 / 20 MB 超 / Invalid Extension / MIME は `VALIDATION_ERROR` かつ Database/Presign Side Effect なしです。
+- Shared Zod Test に 1 byte と 20 MB の Inclusive Boundary を追加しました。
+- HTTP Integration 1 Suite / 4 Tests と Shared 4 Suites / 19 Tests が成功しました。Real MinIO Acceptance は `PDF-TASK-012` に残します。
+- Full Workspace の Format、Spec Check、Lint、Typecheck、127 Unit/Component Tests、Build、Prisma Validate と、PostgreSQL Integration 4 Suites / 27 Tests が成功しました。
+
+### PDF Upload Security Boundary
+
+- Approved `PDF-TASK-010` として Start/Re-presign/Finalize/List/Delete の Stable Cross-user Not Found Boundary を Service Test 上で `PDF-SEC-006` に追跡可能にしました。Bearer User A/B HTTP Acceptance は `PDF-TASK-013` に残します。
+- Structured Logger は Presigned URL、Storage Coordinate、Original Filename、Object Body、Full PDF/Page/Chunk Text を Nested Field でも Redact し、実際の JSON Log に値が残らないことを検証しました。
+- Shared Package に Zod-validated `buildUntrustedPdfContext` を追加し、Uploaded Text を `role: user`、`trust: untrusted`、`instructionsAllowed: false` に固定しました。
+- Prompt Injection が偽の Delimiter や `<system>` Markup を含んでも Escape され、単一の Untrusted Data Block 外へ出られないことを Unit Test で検証しました。
+- Parse/LLM Provider 接続は本 Task の Scope 外です。`PDF-SEC-007` は Boundary Unit Evidence により Blocked から Partial へ進み、Provider Integration と End-to-end Evaluation を Phase 4 に残します。
+- Full Workspace の Format、Spec Check、Lint、Typecheck、125 Unit/Component Tests、Build、Prisma Validate と、PostgreSQL Integration 3 Suites / 23 Tests が成功しました。
+
 ## 2026-08-06
 
 ### PDF Upload Document List / Delete API

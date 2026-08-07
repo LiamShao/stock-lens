@@ -1,5 +1,25 @@
 export const REDACTED_LOG_VALUE = '[REDACTED]';
 
+const PDF_SENSITIVE_FIELD_NAMES = [
+  'chunkText',
+  'fullPdfText',
+  'objectBody',
+  'objectKey',
+  'originalName',
+  'pageText',
+  'pdfText',
+  'presignedUrl',
+  'storageBucket',
+  'storageKey',
+  'uploadUrl',
+] as const;
+
+const PDF_SENSITIVE_FIELD_PATHS = PDF_SENSITIVE_FIELD_NAMES.flatMap((field) => [
+  field,
+  `*.${field}`,
+  `*.*.${field}`,
+]);
+
 export const SENSITIVE_LOG_PATHS = [
   'req.headers.authorization',
   'req.headers.cookie',
@@ -12,7 +32,14 @@ export const SENSITIVE_LOG_PATHS = [
   'accessToken',
   'refreshToken',
   'token',
-] as const;
+  ...PDF_SENSITIVE_FIELD_PATHS,
+  'upload.url',
+  '*.upload.url',
+  '*.*.upload.url',
+  'presignedUpload.url',
+  '*.presignedUpload.url',
+  '*.*.presignedUpload.url',
+] as const satisfies readonly string[];
 
 export function getFastifyLoggerOptions(): {
   redact: { censor: string; paths: string[] };

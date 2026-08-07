@@ -23,11 +23,11 @@
 - [x] `PDF-TASK-007` (`PDF-FR-003`, `PDF-FR-004`, `PDF-FR-007`, `PDF-SEC-001`〜`PDF-SEC-005`) Streaming Finalize Validation を実装
 - [x] `PDF-TASK-008` (`PDF-FR-002`, `PDF-FR-007`, `PDF-FR-009`) Transactional Limit、Duplicate、Idempotent Finalize を実装
 - [x] `PDF-TASK-009` (`PDF-FR-008`, `PDF-SEC-006`) Document List/Delete と Cleanup Enqueue を実装
-- [ ] `PDF-TASK-010` (`PDF-SEC-006`, `PDF-SEC-007`) Cross-user Not Found、Log Redaction、Untrusted Content Boundary を実装
+- [x] `PDF-TASK-010` (`PDF-SEC-006`, `PDF-SEC-007`) Cross-user Not Found、Log Redaction、Untrusted Content Boundary を実装
 
 ## Verification and Documentation
 
-- [ ] `PDF-TASK-011` (`PDF-AC-001`〜`PDF-AC-004`) Start/Validation Unit + HTTP Integration Test を追加
+- [x] `PDF-TASK-011` (`PDF-AC-001`〜`PDF-AC-004`) Start/Validation Unit + HTTP Integration Test を追加
 - [ ] `PDF-TASK-012` (`PDF-AC-005`, `PDF-AC-007`) MinIO Storage Integration Test を追加
 - [ ] `PDF-TASK-013` (`PDF-AC-006`) Cross-user HTTP Authorization Test を追加
 - [ ] `PDF-TASK-014` (`PDF-AC-008`) Delete/Cleanup Worker Integration Test を追加

@@ -23,6 +23,18 @@ describe('startDocumentUploadRequestSchema (PDF-FR-003, PDF-FR-004)', () => {
     });
   });
 
+  it.each([1, MAX_PDF_SIZE_BYTES])(
+    'accepts the inclusive %i-byte size boundary',
+    (sizeBytes) => {
+      expect(
+        startDocumentUploadRequestSchema.parse({
+          ...validRequest,
+          sizeBytes,
+        }).sizeBytes,
+      ).toBe(sizeBytes);
+    },
+  );
+
   it.each([
     ['zero size', { ...validRequest, sizeBytes: 0 }],
     ['oversize', { ...validRequest, sizeBytes: MAX_PDF_SIZE_BYTES + 1 }],

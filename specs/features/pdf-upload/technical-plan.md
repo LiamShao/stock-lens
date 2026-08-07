@@ -5,8 +5,8 @@
 | Field        | Value                                   |
 | ------------ | --------------------------------------- |
 | Related Spec | `specs/features/pdf-upload/spec.md`     |
-| Plan status  | `Implementing — PDF-TASK-009 completed` |
-| Last updated | `2026-08-06`                            |
+| Plan status  | `Implementing — PDF-TASK-011 completed` |
+| Last updated | `2026-08-07`                            |
 
 ## Approach
 
@@ -82,6 +82,23 @@ Active Document と未期限切れ Upload Session の合計が 3 を超えない
 - Validator は Full Body を保持せず、最大 20 MB + 1 byte で打ち切り、Invalid Content と Retryable Storage Failure を構造化して区別します。
 - Public Finalize Endpoint、`PENDING → VALIDATING` Claim、Document 作成、Duplicate/Limit 再確認、`COMPLETED`/`REJECTED` 永続化、Cleanup Enqueue は一つの整合した Flow として `PDF-TASK-008` で接続します。
 - したがって `PDF-TASK-007` 単独では Upload Session Status を変更せず、公開 Finalize Response も追加しません。
+
+### TASK-010 Security Boundary
+
+- Start、Re-presign、Finalize、List、Delete は Repository の Owner Scope が対象を返さない場合、Missing Resource と同一の Stable Not Found に収束させます。Bearer User A/B の HTTP Acceptance Evidence は `PDF-TASK-013` で追加します。
+- API Structured Logger は Presigned Upload URL、Storage Bucket/Key、Object Key、Original Filename、Full PDF/Page/Chunk Text、Object Body を Field 名と既知の Response Nesting で Redact します。SHA-256 と Size のような Integrity Metadata は Secret として扱いません。
+- 将来の Parse/LLM Pipeline が Raw String を System Instruction として渡さないよう、Shared Package に `source = uploaded-pdf`、`trust = untrusted`、`role = user` を固定した Provider-agnostic Context Builder を追加します。
+- Context Builder は Document/Page/Chunk Metadata を検証し、PDF Text 内の Delimiter/Markup を Escape して単一の明示的な Untrusted Data Block に閉じ込めます。Prompt Injection 文字列を含む Regression Test を追加します。
+- 本 Task は PDF Parsing、Prompt Template、LLM Provider Call を実装しません。実際の Provider Adapter は Phase 4 でこの Boundary を必須入力として接続し、End-to-end Prompt Injection Evaluation を追加します。
+
+### TASK-011 HTTP Verification Boundary
+
+- Nest Testing Module は `OBJECT_STORAGE` を deterministic fake に置換し、Bearer Guard、Global Zod Pipe、Controller、Service、Owner-scoped Repository、PostgreSQL Migration/Constraint を実経路で検証します。
+- Valid Start は `201`、Storage-safe Session Response、Expected Size/MIME/SHA Header、5 分の Presigned Expiry、Database `PENDING` Record、Random Storage Key を検証します。
+- 3 Active Upload Slot の後の 4 件目は `DOCUMENT_LIMIT_EXCEEDED` に収束し、`DocumentUpload` Record と Presign Call が増えないことを検証します。
+- Size 0、20 MB + 1、Invalid Extension/MIME は HTTP `VALIDATION_ERROR` となり、Database Write と Presign Call が発生しないことを検証します。
+- Shared Zod Unit Test は 1 byte と 20 MB の inclusive Boundary を受理し、0 byte と 20 MB + 1 を拒否します。
+- Fake Storage は HTTP/Application Wiring Evidence に限定し、Header/Object/Finalize の Real Provider Acceptance は `PDF-TASK-012` で MinIO に対して検証します。
 
 ## Object Cleanup Queue Contract
 

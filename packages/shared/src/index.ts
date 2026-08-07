@@ -4,6 +4,7 @@ export * from './analysis';
 export * from './document';
 export * from './document-upload';
 export * from './object-cleanup';
+export * from './untrusted-pdf-content';
 
 export const healthResponseSchema = z.object({
   service: z.string().min(1),
