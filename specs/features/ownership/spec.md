@@ -2,13 +2,13 @@
 
 ## Metadata
 
-| Field                 | Value                        |
-| --------------------- | ---------------------------- |
-| Spec status           | `Approved`                   |
-| Implementation status | `Repository + Analysis HTTP` |
-| Verification status   | `Partial`                    |
-| Approval              | `Approved 2026-07-22`        |
-| Last updated          | `2026-07-22`                 |
+| Field                 | Value                 |
+| --------------------- | --------------------- |
+| Spec status           | `Approved`            |
+| Implementation status | `Implemented`         |
+| Verification status   | `Verified`            |
+| Approval              | `Approved 2026-07-22` |
+| Last updated          | `2026-08-10`          |
 
 ## Goal
 
@@ -17,7 +17,6 @@ Analysis と Document の Data Access で User A が User B の Resource を Rea
 ## Non-goals
 
 - PostgreSQL RLS
-- 未実装の Document HTTP API
 - Object Storage Authorization と Object Delete Job
 - Phase 3 以降の Child Repository
 
@@ -39,7 +38,7 @@ Analysis と Document の Data Access で User A が User B の Resource を Rea
 | `OWN-SEC-002` | Controller/Service は Prisma を直接呼ばず Owner-scoped Repository を使用する                   |
 | `OWN-SEC-003` | User-owned Parent/Child は作成時に Owner 一致を検証する                                        |
 | `OWN-SEC-004` | Soft-deleted Resource は通常 Query から除外する                                                |
-| `OWN-SEC-005` | Cross-user Authorization を実 PostgreSQL と将来の HTTP Integration Test で検証する             |
+| `OWN-SEC-005` | Cross-user Authorization を実 PostgreSQL と HTTP Integration Test で検証する                   |
 
 ## Repository Contract
 
@@ -61,12 +60,12 @@ Analysis と Document の Data Access で User A が User B の Resource を Rea
 
 ## Open Questions
 
-| ID          | Question                                                          | Status                                          |
-| ----------- | ----------------------------------------------------------------- | ----------------------------------------------- |
-| `OWN-Q-001` | Parent/Child Owner Equality を Database Composite FK で強制するか | `Resolved` — Composite FK                       |
-| `OWN-Q-002` | PostgreSQL Integration を Testcontainers に移行する時期           | `Resolved` — CI Gate として導入                 |
-| `OWN-Q-003` | Concurrent Parent Soft Delete と Child Create の Serialization    | `Resolved` — Serializable Retry                 |
-| `OWN-Q-004` | HTTP Authorization Contract                                       | `Partial` — Analysis Verified、Document Blocked |
+| ID          | Question                                                          | Status                                           |
+| ----------- | ----------------------------------------------------------------- | ------------------------------------------------ |
+| `OWN-Q-001` | Parent/Child Owner Equality を Database Composite FK で強制するか | `Resolved` — Composite FK                        |
+| `OWN-Q-002` | PostgreSQL Integration を Testcontainers に移行する時期           | `Resolved` — CI Gate として導入                  |
+| `OWN-Q-003` | Concurrent Parent Soft Delete と Child Create の Serialization    | `Resolved` — Serializable Retry                  |
+| `OWN-Q-004` | HTTP Authorization Contract                                       | `Resolved` — Analysis/Document Bearer A/B Passed |
 
 ## Dependencies
 

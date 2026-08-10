@@ -41,18 +41,18 @@ Status は Requirement の実装・検証状況を表します。`Partial` は C
 
 ## Owner-scoped Data Access
 
-| Requirement   | Implementation                                   | Verification                           | Status    |
-| ------------- | ------------------------------------------------ | -------------------------------------- | --------- |
-| `OWN-FR-001`  | `AnalysisRepository` + Serializable Retry        | Testcontainers PostgreSQL              | `Passed`  |
-| `OWN-FR-002`  | `DocumentRepository`                             | Testcontainers PostgreSQL              | `Passed`  |
-| `OWN-FR-003`  | Parent Check + Composite FK + Serializable Retry | Cross-owner FK + Concurrency Test      | `Passed`  |
-| `OWN-FR-004`  | Transactional Parent/Child Soft Delete           | Integration + Concurrent Create/Delete | `Passed`  |
-| `OWN-FR-005`  | `null`/`false`/Empty Contract                    | Cross-user Integration                 | `Passed`  |
-| `OWN-SEC-001` | Analysis HTTP 実装、Document HTTP は Planned     | Analysis Bearer Owner HTTP Passed      | `Partial` |
-| `OWN-SEC-002` | Analysis Service + `DatabaseModule` Boundary     | Code Review + Analysis HTTP Test       | `Passed`  |
-| `OWN-SEC-003` | Composite Owner FK + Repository Parent Check     | Direct Cross-owner Insert Reject       | `Passed`  |
-| `OWN-SEC-004` | `deletedAt: null` Filters                        | Integration Test                       | `Passed`  |
-| `OWN-SEC-005` | Testcontainers PostgreSQL + Analysis HTTP Test   | Analysis Passed、Document HTTP Blocked | `Partial` |
+| Requirement   | Implementation                                   | Verification                           | Status   |
+| ------------- | ------------------------------------------------ | -------------------------------------- | -------- |
+| `OWN-FR-001`  | `AnalysisRepository` + Serializable Retry        | Testcontainers PostgreSQL              | `Passed` |
+| `OWN-FR-002`  | `DocumentRepository`                             | Testcontainers PostgreSQL              | `Passed` |
+| `OWN-FR-003`  | Parent Check + Composite FK + Serializable Retry | Cross-owner FK + Concurrency Test      | `Passed` |
+| `OWN-FR-004`  | Transactional Parent/Child Soft Delete           | Integration + Concurrent Create/Delete | `Passed` |
+| `OWN-FR-005`  | `null`/`false`/Empty Contract                    | Cross-user Integration                 | `Passed` |
+| `OWN-SEC-001` | Analysis/Document Controller Authenticated Owner | Bearer Owner A/B HTTP Passed           | `Passed` |
+| `OWN-SEC-002` | Analysis Service + `DatabaseModule` Boundary     | Code Review + Analysis HTTP Test       | `Passed` |
+| `OWN-SEC-003` | Composite Owner FK + Repository Parent Check     | Direct Cross-owner Insert Reject       | `Passed` |
+| `OWN-SEC-004` | `deletedAt: null` Filters                        | Integration Test                       | `Passed` |
+| `OWN-SEC-005` | Testcontainers PostgreSQL + HTTP Owner Tests     | Analysis/Document Bearer A/B Passed    | `Passed` |
 
 ## Cross-cutting Gaps
 
@@ -61,24 +61,24 @@ Status は Requirement の実装・検証状況を表します。`Partial` は C
 
 ## PDF Upload
 
-| Requirement   | Implementation                                               | Verification                               | Status    |
-| ------------- | ------------------------------------------------------------ | ------------------------------------------ | --------- |
-| `PDF-FR-001`  | Owner-scoped Start Controller/Service/Repository + FK        | Service Unit + DB FK、HTTP planned         | `Partial` |
-| `PDF-FR-002`  | Serializable Start Reservation + Finalize Limit Recheck      | 4th Slot HTTP Passed、concurrency planned  | `Partial` |
-| `PDF-FR-003`  | DB/Zod Boundary + Streaming 20 MB Cutoff                     | Inclusive Unit + Invalid Size HTTP Passed  | `Partial` |
-| `PDF-FR-004`  | Filename/MIME Start Zod + Trusted `%PDF-` Finalize           | Extension/MIME HTTP Passed、MinIO planned  | `Partial` |
-| `PDF-FR-005`  | Random Private Key + `@stocklens/object-storage`             | Unit + MinIO Adapter Smoke                 | `Partial` |
-| `PDF-FR-006`  | Start/Re-presign API + Signed PUT max 300 seconds            | Service/Signature Unit + MinIO Smoke       | `Partial` |
-| `PDF-FR-007`  | Trusted Stream + Atomic Document/Upload Finalize             | Service/DB Unit + MinIO Primitive Smoke    | `Partial` |
-| `PDF-FR-008`  | Document List/Delete + Atomic Soft Delete/Cleanup Queue      | Shared/Service Unit + DB Integration       | `Partial` |
-| `PDF-FR-009`  | Finalize Lifecycle + Durable Reject Cleanup + Retry Tracking | Service/Queue/Worker Unit + DB Integration | `Partial` |
-| `PDF-SEC-001` | Case-insensitive `.pdf` Shared Zod Validation                | Schema Unit + Invalid Extension HTTP       | `Passed`  |
-| `PDF-SEC-002` | Exact `application/pdf` Shared Zod Validation                | Schema Unit + Invalid MIME HTTP            | `Passed`  |
-| `PDF-SEC-003` | Trusted chunk-safe `%PDF-` Check + Invalid Reject/Cleanup    | Validator/Service Unit + DB Cleanup        | `Partial` |
-| `PDF-SEC-004` | Size/Type/SHA Header-constrained Signed PUT                  | Signature Unit + MinIO Smoke               | `Partial` |
-| `PDF-SEC-005` | Random Key + Bounded Stream + PDF/Storage Log Redaction      | Key/Validator + Emitted JSON Log Unit      | `Partial` |
-| `PDF-SEC-006` | Owner-scoped Start/Finalize/List/Delete Not Found Boundary   | Service/DB Unit、HTTP A/B planned          | `Partial` |
-| `PDF-SEC-007` | Typed/Escaped Untrusted PDF User Context Builder             | Injection Delimiter Unit、Provider planned | `Partial` |
+| Requirement   | Implementation                                               | Verification                                | Status    |
+| ------------- | ------------------------------------------------------------ | ------------------------------------------- | --------- |
+| `PDF-FR-001`  | Owner-scoped Start Controller/Service/Repository + FK        | Bearer Owner A/B HTTP + No Side Effect      | `Passed`  |
+| `PDF-FR-002`  | Serializable Start Reservation + Finalize Limit Recheck      | 4th Slot HTTP Passed、concurrency planned   | `Partial` |
+| `PDF-FR-003`  | DB/Zod Boundary + Streaming 20 MB Cutoff                     | Inclusive Unit + Invalid Size HTTP Passed   | `Partial` |
+| `PDF-FR-004`  | Filename/MIME Start Zod + Trusted `%PDF-` Finalize           | Extension/MIME HTTP + Invalid MinIO Header  | `Passed`  |
+| `PDF-FR-005`  | Random Private Key + `@stocklens/object-storage`             | Unit + Isolated Private MinIO               | `Passed`  |
+| `PDF-FR-006`  | Start/Re-presign API + Signed PUT max 300 seconds            | Real Presigned PUT + Signed Headers         | `Passed`  |
+| `PDF-FR-007`  | Trusted Stream + Atomic Document/Upload Finalize             | Real MinIO + HTTP/PostgreSQL Finalize       | `Passed`  |
+| `PDF-FR-008`  | Document List/Delete + Atomic Soft Delete/Cleanup Queue      | HTTP + PostgreSQL/Redis/BullMQ/MinIO Worker | `Passed`  |
+| `PDF-FR-009`  | Finalize Lifecycle + Durable Reject Cleanup + Retry Tracking | Service/Queue/Worker Unit + DB Integration  | `Partial` |
+| `PDF-SEC-001` | Case-insensitive `.pdf` Shared Zod Validation                | Schema Unit + Invalid Extension HTTP        | `Passed`  |
+| `PDF-SEC-002` | Exact `application/pdf` Shared Zod Validation                | Schema Unit + Invalid MIME HTTP             | `Passed`  |
+| `PDF-SEC-003` | Trusted chunk-safe `%PDF-` Check + Invalid Reject/Cleanup    | Real MinIO Invalid Header + Durable Cleanup | `Passed`  |
+| `PDF-SEC-004` | Size/Type/SHA Header-constrained Signed PUT                  | Real MinIO Signed PUT                       | `Passed`  |
+| `PDF-SEC-005` | Random Key + Bounded Stream + PDF/Storage Log Redaction      | Real Stream + Key/Log Regression            | `Passed`  |
+| `PDF-SEC-006` | Owner-scoped Start/Finalize/List/Delete Not Found Boundary   | Bearer A/B HTTP + PostgreSQL No Side Effect | `Passed`  |
+| `PDF-SEC-007` | Typed/Escaped Untrusted PDF User Context Builder             | Injection Delimiter Unit、Provider planned  | `Partial` |
 
 ## Analysis Management
 

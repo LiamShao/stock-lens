@@ -6,7 +6,7 @@
 | ------------ | ---------------------------------- |
 | Related Spec | `specs/features/ownership/spec.md` |
 | Plan status  | `Implemented`                      |
-| Last updated | `2026-07-22`                       |
+| Last updated | `2026-08-10`                       |
 
 ## Implemented Approach
 
@@ -27,7 +27,7 @@
 
 ## API Changes
 
-Analysis Create/List/Get/Rename/Delete API は実装済みで、Bearer User A/B の HTTP Authorization を検証しました。Document HTTP API は PDF Upload Feature まで Blocked です。
+Analysis Create/List/Get/Rename/Delete と Document Start/Re-presign/Finalize/List/Delete API は実装済みで、Bearer User A/B の HTTP Authorization を検証しました。
 
 ## Database Changes
 
@@ -35,17 +35,17 @@ Analysis Create/List/Get/Rename/Delete API は実装済みで、Bearer User A/B 
 
 ## Test Strategy
 
-| Requirement                | Evidence                                           | Result    |
-| -------------------------- | -------------------------------------------------- | --------- |
-| `OWN-AC-001`〜`OWN-AC-006` | Testcontainers PostgreSQL Integration Test 4 Cases | `Passed`  |
-| `OWN-AC-007`               | Analysis HTTP Integration                          | `Partial` |
+| Requirement                | Evidence                                           | Result   |
+| -------------------------- | -------------------------------------------------- | -------- |
+| `OWN-AC-001`〜`OWN-AC-006` | Testcontainers PostgreSQL Integration Test 4 Cases | `Passed` |
+| `OWN-AC-007`               | Analysis + Document HTTP Bearer A/B Integration    | `Passed` |
 
 各 Suite は隔離 Container を起動し、空 Database に全 Migration を適用します。Container 停止で Test Data を破棄し、共有 Local Database は変更しません。
 
 ## Risks and Decisions
 
 - Database Bypass、Test Isolation、Concurrency Race の整改は `OWN-DEV-001`〜`OWN-DEV-003` として解消済みです。
-- Analysis HTTP Boundary は検証済みです。Document HTTP Boundary は `OWN-DEV-004` として Partial です。
+- Analysis と Document HTTP Boundary は検証済みで、`OWN-DEV-004` は 2026-08-10 に解消しました。
 
 ## Approved Remediation Plan — 2026-07-22
 

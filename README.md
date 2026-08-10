@@ -64,13 +64,13 @@ pnpm build
 pnpm db:validate
 ```
 
-`test:integration` は Docker/Testcontainers で隔離した `stocklens-postgres:16-pgvector` を起動し、空 Database に全 Migration を適用します。共有 Local PostgreSQL や既存 Data は変更しません。Image が未 Build の場合は先に `docker compose build postgres` を実行してください。
+`test:integration` は最初に `docker/postgres` から `stocklens-postgres:16-pgvector` を自動 Build または Docker Layer Cache から再 Tag し、その後 Testcontainers で隔離 Database を起動して空 Database に全 Migration を適用します。共有 Local PostgreSQL や既存 Data は変更せず、事前の手動 Image Build も不要です。
 
 Prisma Schema と Migration には、User、Analysis、Document、Evidence、Job などの Domain Model を定義しています。論理設計と Ownership Rule は [docs/database-design.md](./docs/database-design.md) を参照してください。
 
 `@stocklens/object-storage` は AWS S3 と Local MinIO を共通 Interface で扱います。S3 Operation には `@aws-sdk/client-s3`、短命 Presigned PUT には `@aws-sdk/s3-request-presigner` のみを追加し、API/Worker から Provider 固有処理を分離しています。詳細は [packages/object-storage/README.md](./packages/object-storage/README.md) を参照してください。
 
-Feature Development は Spec-Driven Development で進めます。SDD Workflow、Feature Spec、Requirement Traceability、Deviation は [specs/README.md](./specs/README.md) を参照してください。Authentication、Demo User、Analysis Management は承認・検証済みです。Ownership は Document HTTP API の Criterion を明示して `Partial` としています。
+Feature Development は Spec-Driven Development で進めます。SDD Workflow、Feature Spec、Requirement Traceability、Deviation は [specs/README.md](./specs/README.md) を参照してください。Authentication、Demo User、Analysis Management、Ownership は承認・検証済みです。
 
 Cross-cutting Design は [docs/architecture.md](./docs/architecture.md)、Test Layer と CI Gate は [docs/testing-strategy.md](./docs/testing-strategy.md) を参照してください。
 

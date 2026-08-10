@@ -22,10 +22,13 @@
 | `OWN-DEV-001`      | Data integrity |     High | Resolved 2026-07-22 | Composite Ownership Constraint を Migration で追加            |
 | `OWN-DEV-002`      | Test isolation |   Medium | Resolved 2026-07-22 | Testcontainers PostgreSQL に移行                              |
 | `OWN-DEV-003`      | Concurrency    |      Low | Resolved 2026-07-22 | Parent Check/Create の Isolation Strategy を明示              |
-| `OWN-DEV-004`      | Authorization  |     High | Partial             | Document API 実装済み、Bearer A/B HTTP は `PDF-TASK-013`      |
+| `OWN-DEV-004`      | Authorization  |     High | Resolved 2026-08-10 | Analysis/Document Bearer A/B HTTP Test を追加                 |
 | `ANALYSIS-DEV-001` | Status model   |     High | Resolved 2026-07-24 | `DRAFT` Status と Default を Migration/Test で検証            |
 | `DOC-DEV-001`      | Documentation  |   Medium | Partial             | Architecture/Testing は追加、残り Required Docs/ADR は未作成  |
 | `CI-DEV-001`       | CI             |   Medium | Resolved 2026-07-22 | Integration Test を CI Quality Gate に追加                    |
+| `TEST-DEV-001`     | Test bootstrap |   Medium | Resolved 2026-08-10 | Integration Command 内で PostgreSQL Image を自動 Build        |
+
+2026-08-10 の `PDF-TASK-012`〜`PDF-TASK-014` Review では新規 Deviation は検出されませんでした。Real MinIO Storage、Document Bearer A/B HTTP、Redis/BullMQ Worker Cleanup の Acceptance Evidence を追加し、`OWN-DEV-004` を解消しました。
 
 ## Resolution Evidence
 
@@ -37,8 +40,10 @@
 | `PLATFORM-DEV-001`, `PLATFORM-DEV-002` | Request ID Validator と Pino Secret Redaction の Unit/Emitted Log Test                                            |
 | `DEMO-DEV-001`〜`DEMO-DEV-004`         | Production Guard、Transactional Session Revoke、`P2002` Convergence、Stable Error Mapper の Unit/Integration Test |
 | `OWN-DEV-001`〜`OWN-DEV-003`           | Fail-fast Migration、Composite FK、Serializable `P2034` Retry、Testcontainers Concurrency/Direct FK Test          |
+| `OWN-DEV-004`                          | Analysis と Document Start/Re-presign/Finalize/List/Delete の Bearer User A/B HTTP Test                           |
 | `ANALYSIS-DEV-001`                     | Split Enum/Default Migrations、`DRAFT` Create HTTP Test、空 PostgreSQL への全 Migration                           |
 | `CI-DEV-001`                           | Tracked GitHub Actions が `spec:check` と Docker-based `test:integration` を必須 Step として実行                  |
+| `TEST-DEV-001`                         | Root `test:integration` が Project PostgreSQL Image を準備してから Testcontainers Suite を実行                    |
 
 ## Detail
 
@@ -156,7 +161,13 @@
 
 - Evidence: 発見時は Analysis / Document Endpoint と Service が未実装で、Authenticated User ID が Request Body ではなく Access Token から渡ることを HTTP Test できませんでした。
 - Impact: Repository Boundary は検証済みですが、End-to-end Authorization は未証明です。
-- Current status: Analysis Create/List/Get/Rename/Delete は Bearer User A/B の Testcontainers HTTP Test で検証済みです。Document Start/Finalize/List/Delete API と Owner-scoped Service/Repository は実装済みですが、Bearer User A/B の Document HTTP Test は `PDF-TASK-013` に残るため、Deviation 全体は Partial です。
+- Resolution: Analysis Create/List/Get/Rename/Delete と Document Start/Re-presign/Finalize/List/Delete は Bearer User A/B の Testcontainers HTTP Test で検証済みです。Cross-user Request は Stable Not Found となり、Database、Storage、Cleanup Side Effect を発生させません。
+
+### TEST-DEV-001 — Integration test depends on a manually built local image
+
+- Evidence: `startMigratedPostgres` は Local-only `stocklens-postgres:16-pgvector` を参照しますが、Root `test:integration` は Image を Build しませんでした。CI と README だけが別の Manual Build Step を持っていました。
+- Impact: Docker Image Tag が存在しない Environment では Testcontainers が Local-only Name を Registry から Pull しようとして `pull access denied` で失敗し、Application Test に到達しません。
+- Resolution: Root `test:integration` に Cacheable `test:integration:prepare` を組み込み、Local/CI/Agent の単一 Command で Image Build と Test を完結させました。CI の重複 Build Step と README の Manual Prerequisite を削除しました。
 
 ### ANALYSIS-DEV-001 — Pre-upload Analysis has no valid status
 

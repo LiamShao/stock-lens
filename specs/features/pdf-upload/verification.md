@@ -6,28 +6,31 @@
 | ------------------- | ----------------------------------- |
 | Related Spec        | `specs/features/pdf-upload/spec.md` |
 | Verification status | `Partial`                           |
-| Verified at         | `Partial verification 2026-08-07`   |
+| Verified at         | `Partial verification 2026-08-10`   |
 
 ## Environment
 
 - `PDF-TASK-003` の Database Foundation、`PDF-TASK-004` の S3-compatible Storage Adapter、`PDF-TASK-005` の Cleanup Queue/Worker/Retry Tracking、`PDF-TASK-006` の Upload Start/Presign API、`PDF-TASK-007` の Trusted Streaming Validator、`PDF-TASK-008` の Transactional Finalize API、`PDF-TASK-009` の Document List/Delete API、`PDF-TASK-010` の Security Boundary を実装済みです。
-- `PDF-TASK-011` の Start/Validation HTTP Integration は Testcontainers PostgreSQL と deterministic fake Storage を使用して Passed しました。Real Provider Acceptance は `PDF-TASK-012` に残ります。
+- `PDF-TASK-011` の Start/Validation HTTP Integration は Testcontainers PostgreSQL と deterministic fake Storage を使用して Passed しました。
+- `PDF-TASK-012` は隔離 MinIO、Production S3 Adapter、実 Presigned PUT、Trusted Finalize を Testcontainers PostgreSQL と同じ Suite で自動検証しました。
+- `PDF-TASK-013` は Bearer User A/B の Start、Re-presign、Finalize、List、Delete を Guard から PostgreSQL までの HTTP 実経路で自動検証しました。
+- `PDF-TASK-014` は Document Delete から Redis/BullMQ、Production S3 Adapter、MinIO Object Delete、Job Attempt Success までを実 Worker 経路で自動検証しました。
 - Analysis Management Feature と `ANALYSIS-DEV-001` は Verified です。
 - Testcontainers PostgreSQL で全 Migration と `DocumentUpload` Constraint を検証済みです。
-- Project-owned MinIO に対する Presigned PUT、Head、Streaming Read、Delete の Manual Smoke Test は成功しました。Cleanup Processor/Dispatch/Retry は Unit Test 済みですが、Automated MinIO/Redis/BullMQ Integration は `PDF-TASK-014` まで未実施です。
+- Project-owned MinIO に対する Presigned PUT、Head、Streaming Read、Valid/Invalid Finalize と Redis/BullMQ Worker Delete は Automated Integration Test 済みです。Concurrency と Automatic Retry Failure Path は `PDF-TASK-015` に残します。
 
 ## Acceptance Evidence
 
-| Acceptance Criterion | Evidence                                                                   | Result    |
-| -------------------- | -------------------------------------------------------------------------- | --------- |
-| `PDF-AC-001`         | Start HTTP + DB は Passed、Real Storage Presign Acceptance は未実施        | `Partial` |
-| `PDF-AC-002`         | 4th Slot HTTP、DB Count、No Presign を Testcontainers で検証               | `Passed`  |
-| `PDF-AC-003`         | Inclusive Unit + 0/20 MB 超 HTTP、No DB/Presign を検証                     | `Passed`  |
-| `PDF-AC-004`         | Invalid Extension/MIME HTTP、No DB/Presign を検証                          | `Passed`  |
-| `PDF-AC-005`         | Invalid Header Reject と Durable Cleanup DB Test は Passed、MinIO は未実施 | `Partial` |
-| `PDF-AC-006`         | Start/Finalize/List/Delete の Owner Scope 実装済み、HTTP A/B は未実施      | `Partial` |
-| `PDF-AC-007`         | Trusted Stream、Document Persist、Repeated Finalize Unit/DB Test は Passed | `Partial` |
-| `PDF-AC-008`         | List/Delete、Soft Delete + Durable Cleanup Unit/DB Test は Passed          | `Partial` |
+| Acceptance Criterion | Evidence                                                          | Result   |
+| -------------------- | ----------------------------------------------------------------- | -------- |
+| `PDF-AC-001`         | Start HTTP + Production Adapter の Real MinIO Presigned PUT       | `Passed` |
+| `PDF-AC-002`         | 4th Slot HTTP、DB Count、No Presign を Testcontainers で検証      | `Passed` |
+| `PDF-AC-003`         | Inclusive Unit + 0/20 MB 超 HTTP、No DB/Presign を検証            | `Passed` |
+| `PDF-AC-004`         | Invalid Extension/MIME HTTP、No DB/Presign を検証                 | `Passed` |
+| `PDF-AC-005`         | Real MinIO Invalid Header Reject、No Document、Durable Cleanup    | `Passed` |
+| `PDF-AC-006`         | Bearer A/B Start/Re-presign/Finalize/List/Delete、No Side Effect  | `Passed` |
+| `PDF-AC-007`         | Real PUT/Head/Stream、Trusted SHA/Size、Atomic Completed/Uploaded | `Passed` |
+| `PDF-AC-008`         | HTTP Delete + PostgreSQL/Redis/BullMQ/MinIO Worker Cleanup        | `Passed` |
 
 ## Database Foundation Evidence
 
@@ -56,6 +59,8 @@
 - Startup と 60 秒 Interval で Pending Dispatch を回復し、成功済み実行は再削除せず、最終失敗 Job は明示的に Retry できます。
 - Unit Test は Persist-before-dispatch、Redis Failure、成功済み Idempotency、Manual Retry、Delete Success/Failure、Pending Redispatch を検証します。
 - PostgreSQL Integration Test に Stable Idempotency Key の一意性と Cleanup Target Constraint の検証を追加し、空 Database への Split Migration とともに Passed しました。
+- Real Infrastructure Integration は Queue Payload が `jobExecutionId` のみであること、BullMQ Job ID、`JobExecution/JobAttempt` の `QUEUED → RUNNING → SUCCEEDED` 結果、MinIO Object Delete を検証しました。
+- MinIO Object がすでに存在しない場合も同じ Worker 経路で 1 Attempt の `SUCCEEDED` に収束することを検証しました。
 
 ## Upload Start and Presign API Evidence
 
@@ -64,7 +69,7 @@
 - Object Key は Owner/Analysis/Upload UUID/Random UUID から生成し、Filename を含めません。API Service は Bucket 名だけを受け取り、Response は Bucket、Key、Credential を返しません。
 - Start と Active `PENDING` Session の再 Presign Endpoint、Bearer Guard、Zod Path/Body Pipe、Concrete OpenAPI Success/Error Schema を追加しました。
 - 初回 Presign Failure は Stable `OBJECT_STORAGE_UNAVAILABLE` と `REJECTED` Status に収束して枠を解放し、再 Presign Failure は再試行用に `PENDING` を維持します。
-- Initial Shared/API Unit Evidence に加え、Start/Validation HTTP Integration は `PDF-TASK-011` で完了しました。Cross-user HTTP と Concurrent Slot Reservation は `PDF-TASK-013`、`PDF-TASK-015` に残ります。
+- Initial Shared/API Unit Evidence に加え、Start/Validation HTTP Integration は `PDF-TASK-011`、Cross-user HTTP は `PDF-TASK-013` で完了しました。Concurrent Slot Reservation は `PDF-TASK-015` に残ります。
 
 ## Upload Start and Validation HTTP Evidence
 
@@ -73,7 +78,16 @@
 - 3 Active Upload 後の 4 件目は `409 DOCUMENT_LIMIT_EXCEEDED` となり、`DocumentUpload` は 3 件、`Document` は 0 件、Presign Call は 3 回のまま増えませんでした。
 - Size 0 と 20 MB + 1、Invalid Extension/MIME は `400 VALIDATION_ERROR` となり、Database Write と Presign Call は 0 でした。
 - Shared Schema Unit Test は 1 byte と 20 MB を Inclusive に受理し、既存 Matrix と合わせて Boundary を検証しました。
-- Storage は deterministic fake のため、Real MinIO Presign/PUT/Finalize Acceptance は `PDF-TASK-012` に残します。
+- `PDF-TASK-011` の Storage は deterministic fake でしたが、Real MinIO Presign/PUT/Finalize Acceptance は `PDF-TASK-012` で補完しました。
+
+## MinIO Storage Integration Evidence
+
+- Official MinIO Image と専用 Private Bucket を Testcontainers で隔離起動し、Production `S3ObjectStorageAdapter` を Nest Application から変更せず使用しました。
+- API Start Response の実 Presigned URL と `Content-Length`、`Content-Type`、SHA Metadata Header を使用した PUT は MinIO で `200` となりました。
+- Valid `%PDF-` Object は Head Metadata、Streaming Body、Actual Size、Actual SHA-256 を通過し、HTTP Finalize が `Document` を返しました。
+- PostgreSQL は `DocumentUpload.COMPLETED`、Trusted `Document.sha256/sizeBytes/uploadedAt`、`Analysis.UPLOADED` を同一 Flow の結果として保持しました。
+- Invalid Header Object は PUT 自体が成功しても Finalize が `422 INVALID_PDF` となり、Document を作成せず `REJECTED / INVALID_PDF_HEADER` と Durable `QUEUED OBJECT_CLEANUP` を保存しました。
+- `PDF-TASK-012` の Test Teardown は生成 Object を削除し、`PDF-TASK-014` は同じ Production Adapter と隔離 MinIO に対する Redis/BullMQ Worker Delete を自動検証しました。
 
 ## Trusted Streaming Validation Evidence
 
@@ -83,7 +97,7 @@
 - 20 MB + 1 byte を検出した時点で Stream を破棄します。Stream Size/SHA と Head Metadata のどちらか一方だけを信頼しません。
 - Missing Object、Head/Get/Stream Error は Provider Detail を含まない Retryable `storage-failure`、Content/Header/Size/SHA Mismatch は `invalid` として区別します。
 - Validator Unit 12 Tests は Valid Chunked Stream、Head Metadata Matrix、Invalid Header、Actual Size/SHA Mismatch、Oversize Cutoff、Missing/Provider/Stream Failure を検証します。
-- Public Finalize、Status Transition、Document Persist、Reject/Cleanup への接続は `PDF-TASK-008` で完了しました。Automated MinIO Acceptance は `PDF-TASK-012` に残ります。
+- Public Finalize、Status Transition、Document Persist、Reject/Cleanup への接続は `PDF-TASK-008`、Automated MinIO Acceptance は `PDF-TASK-012` で完了しました。
 
 ## Transactional Finalize Evidence
 
@@ -93,7 +107,7 @@
 - Valid Object は Active Duplicate SHA と 3 Document Limit を再確認し、Document、Upload `COMPLETED` Relation、`uploadedAt`、Analysis `DRAFT → UPLOADED` を同一 Transaction に保存します。
 - Completed Session の Repeat Finalize は Storage を再読込せず同じ Document を返します。Storage Failure は Provider Detail を返さず `STORAGE_VALIDATION_FAILED` に収束します。
 - API Unit Test は Valid/Repeated/Invalid/Storage Failure/Duplicate/Limit/Expired/Inactive Mapping を検証しました。PostgreSQL Integration Test は Atomic Complete、Idempotent Repeat、Reject/Cleanup、Duplicate、Limit、Expired を検証しました。
-- Concurrent Finalize と HTTP/MinIO Acceptance は `PDF-TASK-012`、`PDF-TASK-013`、`PDF-TASK-015` に残ります。
+- HTTP Bearer A/B は `PDF-TASK-013`、MinIO Acceptance は `PDF-TASK-012` で完了しました。Concurrent Finalize は `PDF-TASK-015` に残ります。
 
 ## Document List and Delete Evidence
 
@@ -102,11 +116,13 @@
 - Redis Queue は Cleanup Dispatch が必要になるまで接続せず、Dispatch Failure 時も API Delete は Durable `QUEUED` Record を保持して Worker Pending Scan から回復できます。
 - Missing/Cross-user Analysis は `ANALYSIS_NOT_FOUND`、Owned Analysis 内の Missing/Cross-analysis/Deleted Document は `DOCUMENT_NOT_FOUND` に収束します。
 - Shared Contract 3 Tests と API Service 7 Tests は UUID Path、3 Document Response Limit、Storage-safe Response、Not Found Mapping、Persist-before-dispatch、Redis Failure を検証しました。
-- PostgreSQL Integration Test は Finalized/Active Filter、Cross-user List/Delete、Soft Delete、Stable Cleanup Idempotency、Repeated Delete を検証しました。Real Redis/MinIO Worker Delete と HTTP Bearer A/B は `PDF-TASK-013`、`PDF-TASK-014` に残ります。
+- PostgreSQL Integration Test は Finalized/Active Filter、Cross-user List/Delete、Soft Delete、Stable Cleanup Idempotency、Repeated Delete を検証しました。HTTP Bearer A/B は `PDF-TASK-013`、Real Redis/BullMQ/MinIO Worker Delete は `PDF-TASK-014` で完了しました。
+- Owner の HTTP Delete 後に List から消えること、Durable `QUEUED` Execution と最小 Queue Payload が作られること、Worker が MinIO Object を削除して Execution/Attempt を Sanitized `SUCCEEDED` にすることを一つの実経路で検証しました。
 
 ## Security Boundary Evidence
 
-- Start、Re-presign、Finalize、List、Delete は Owner-scoped Repository Result を Stable `ANALYSIS_NOT_FOUND`、`DOCUMENT_UPLOAD_NOT_FOUND`、`DOCUMENT_NOT_FOUND` に収束させ、Service Unit Test を `PDF-SEC-006` に紐付けました。Bearer User A/B HTTP Acceptance は `PDF-TASK-013` に残ります。
+- Start、Re-presign、Finalize、List、Delete は Owner-scoped Repository Result を Stable `ANALYSIS_NOT_FOUND`、`DOCUMENT_UPLOAD_NOT_FOUND`、`DOCUMENT_NOT_FOUND` に収束させ、Service Unit Test と Bearer User A/B HTTP Acceptance を `PDF-SEC-006` に紐付けました。
+- Cross-user Start は Upload/Presign を作成せず、Re-presign/Finalize は Presign/Head/Stream/Status/Document を変更せず、List/Delete は Metadata、Soft Delete、Cleanup Job を発生させないことを PostgreSQL と Mock Call Count で確認しました。
 - Fastify/Pino Redaction は Presigned Upload URL、Storage Bucket/Key、Object Key、Original Filename、Full PDF/Page/Chunk Text、Object Body を既知の Nested Path でも Redact します。
 - Emitted JSON Log Regression Test は上記 Secret/Sensitive Value が Serialized Log に残らないことを検証しました。
 - `@stocklens/shared` の `buildUntrustedPdfContext` は入力 Metadata を Zod で検証し、`source: uploaded-pdf`、`trust: untrusted`、`role: user`、`instructionsAllowed: false` を固定します。
@@ -115,26 +131,27 @@
 
 ## Quality Gates
 
-| Command                 | Result                                  |
-| ----------------------- | --------------------------------------- |
-| `pnpm format:check`     | Passed                                  |
-| `pnpm spec:check`       | Passed — 5 Features / 68 Requirements   |
-| `pnpm db:validate`      | Passed                                  |
-| `pnpm lint`             | Passed — Full Workspace                 |
-| `pnpm typecheck`        | Passed — Full Workspace                 |
-| `pnpm test`             | Passed — Full Workspace 127 Tests       |
-| `pnpm test:integration` | Passed — PostgreSQL 4 Suites / 27 Tests |
-| `pnpm build`            | Passed — Full Workspace                 |
+| Command                 | Result                                 |
+| ----------------------- | -------------------------------------- |
+| `pnpm format:check`     | Passed                                 |
+| `pnpm spec:check`       | Passed — 5 Features / 68 Requirements  |
+| `pnpm db:validate`      | Passed                                 |
+| `pnpm db:generate`      | Passed                                 |
+| `pnpm lint`             | Passed — Full Workspace                |
+| `pnpm typecheck`        | Passed — Full Workspace                |
+| `pnpm test`             | Passed — Full Workspace 127 Tests      |
+| `pnpm test:integration` | Passed — PostgreSQL/MinIO/Redis 5 / 33 |
+| `pnpm build`            | Passed — Full Workspace                |
 
 ## Deviations and Residual Risks
 
 - `ANALYSIS-DEV-001` — Pre-upload Analysis 用 `DRAFT` Status は実装・検証済みです。
-- `OWN-DEV-004` — Analysis HTTP は検証済みです。Document Upload/Finalize/List/Delete は実装済みですが、Bearer User A/B の HTTP Verification は `PDF-TASK-013` まで Partial です。
+- `OWN-DEV-004` — Analysis と Document の Bearer User A/B HTTP Verification が完了し、2026-08-10 に解消しました。
 - Exact API Path/Schema と AWS SDK/BullMQ Dependency は Technical Plan として承認済みです。AWS SDK Storage Adapter と Cleanup Queue Dependency は実装済みです。
-- Database Constraint は Defense-in-depth です。3 File Limit、Duplicate 判定、Trusted Validator の Finalize Service 接続は Unit/PostgreSQL Integration で検証済みですが、Concurrent Finalize と Real MinIO は未検証です。
-- MinIO Smoke Test は Adapter の Provider Compatibility Evidence ですが、Automated Test ではありません。`PDF-TASK-012` が完了するまで Storage Acceptance を Passed としません。
+- Database Constraint は Defense-in-depth です。3 File Limit、Duplicate 判定、Trusted Validator の Finalize Service 接続と Real MinIO は検証済みですが、Concurrent Finalize は未検証です。
+- MinIO Storage と Redis/BullMQ を含む実 Cleanup Worker Acceptance は Automated Test で Passed しました。Automatic Retry Failure Path、Concurrent Finalize/Delete、Orphan Expiry は `PDF-TASK-015` に残ります。
 - Private Bucket Provisioning、Browser CORS と Production IAM Policy は本 Task の Adapter Scope 外です。Upload HTTP Integration と Deployment Configuration で検証が必要です。
 
 ## Conclusion
 
-PDF Upload Spec、7 Decisions、Technical Plan と Analysis Management Dependency は Approved/Verified で、Database Foundation、Object Storage Adapter、Cleanup Queue/Worker、Upload Start/Presign API、Trusted Streaming Validator、Transactional Finalize API、Document List/Delete API は実装・部分検証済みです。Automated HTTP/Storage/Cleanup Acceptance Evidence が完了するまで `Verified` としません。
+PDF Upload Spec、7 Decisions、Technical Plan と Analysis Management Dependency は Approved/Verified です。Database Foundation、Object Storage Adapter、Cleanup Queue/Worker、Upload Start/Presign API、Trusted Streaming Validator、Transactional Finalize API、Document List/Delete API は実装済みで、Real MinIO Storage、Cross-user HTTP、Redis/BullMQ Cleanup Acceptance も Passed しました。Concurrency/Retry/Orphan Expiry の Evidence が完了するまで Feature 全体は `Partial` とします。

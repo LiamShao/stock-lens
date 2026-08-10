@@ -1,5 +1,42 @@
 # StockLens AI 開発進捗
 
+## 2026-08-10
+
+### PDF Upload Redis/BullMQ Cleanup Acceptance
+
+- Approved `PDF-TASK-014` として、Owner の HTTP Document Delete から PostgreSQL、Redis/BullMQ、Worker、Production `S3ObjectStorageAdapter`、MinIO Object Delete までの Automated Integration Test を追加しました。
+- Delete は `204`、Document List からの除外、`deletedAt`、Stable `QUEUED OBJECT_CLEANUP` を先に確定し、Queue Payload は `jobExecutionId` UUID のみを保持します。
+- Worker は Database Relation から Storage Target を解決し、Object Delete 後に `JobExecution` と `JobAttempt` を 1 Attempt の `SUCCEEDED`、Error Detail なしへ収束させました。
+- MinIO Object がすでに存在しない場合も同じ実 Worker 経路で成功扱いとなる Idempotency を検証しました。
+- Test-only Redis Container Support を追加しました。Production Dependency、Database Schema、Public API Contract の変更はありません。
+- Targeted PostgreSQL/Redis/BullMQ/MinIO Integration 1 Suite / 4 Tests が成功しました。Full Workspace の Format、Spec Check、Prisma Validate/Generate、Lint、Typecheck、127 Unit/Component Tests、Build と、Self-bootstrapping Integration 5 Suites / 33 Tests も成功しました。
+
+### Integration PostgreSQL Image Bootstrap
+
+- `pnpm test:integration` が Local-only `stocklens-postgres:16-pgvector` の事前 Build を暗黙に要求し、Image Tag がないと Testcontainers が Docker Hub Pull を試みて失敗する問題を解消しました。
+- Root Command に Cacheable `test:integration:prepare` を組み込み、`docker/postgres` の Build/再 Tag と Testcontainers Suite を単一 Command で実行します。
+- GitHub Actions の重複 Build Step を統合し、README、Docker README、Testing Strategy を Self-bootstrapping Contract に更新しました。
+- Self-bootstrapping `pnpm test:integration` は Docker Layer Cache を使用して Image を準備し、PostgreSQL/MinIO 5 Suites / 31 Tests に成功しました。Format、Spec Check、Lint、Typecheck、127 Unit/Component Tests、Build も成功しました。
+- Production Runtime、Database Schema、API Contract、Test Data Isolation に変更はありません。
+
+### PDF Upload HTTP Authorization Acceptance
+
+- Approved `PDF-TASK-013` として Bearer User A/B の Start、Re-presign、Finalize、List、Delete を Testcontainers PostgreSQL の HTTP 実経路で検証しました。
+- Cross-user Start は Missing Analysis と同じ `404 ANALYSIS_NOT_FOUND` となり、Upload Session と Presign Call を作成しません。
+- Cross-user Re-presign/Finalize は `404 DOCUMENT_UPLOAD_NOT_FOUND` となり、Presign、Head、Stream、Session Status、Document に Side Effect を発生させません。
+- Cross-user List/Delete は `404 ANALYSIS_NOT_FOUND` となり、Document Metadata を返さず、Soft Delete と Cleanup Job を作成しません。
+- `PDF-AC-006`、`PDF-FR-001`、`PDF-SEC-006`、`OWN-AC-007` を Passed とし、`OWN-DEV-004` を解消しました。Owner-scoped Data Access Feature は `Verified` です。
+- Targeted HTTP Integration 1 Suite / 6 Tests が成功しました。Full Workspace の Format、Spec Check、Lint、Typecheck、127 Unit/Component Tests、Build、Prisma Validate/Generate と、PostgreSQL/MinIO Integration 5 Suites / 31 Tests が成功しました。
+
+### PDF Upload MinIO Storage Acceptance
+
+- Approved `PDF-TASK-012` として Official MinIO Image、専用 Private Bucket、Production `S3ObjectStorageAdapter` を使用する Automated Integration Test を追加しました。
+- API が返す Real Presigned URL と Signed Content Length/Type/SHA Headers で PDF を PUT し、MinIO Head/Stream と Trusted Finalize を実経路で検証しました。
+- Valid PDF は `DocumentUpload.COMPLETED`、Trusted `Document.sha256/sizeBytes/uploadedAt`、`Analysis.UPLOADED` に原子的に収束しました。
+- Invalid `%PDF-` Header は `422 INVALID_PDF`、No Document、`REJECTED / INVALID_PDF_HEADER`、Durable `QUEUED OBJECT_CLEANUP` に収束しました。実 Redis/BullMQ Worker Delete は `PDF-TASK-014` に残します。
+- `testcontainers` を API の Test-only Direct Dependency として追加しました。Production Dependency、Database Schema、Public API Contract の変更はありません。
+- Targeted MinIO Integration 1 Suite / 2 Tests が成功しました。Full Workspace の Format、Spec Check、Lint、Typecheck、127 Unit/Component Tests、Build、Prisma Validate/Generate と、PostgreSQL/MinIO Integration 5 Suites / 29 Tests が成功しました。
+
 ## 2026-08-07
 
 ### PDF Upload Start / Validation HTTP Acceptance

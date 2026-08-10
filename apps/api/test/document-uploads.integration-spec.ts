@@ -1,4 +1,5 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
+import { Readable } from 'node:stream';
 
 import { Test } from '@nestjs/testing';
 import {
@@ -9,6 +10,8 @@ import type { ObjectStorage } from '@stocklens/object-storage';
 import {
   analysisResourceSchema,
   authResponseSchema,
+  documentListResponseSchema,
+  documentResourceSchema,
   MAX_PDF_SIZE_BYTES,
   startDocumentUploadResponseSchema,
   type AuthResponse,
@@ -25,15 +28,19 @@ import { startMigratedPostgres } from './support/postgres-test-container';
 
 jest.setTimeout(120_000);
 
-describe('document upload start HTTP integration (PDF-TASK-011)', () => {
+describe('document upload HTTP integration (PDF-TASK-011, PDF-TASK-013)', () => {
   const createPresignedPdfUpload: jest.MockedFunction<
     ObjectStorage['createPresignedPdfUpload']
   > = jest.fn();
+  const getObjectStream: jest.MockedFunction<ObjectStorage['getObjectStream']> =
+    jest.fn();
+  const headObject: jest.MockedFunction<ObjectStorage['headObject']> =
+    jest.fn();
   const objectStorage: jest.Mocked<ObjectStorage> = {
     createPresignedPdfUpload,
     deleteObject: jest.fn(),
-    getObjectStream: jest.fn(),
-    headObject: jest.fn(),
+    getObjectStream,
+    headObject,
   };
   let app: NestFastifyApplication;
   let container: StartedPostgreSqlContainer;
@@ -74,7 +81,10 @@ describe('document upload start HTTP integration (PDF-TASK-011)', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    createPresignedPdfUpload.mockReset();
+    objectStorage.deleteObject.mockReset();
+    getObjectStream.mockReset();
+    headObject.mockReset();
     createPresignedPdfUpload.mockImplementation((input) =>
       Promise.resolve({
         expiresAt: new Date(Date.now() + 300_000),
@@ -234,22 +244,127 @@ describe('document upload start HTTP integration (PDF-TASK-011)', () => {
     expect(createPresignedPdfUpload).not.toHaveBeenCalled();
   });
 
+  it('PDF-AC-006 rejects cross-user upload start without persistence or presigning', async () => {
+    const { analysisId } = await createOwnedAnalysis();
+    const outsider = await registerUser('Cross-user Start');
+    const payload = {
+      mimeType: 'application/pdf',
+      originalName: 'cross-user.pdf',
+      sha256: '1'.repeat(64),
+      sizeBytes: 1024,
+    };
+
+    const crossUser = await startUpload(outsider, analysisId, payload);
+    expect(crossUser.statusCode).toBe(404);
+    expect(crossUser.json()).toMatchObject({ code: 'ANALYSIS_NOT_FOUND' });
+
+    const missing = await startUpload(outsider, randomUUID(), payload);
+    expect(missing.statusCode).toBe(404);
+    expect(missing.json()).toMatchObject({ code: 'ANALYSIS_NOT_FOUND' });
+    await expect(
+      prisma.documentUpload.count({ where: { analysisId } }),
+    ).resolves.toBe(0);
+    expect(createPresignedPdfUpload).not.toHaveBeenCalled();
+  });
+
+  it('PDF-AC-006 hides upload and document operations from a cross-user bearer without side effects', async () => {
+    const pdf = Buffer.from('%PDF-1.7\n%%EOF\n');
+    const sha256 = createHash('sha256').update(pdf).digest('hex');
+    const { analysisId, auth: owner } = await createOwnedAnalysis();
+    const outsider = await registerUser('Cross-user Resource');
+    const startedResponse = await startUpload(owner, analysisId, {
+      mimeType: 'application/pdf',
+      originalName: 'owned.pdf',
+      sha256,
+      sizeBytes: pdf.byteLength,
+    });
+    expect(startedResponse.statusCode).toBe(201);
+    const started = startDocumentUploadResponseSchema.parse(
+      startedResponse.json<unknown>(),
+    );
+
+    const crossPresign = await request(outsider, {
+      method: 'POST',
+      url: `/api/analyses/${analysisId}/document-uploads/${started.uploadSession.id}/presign`,
+    });
+    expect(crossPresign.statusCode).toBe(404);
+    expect(crossPresign.json()).toMatchObject({
+      code: 'DOCUMENT_UPLOAD_NOT_FOUND',
+    });
+
+    const crossFinalize = await request(outsider, {
+      method: 'POST',
+      url: `/api/analyses/${analysisId}/document-uploads/${started.uploadSession.id}/finalize`,
+    });
+    expect(crossFinalize.statusCode).toBe(404);
+    expect(crossFinalize.json()).toMatchObject({
+      code: 'DOCUMENT_UPLOAD_NOT_FOUND',
+    });
+    expect(createPresignedPdfUpload).toHaveBeenCalledTimes(1);
+    expect(headObject).not.toHaveBeenCalled();
+    expect(getObjectStream).not.toHaveBeenCalled();
+    await expect(
+      prisma.documentUpload.findUniqueOrThrow({
+        where: { id: started.uploadSession.id },
+      }),
+    ).resolves.toMatchObject({ status: 'PENDING' });
+    await expect(
+      prisma.document.count({ where: { analysisId } }),
+    ).resolves.toBe(0);
+
+    headObject.mockResolvedValue({
+      checksumSha256: null,
+      contentLength: pdf.byteLength,
+      contentType: 'application/pdf',
+      eTag: 'integration-etag',
+      lastModified: new Date(),
+      metadata: { 'stocklens-sha256': sha256 },
+    });
+    getObjectStream.mockResolvedValue(Readable.from([pdf]));
+    const ownerFinalize = await request(owner, {
+      method: 'POST',
+      url: `/api/analyses/${analysisId}/document-uploads/${started.uploadSession.id}/finalize`,
+    });
+    expect(ownerFinalize.statusCode).toBe(200);
+    const document = documentResourceSchema.parse(
+      ownerFinalize.json<unknown>(),
+    );
+
+    const crossList = await request(outsider, {
+      method: 'GET',
+      url: `/api/analyses/${analysisId}/documents`,
+    });
+    expect(crossList.statusCode).toBe(404);
+    expect(crossList.json()).toMatchObject({ code: 'ANALYSIS_NOT_FOUND' });
+
+    const crossDelete = await request(outsider, {
+      method: 'DELETE',
+      url: `/api/analyses/${analysisId}/documents/${document.id}`,
+    });
+    expect(crossDelete.statusCode).toBe(404);
+    expect(crossDelete.json()).toMatchObject({ code: 'ANALYSIS_NOT_FOUND' });
+
+    const ownerList = await request(owner, {
+      method: 'GET',
+      url: `/api/analyses/${analysisId}/documents`,
+    });
+    expect(ownerList.statusCode).toBe(200);
+    expect(
+      documentListResponseSchema.parse(ownerList.json<unknown>()).items,
+    ).toEqual([document]);
+    await expect(
+      prisma.document.findUniqueOrThrow({ where: { id: document.id } }),
+    ).resolves.toMatchObject({ deletedAt: null });
+    await expect(
+      prisma.jobExecution.count({ where: { documentId: document.id } }),
+    ).resolves.toBe(0);
+  });
+
   async function createOwnedAnalysis(): Promise<{
     analysisId: string;
     auth: AuthResponse;
   }> {
-    const registration = await app.inject({
-      method: 'POST',
-      payload: {
-        displayName: 'Document Upload Integration User',
-        email: `${randomUUID()}@document-upload.integration.test`,
-        password: 'integration-password',
-      },
-      remoteAddress: `10.20.0.${remoteAddressSequence++}`,
-      url: '/api/auth/register',
-    });
-    expect(registration.statusCode).toBe(201);
-    const auth = authResponseSchema.parse(registration.json<unknown>());
+    const auth = await registerUser('Document Upload Integration User');
     const analysis = await request(auth, {
       method: 'POST',
       payload: { title: 'Document upload integration' },
@@ -260,6 +375,21 @@ describe('document upload start HTTP integration (PDF-TASK-011)', () => {
       analysisId: analysisResourceSchema.parse(analysis.json<unknown>()).id,
       auth,
     };
+  }
+
+  async function registerUser(displayName: string): Promise<AuthResponse> {
+    const registration = await app.inject({
+      method: 'POST',
+      payload: {
+        displayName,
+        email: `${randomUUID()}@document-upload.integration.test`,
+        password: 'integration-password',
+      },
+      remoteAddress: `10.20.0.${remoteAddressSequence++}`,
+      url: '/api/auth/register',
+    });
+    expect(registration.statusCode).toBe(201);
+    return authResponseSchema.parse(registration.json<unknown>());
   }
 
   function startUpload(

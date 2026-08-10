@@ -5,8 +5,8 @@
 | Field        | Value                                   |
 | ------------ | --------------------------------------- |
 | Related Spec | `specs/features/pdf-upload/spec.md`     |
-| Plan status  | `Implementing — PDF-TASK-011 completed` |
-| Last updated | `2026-08-07`                            |
+| Plan status  | `Implementing — PDF-TASK-014 completed` |
+| Last updated | `2026-08-10`                            |
 
 ## Approach
 
@@ -100,6 +100,22 @@ Active Document と未期限切れ Upload Session の合計が 3 を超えない
 - Shared Zod Unit Test は 1 byte と 20 MB の inclusive Boundary を受理し、0 byte と 20 MB + 1 を拒否します。
 - Fake Storage は HTTP/Application Wiring Evidence に限定し、Header/Object/Finalize の Real Provider Acceptance は `PDF-TASK-012` で MinIO に対して検証します。
 
+### TASK-012 MinIO Verification Boundary
+
+- Official MinIO Image を Testcontainers で Suite ごとに起動し、Test 専用 Private Bucket を Container 内の `mc` で作成します。
+- API の Production `S3ObjectStorageAdapter` から発行した URL と Signed Headers を使用して、Node.js Client が実際に PDF Body を PUT します。
+- Valid Object は Head Metadata と Finalize 後の `Document`、`DocumentUpload.COMPLETED`、`Analysis.UPLOADED` を PostgreSQL と HTTP Response で検証します。
+- Invalid `%PDF-` Header は Real MinIO Stream から `INVALID_PDF` に収束し、Document を作成せず、`REJECTED` Session と Durable `QUEUED OBJECT_CLEANUP` を保存することを検証します。
+- Redis/BullMQ Worker による実 Object Delete は `PDF-TASK-014` で検証します。`PDF-TASK-012` 単独では Test Object を Teardown で削除します。
+
+### TASK-013 HTTP Authorization Boundary
+
+- Bearer User A が所有する Analysis、Upload Session、Finalized Document に対し、Bearer User B から Start、Re-presign、Finalize、List、Delete を HTTP 実経路で試行します。
+- Cross-user Start は Missing Analysis と同じ `404 ANALYSIS_NOT_FOUND` とし、`DocumentUpload` Record と Presign Call を作成しません。
+- Cross-user Re-presign/Finalize は `404 DOCUMENT_UPLOAD_NOT_FOUND` とし、Presign、Head、Get/Stream、Session Status、Document Persist に Side Effect を発生させません。
+- Cross-user List/Delete は `404 ANALYSIS_NOT_FOUND` とし、Document Metadata を返さず、Soft Delete と `OBJECT_CLEANUP` JobExecution を作成しません。
+- Owner A の同一 Flow は成功することも同じ Test で確認し、Guard だけでなく Authenticated User ID の Controller → Service → Repository 伝播を検証します。
+
 ## Object Cleanup Queue Contract
 
 - Queue 名は `object-cleanup`、Job 名は `delete-object` とし、Queue Payload は `jobExecutionId` UUID のみに限定します。Bucket、Object Key、Owner ID は Redis に複製しません。
@@ -115,13 +131,13 @@ S3-compatible Operation と Presigning のため AWS SDK v3 の最小 Package �
 
 ## Test Strategy
 
-| Acceptance Criterion       | Level                     | Planned Evidence                                                        |
-| -------------------------- | ------------------------- | ----------------------------------------------------------------------- |
-| `PDF-AC-001`〜`PDF-AC-004` | Unit + HTTP Integration   | Start Validation、Presign Constraint、Limit、Extension/MIME/Size        |
-| `PDF-AC-005`, `PDF-AC-007` | Storage Integration       | MinIO Object の Header/Size/SHA 検証と Finalize                         |
-| `PDF-AC-006`               | HTTP + PostgreSQL         | Bearer Owner A/B の Cross-user Start/Finalize/List/Delete               |
-| `PDF-AC-008`               | HTTP + Worker Integration | Soft Delete、Cleanup Enqueue、Retry、Object Not Found Idempotency       |
-| Concurrency / Idempotency  | PostgreSQL Integration    | Concurrent Start/Finalize/Delete、Repeated Finalize、3 File Reservation |
+| Acceptance Criterion       | Level                     | Planned Evidence                                                    |
+| -------------------------- | ------------------------- | ------------------------------------------------------------------- |
+| `PDF-AC-001`〜`PDF-AC-004` | Unit + HTTP Integration   | Start Validation、Presign Constraint、Limit、Extension/MIME/Size    |
+| `PDF-AC-005`, `PDF-AC-007` | Storage Integration       | MinIO Object の Header/Size/SHA 検証と Finalize                     |
+| `PDF-AC-006`               | HTTP + PostgreSQL         | Bearer Owner A/B の Cross-user Start/Finalize/List/Delete           |
+| `PDF-AC-008`               | HTTP + Worker Integration | Soft Delete、Cleanup Enqueue、Object Delete/Not Found Idempotency   |
+| Concurrency / Idempotency  | PostgreSQL Integration    | Concurrent Start/Finalize/Delete、Cleanup Retry、3 File Reservation |
 
 Testcontainers PostgreSQL と隔離 MinIO-compatible Storage を使用し、Mock だけでは Integration Acceptance を Passed にしません。
 

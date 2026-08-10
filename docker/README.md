@@ -22,6 +22,12 @@ docker/postgres/Dockerfile
 
 イメージに `postgresql-16-pgvector` をインストールしているため、`docker compose down` やコンテナの再作成後も pgvector を利用できます。
 
+Integration Test は次の Command だけで Image Build と Testcontainers 実行を完結します。Image Tag が存在しない場合も Dockerfile から自動的に再作成し、存在する場合は Docker Layer Cache を再利用します。
+
+```bash
+pnpm test:integration
+```
+
 データベースの初回初期化時に、次のスクリプトが `stocklens_ai` で pgvector Extension を有効化します。
 
 ```text

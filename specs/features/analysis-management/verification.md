@@ -46,7 +46,7 @@
 ## Deviations and Residual Risks
 
 - `ANALYSIS-DEV-001` は `DRAFT` Migration と空 Database Migration Test により解消しました。
-- `OWN-DEV-004` は Analysis HTTP Boundary を検証済みですが、Document HTTP API は PDF Upload Feature まで Partial です。
+- `OWN-DEV-004` は `PDF-TASK-013` の Document Bearer User A/B HTTP Evidence により 2026-08-10 解消しました。
 - Processing 中 Delete 後の Worker Stop/Object Cleanup は Pipeline/PDF Feature の Scope です。現在は Metadata Transaction Boundary を検証済みです。
 
 ## Conclusion

@@ -5,8 +5,8 @@
 | Field               | Value                              |
 | ------------------- | ---------------------------------- |
 | Related Spec        | `specs/features/ownership/spec.md` |
-| Verification status | `Partial`                          |
-| Verified at         | `2026-07-22`                       |
+| Verification status | `Verified`                         |
+| Verified at         | `2026-08-10`                       |
 
 ## Environment
 
@@ -21,7 +21,7 @@
 | `OWN-AC-001`, `OWN-AC-002`, `OWN-AC-005` | `isolates analysis reads, updates, lists, and deletes by owner`    | `Passed` at Repository/DB Boundary |
 | `OWN-AC-003`, `OWN-AC-004`, `OWN-AC-005` | `isolates document creation, reads, updates, and deletes by owner` | `Passed` at Repository/DB Boundary |
 | `OWN-AC-006`                             | `soft-deletes an owned analysis and its active documents together` | `Passed`                           |
-| `OWN-AC-007`                             | Analysis HTTP Owner A/B Test、Document HTTP 未実装                 | `Partial`                          |
+| `OWN-AC-007`                             | Analysis + Document HTTP Bearer Owner A/B Test                     | `Passed`                           |
 
 Database-level Evidence:
 
@@ -35,12 +35,12 @@ Database-level Evidence:
 pnpm test:integration
 ```
 
-Result: 全 Integration 3 Suites、13 Tests Passed。Ownership Suite は 4 Tests、Analysis HTTP Suite は 4 Tests で、Container 停止により各 Test Database 全体を破棄しました。
+Result: Repository/Analysis/Document の Owner Isolation を隔離 PostgreSQL で検証しました。Document HTTP Target Suite は 6 Tests、全 Integration は 5 Suites / 31 Tests Passed し、Cross-user Request の Database/Storage/Cleanup Side Effect がないことを確認しました。Container 停止により各 Test Database 全体を破棄します。
 
 ## Deviations and Residual Risks
 
-- `OWN-DEV-004` — Analysis HTTP は検証済み、Document HTTP は PDF Upload Feature まで Blocked
+- `OWN-DEV-004` — Analysis と Document の Bearer User A/B HTTP Evidence により 2026-08-10 解消
 
 ## Conclusion
 
-Repository、PostgreSQL Constraint、Concurrency Boundary と Analysis HTTP の Cross-user Isolation は検証済みです。Document HTTP Authorization は Planned API が存在しないため Feature 全体は意図的に `Partial` のままです。
+Repository、PostgreSQL Constraint、Concurrency Boundary、Analysis HTTP、Document Start/Re-presign/Finalize/List/Delete の Cross-user Isolation は検証済みです。Approved Acceptance Criteria は再現可能な PostgreSQL/HTTP Evidence を持つため、本 Feature は `Verified` です。

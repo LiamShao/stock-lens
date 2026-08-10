@@ -18,12 +18,12 @@ StockLens AI の Test は、Build が通ることだけでなく、Security Boun
 
 ## 3. PostgreSQL Integration Harness
 
-`pnpm test:integration` は Testcontainers で `stocklens-postgres:16-pgvector` を起動し、空の `stocklens_test` Database に `prisma migrate deploy` を実行します。
+`pnpm test:integration` は `docker/postgres` から `stocklens-postgres:16-pgvector` を自動 Build/再 Tag してから Testcontainers で起動し、空の `stocklens_test` Database に `prisma migrate deploy` を実行します。Local Image Tag を事前条件としません。
 
 - Shared Local Database や既存 User Data を使用しません。
 - Suite 終了時に Container を停止し、Test Data 全体を破棄します。
 - Migration が失敗した場合は Test を開始せず Fail します。
-- CI は `docker/postgres` から同じ Image を Build してから Integration Test を実行します。
+- Local と CI は同じ Root Command 内で `docker/postgres` から Image を準備し、Docker Layer Cache が利用可能なら再利用します。
 - Node 22 + Fastify Cookie の Dynamic Import を Jest で実行するため、Integration Script は `--experimental-vm-modules` を使用します。
 
 現在の Integration Evidence:
@@ -31,6 +31,7 @@ StockLens AI の Test は、Build が通ることだけでなく、Security Boun
 - Authentication: Register、Duplicate、Login、Refresh Rotation、Reuse、Logout、Bearer Guard、Rate Limit、CORS
 - Demo User: Create、Idempotent No-op、Password Rotation、Session Revoke
 - Ownership: Cross-user Read/Create/Update/Delete、Composite FK、Parent/Child Soft Delete、Concurrent Create/Delete
+- PDF Upload: Start Validation、3 File Limit、Production S3 Adapter による Real MinIO Presigned PUT、Valid/Invalid Header Finalize、Bearer User A/B Start/Re-presign/Finalize/List/Delete、Real Redis/BullMQ Worker Cleanup
 
 ## 4. Security Test Requirements
 
