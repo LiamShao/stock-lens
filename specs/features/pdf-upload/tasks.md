@@ -31,6 +31,6 @@
 - [x] `PDF-TASK-012` (`PDF-AC-005`, `PDF-AC-007`) MinIO Storage Integration Test を追加
 - [x] `PDF-TASK-013` (`PDF-AC-006`) Cross-user HTTP Authorization Test を追加
 - [x] `PDF-TASK-014` (`PDF-AC-008`) Delete/Cleanup Worker Integration Test を追加
-- [ ] `PDF-TASK-015` Concurrency、Retry、Repeated Finalize、Orphan Expiry Test を追加
-- [ ] `PDF-TASK-016` API、Database、Security、Architecture、Environment Documentation を更新
-- [ ] `PDF-TASK-017` Lint、Typecheck、Unit/Integration Test、Build、Verification、Traceability を完了
+- [x] `PDF-TASK-015` Concurrent Start/Finalize/Delete、Repeated Finalize、Automatic Cleanup Retry、24-hour Orphan Expiry Scan の実装・Test を追加
+- [x] `PDF-TASK-016` API、Database、Security、Architecture、Environment Documentation を更新
+- [x] `PDF-TASK-017` Lint、Typecheck、Unit/Integration Test、Build、Verification、Traceability を完了

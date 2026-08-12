@@ -528,6 +528,120 @@ describe('owner-scoped repositories', () => {
     ).toBe(1);
   });
 
+  it('PDF-TASK-015 keeps concurrent upload reservations within the three-file limit', async () => {
+    const [ownerA] = await createOwners(prisma, testRunId);
+    const analysis = await analysisRepository.create({
+      ownerId: ownerA,
+      title: 'Concurrent upload reservation analysis',
+    });
+    const now = new Date();
+    const results = await Promise.all(
+      Array.from({ length: 4 }, (_, index) =>
+        documentUploadRepository.createPending({
+          analysisId: analysis.id,
+          claimedSha256: String(index).repeat(64),
+          declaredMimeType: 'application/pdf',
+          declaredSizeBytes: 1024,
+          documentType: 'UNKNOWN',
+          expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+          id: randomUUID(),
+          now,
+          originalName: `concurrent-${index}.pdf`,
+          ownerId: ownerA,
+          storageBucket: 'stocklens-test',
+          storageKey: `${testRunId}/${randomUUID()}.pdf`,
+        }),
+      ),
+    );
+
+    expect(results.filter(({ kind }) => kind === 'created')).toHaveLength(3);
+    expect(
+      results.filter(({ kind }) => kind === 'limit-exceeded'),
+    ).toHaveLength(1);
+    await expect(
+      prisma.documentUpload.count({
+        where: {
+          analysisId: analysis.id,
+          ownerId: ownerA,
+          status: { in: ['PENDING', 'VALIDATING'] },
+        },
+      }),
+    ).resolves.toBe(3);
+  });
+
+  it('PDF-TASK-015 converges concurrent finalize and delete without duplicate records', async () => {
+    const [ownerA] = await createOwners(prisma, testRunId);
+    const analysis = await analysisRepository.create({
+      ownerId: ownerA,
+      title: 'Concurrent finalize analysis',
+    });
+    const upload = await prisma.documentUpload.create({
+      data: createUploadData(ownerA, analysis.id, testRunId),
+    });
+    const now = new Date();
+    await expect(
+      documentUploadRepository.claimForFinalize({
+        analysisId: analysis.id,
+        id: upload.id,
+        now,
+        ownerId: ownerA,
+      }),
+    ).resolves.toMatchObject({ kind: 'claimed' });
+
+    const finalizeInput = {
+      analysisId: analysis.id,
+      id: upload.id,
+      now,
+      ownerId: ownerA,
+      sha256: upload.claimedSha256,
+      sizeBytes: Number(upload.declaredSizeBytes),
+    };
+    const finalized = await Promise.all([
+      documentUploadRepository.completeFinalize(finalizeInput),
+      documentUploadRepository.completeFinalize(finalizeInput),
+    ]);
+    expect(finalized).toEqual([
+      expect.objectContaining({ kind: 'completed' }),
+      expect.objectContaining({ kind: 'completed' }),
+    ]);
+    const documentIds = finalized.flatMap((result) =>
+      result.kind === 'completed' ? [result.document.id] : [],
+    );
+    expect(new Set(documentIds).size).toBe(1);
+    const documentId = documentIds[0];
+    if (documentId === undefined) {
+      throw new Error('Concurrent finalize did not return a document.');
+    }
+    await expect(
+      prisma.document.count({ where: { analysisId: analysis.id } }),
+    ).resolves.toBe(1);
+
+    const [repeatedFinalize, deleted] = await Promise.all([
+      documentUploadRepository.claimForFinalize({
+        analysisId: analysis.id,
+        id: upload.id,
+        now: new Date(now.getTime() + 1),
+        ownerId: ownerA,
+      }),
+      documentRepository.deleteFinalizedForAnalysis({
+        analysisId: analysis.id,
+        deletedAt: new Date(now.getTime() + 1),
+        id: documentId,
+        ownerId: ownerA,
+      }),
+    ]);
+    expect(repeatedFinalize).toMatchObject({
+      document: { id: documentId },
+      kind: 'completed',
+    });
+    expect(deleted).toEqual({ kind: 'deleted' });
+    await expect(
+      prisma.jobExecution.count({
+        where: { documentId, step: 'OBJECT_CLEANUP' },
+      }),
+    ).resolves.toBe(1);
+  });
+
   it('PDF-FR-009 rejects invalid and expired uploads with durable cleanup', async () => {
     const [ownerA] = await createOwners(prisma, testRunId);
     const analysis = await analysisRepository.create({

@@ -125,6 +125,23 @@ Active Document と未期限切れ Upload Session の合計が 3 を超えない
 - Automatic Retry は最大 3 回の Exponential Backoff とし、各試行を `JobAttempt` に保存します。最終失敗後は既存 BullMQ Job の `retry()` と Database Status Reset により手動再実行できます。
 - Object Storage の Delete は Missing Object を含め成功として扱います。Provider Error Detail は保存・出力せず、Stable `OBJECT_STORAGE_DELETE_FAILED` のみを記録します。
 
+### TASK-015 Concurrency / Retry / Orphan Expiry Boundary
+
+- Concurrent Start は Serializable Transaction の再試行後も Active Document と未期限 `PENDING` / `VALIDATING` の合計を 3 以下に保ちます。
+- Concurrent Finalize と Finalize/Delete Race は、重複 Document/Job を作らず、同一 Document の Idempotent Result または Stable Conflict に収束させます。
+- Repeated Finalize は Storage を再読込せず、最初に確定した同一 Document を返します。
+- Cleanup Worker は一時的な Object Storage Delete Failure を BullMQ の最大 3 Attempt / Exponential Backoff で再試行し、各 Attempt と最終成功を PostgreSQL に保存します。
+- Worker は起動時と 60 秒 Interval で `expiresAt <= now` の `PENDING` / `VALIDATING` Session を bounded batch で `EXPIRED` にし、同一 Transaction で Stable `OBJECT_CLEANUP` Execution を Upsert します。並行 Scan/Finalize は Status 条件付き Update と Serializable Retry で一方だけが状態を確定します。
+
+### TASK-016 Documentation Boundary
+
+- `docs/api-conventions.md` に Upload Start/Re-presign/Finalize、Document List/Delete、Request/Response、Stable Error と Client PUT Flow を記載します。
+- `docs/database-design.md` に Session Reservation、Finalize Concurrency、Orphan Expiry Scan、Cleanup Execution/Attempt の実装済み Transaction Boundary を記載します。
+- `docs/security.md` に PDF 三段階検証、Trusted Streaming Validation、Private Storage、Log Redaction、Cleanup Failure Sanitization と残存 Production IAM/CORS Risk を記載します。
+- `docs/architecture.md` に Browser から Private Object Storage への Presigned PUT、API Finalize、Worker Expiry/Cleanup Flow と実装済み/未実装 Boundary を反映します。
+- Root/Docker/Object Storage README と `.env.example` に Host/Compose/AWS の Environment 差分、Private Bucket 初期化、Redis/Worker Maintenance、Credential Handling を記載します。
+- Documentation Task は Public API、Database Schema、Runtime Dependency、Production Behavior を変更しません。
+
 ## Dependencies
 
 S3-compatible Operation と Presigning のため AWS SDK v3 の最小 Package を `@stocklens/object-storage` に追加済みです。`PDF-TASK-006` では API から同 Package を再利用する Workspace Dependency を追加しました。Cleanup Job 発行用の `bullmq` も API Dependency として追加済みです。

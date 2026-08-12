@@ -34,3 +34,13 @@ S3_PRESIGN_EXPIRES_IN_SECONDS=300
 ```
 
 AWS Runtime では `S3_ENDPOINT` と Static Credential を省略し、IAM Role など AWS SDK Default Credential Provider Chain を利用できます。
+
+## Upload / Cleanup Lifecycle
+
+- API は `DocumentUpload` に Bucket/Key を保存した後、Adapter から最大 5 分の Presigned PUT を取得します。
+- Client は Response の署名済み Header を変更せず Private Bucket へ直接 PUT します。
+- API Finalize は Head/Get を使い、Metadata を Hint として Actual Size、SHA-256、`%PDF-` Header を Streaming 再検証します。
+- Worker は Database Relation から同じ Bucket/Key を解決して Delete します。Missing Object は Idempotent Success です。
+- API/Worker の Configured Bucket と Database Target Bucket が一致しない場合、Worker は Delete せず Sanitized Failure とします。
+
+Local MinIO Bucket は Application が自動作成しません。Root/Docker README の `mc mb --ignore-existing` を実行してください。Production は事前作成した Private Bucket、Browser PUT CORS、API/Worker 別の最小権限 IAM Role を必要とします。

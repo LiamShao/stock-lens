@@ -1,5 +1,41 @@
 # StockLens AI 開発進捗
 
+## 2026-08-12
+
+### PDF Upload Final Quality Gate / Traceability
+
+- Approved `PDF-TASK-017` として PDF Upload の全 Requirement、8 Acceptance Criteria、Implementation Evidence、Verification Evidence、Deviation を再監査しました。
+- `PDF-FR-003` は Inclusive Zod/Database Boundary、Invalid Size HTTP、20 MB + 1 Streaming Cutoff の Evidence により `Passed` へ更新しました。
+- Spec の Implementation Status を `Implemented` とし、`PDF-TASK-001`〜`017` を完了しました。
+- `PDF-SEC-007` は Untrusted Context Builder/Regression Unit まで実装済みですが、Parse/LLM Provider 接続と End-to-end Evaluation が Phase 4 Dependency のため Verification は `Partial` を維持します。
+- User 承認済み `PDF-DEV-002` Option `C` は統一 Job Re-run Feature の Follow-up として保持します。
+- Format、Spec Check、Prisma Validate/Generate、Lint、Typecheck、129 Unit/Component Tests、Build と、PostgreSQL/Redis/BullMQ/MinIO Integration 5 Suites / 37 Tests が成功しました。
+
+### PDF Upload Documentation
+
+- Approved `PDF-TASK-016` として API、Database、Security、Architecture、Environment Documentation を現在の PDF Upload 実装へ同期しました。
+- Upload Start/Re-presign/Finalize、Document List/Delete、Stable Error、Trusted Validation、Concurrency、24-hour Expiry、Durable Cleanup、3 Attempt History を文書化しました。
+- Root/Docker README に MinIO Private Bucket の明示的作成手順を追加し、Host/Compose/AWS の Endpoint、Credential、IAM/CORS Boundary を整理しました。
+- Documentation Review で、FAILED Cleanup の内部 Retry Contract に Operator-facing CLI/API/Runbook がない `PDF-DEV-002` を検出しました。挙動を拡張せず Open Deviation として記録しています。
+- Public API、Database Schema、Runtime Dependency、Production Behavior の変更はありません。
+- Format、Spec Check、Lint、Typecheck、129 Unit/Component Tests、Build、Prisma Validate が成功しました。Runtime Code は `PDF-TASK-015` から不変のため Docker Integration Test は再実行していません。
+
+### PDF Upload Manual Re-run Decision
+
+- User は `PDF-DEV-002` に Option `C` を選択し、FAILED Cleanup の Operator-facing CLI/API/Runbook を Phase 3 の統一 Job Re-run Feature まで延期しました。
+- Automatic 3 Attempt、Durable FAILED State、Sanitized Attempt History と内部 Reset/Retry Contract は維持します。
+- PDF Upload Feature の Public API を拡張せず、将来 Feature で Authorization、Audit、Stable Operator Output を承認してから実装します。
+
+### PDF Upload Concurrency、Retry、Orphan Expiry Acceptance
+
+- Approved `PDF-TASK-015` として Concurrent Start/Finalize/Delete、Repeated Finalize、Automatic Cleanup Retry、24-hour Orphan Expiry を実装・検証しました。
+- 4 件の Concurrent Start は 3 Created / 1 Limit に収束し、同一 Upload の Concurrent Finalize は PostgreSQL Unique Conflict 後も同じ Document を返して重複を作りません。
+- Repeat Finalize は MinIO Head/Stream を再実行せず、Finalize/Delete Race は 1 Cleanup Execution に収束しました。
+- Worker に bounded `ExpiredDocumentUploadScanner` を追加し、起動時と 60 秒 Interval に期限切れ `PENDING` / `VALIDATING` を `EXPIRED` と Stable Cleanup Job へ原子的に遷移させます。
+- Redis/BullMQ の 3 Attempt Exponential Backoff、Sanitized Failure History、3 回目の MinIO Delete Success と、未 Finalize Orphan の Scan から Object Delete までを Automated Integration Test で確認しました。
+- Review で検出した `PDF-DEV-001` は同 Task で解消しました。Public API、Database Schema、Production Dependency の変更はありません。
+- Full Workspace の Format、Spec Check、Prisma Validate/Generate、Lint、Typecheck、129 Unit/Component Tests、Build と、PostgreSQL/Redis/BullMQ/MinIO Integration 5 Suites / 37 Tests が成功しました。
+
 ## 2026-08-10
 
 ### PDF Upload Redis/BullMQ Cleanup Acceptance

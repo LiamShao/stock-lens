@@ -275,7 +275,7 @@ export class DocumentUploadRepository {
     });
   }
 
-  completeFinalize(input: {
+  async completeFinalize(input: {
     analysisId: string;
     id: string;
     now: Date;
@@ -283,115 +283,160 @@ export class DocumentUploadRepository {
     sha256: string;
     sizeBytes: number;
   }): Promise<CompleteDocumentUploadResult> {
-    return runSerializableTransaction(this.prisma, async (transaction) => {
-      const upload = await transaction.documentUpload.findFirst({
-        select: { ...uploadSelection, finalizedDocumentId: true },
+    try {
+      return await runSerializableTransaction(
+        this.prisma,
+        async (transaction) => {
+          const upload = await transaction.documentUpload.findFirst({
+            select: { ...uploadSelection, finalizedDocumentId: true },
+            where: {
+              analysisId: input.analysisId,
+              id: input.id,
+              ownerId: input.ownerId,
+            },
+          });
+          if (upload === null) {
+            return { kind: 'not-found' };
+          }
+          const analysis = await transaction.analysis.findFirst({
+            select: { id: true },
+            where: {
+              deletedAt: null,
+              id: input.analysisId,
+              ownerId: input.ownerId,
+            },
+          });
+          if (analysis === null) {
+            if (upload.status === 'VALIDATING') {
+              await rejectWithCleanup(transaction, upload, {
+                code: 'ANALYSIS_NOT_FOUND',
+                message: 'The parent analysis is no longer active.',
+              });
+            }
+            return { kind: 'not-found' };
+          }
+          if (upload.status === 'COMPLETED') {
+            const document = await findFinalizedDocument(
+              transaction,
+              input.ownerId,
+              input.analysisId,
+              upload.finalizedDocumentId,
+            );
+            return { document, kind: 'completed' };
+          }
+          if (upload.status !== 'VALIDATING') {
+            return { kind: 'inactive' };
+          }
+
+          const duplicate = await transaction.document.findFirst({
+            select: { id: true },
+            where: {
+              analysisId: input.analysisId,
+              deletedAt: null,
+              ownerId: input.ownerId,
+              sha256: input.sha256,
+            },
+          });
+          if (duplicate !== null) {
+            await rejectWithCleanup(transaction, upload, {
+              code: 'DUPLICATE_DOCUMENT',
+              message:
+                'An active document with the same SHA-256 already exists.',
+            });
+            return { kind: 'duplicate' };
+          }
+
+          const activeDocumentCount = await transaction.document.count({
+            where: {
+              analysisId: input.analysisId,
+              deletedAt: null,
+              ownerId: input.ownerId,
+            },
+          });
+          if (activeDocumentCount >= 3) {
+            await rejectWithCleanup(transaction, upload, {
+              code: 'DOCUMENT_LIMIT_EXCEEDED',
+              message:
+                'An analysis can contain at most three active documents.',
+            });
+            return { kind: 'limit-exceeded' };
+          }
+
+          const document = await transaction.document.create({
+            data: {
+              analysisId: input.analysisId,
+              documentType: upload.documentType,
+              mimeType: upload.declaredMimeType,
+              originalName: upload.originalName,
+              ownerId: input.ownerId,
+              sha256: input.sha256,
+              sizeBytes: BigInt(input.sizeBytes),
+              storageBucket: upload.storageBucket,
+              storageKey: upload.storageKey,
+              uploadedAt: input.now,
+            },
+            select: finalizedDocumentSelection,
+          });
+          await transaction.documentUpload.update({
+            data: {
+              completedAt: input.now,
+              finalizedDocumentId: document.id,
+              status: 'COMPLETED',
+            },
+            where: { id: upload.id },
+          });
+          await transaction.analysis.updateMany({
+            data: { status: 'UPLOADED' },
+            where: {
+              deletedAt: null,
+              id: input.analysisId,
+              ownerId: input.ownerId,
+              status: 'DRAFT',
+            },
+          });
+          return { document, kind: 'completed' };
+        },
+      );
+    } catch (error: unknown) {
+      if (!isUniqueConflict(error)) {
+        throw error;
+      }
+
+      const upload = await this.prisma.documentUpload.findFirst({
+        select: { finalizedDocumentId: true, status: true },
         where: {
           analysisId: input.analysisId,
           id: input.id,
           ownerId: input.ownerId,
         },
       });
-      if (upload === null) {
-        return { kind: 'not-found' };
+      if (
+        upload?.status !== 'COMPLETED' ||
+        upload.finalizedDocumentId === null
+      ) {
+        throw error;
       }
-      const analysis = await transaction.analysis.findFirst({
-        select: { id: true },
-        where: {
-          deletedAt: null,
-          id: input.analysisId,
-          ownerId: input.ownerId,
-        },
-      });
-      if (analysis === null) {
-        if (upload.status === 'VALIDATING') {
-          await rejectWithCleanup(transaction, upload, {
-            code: 'ANALYSIS_NOT_FOUND',
-            message: 'The parent analysis is no longer active.',
-          });
-        }
-        return { kind: 'not-found' };
-      }
-      if (upload.status === 'COMPLETED') {
-        const document = await findFinalizedDocument(
-          transaction,
-          input.ownerId,
-          input.analysisId,
-          upload.finalizedDocumentId,
-        );
-        return { document, kind: 'completed' };
-      }
-      if (upload.status !== 'VALIDATING') {
-        return { kind: 'inactive' };
-      }
-
-      const duplicate = await transaction.document.findFirst({
-        select: { id: true },
-        where: {
-          analysisId: input.analysisId,
-          deletedAt: null,
-          ownerId: input.ownerId,
-          sha256: input.sha256,
-        },
-      });
-      if (duplicate !== null) {
-        await rejectWithCleanup(transaction, upload, {
-          code: 'DUPLICATE_DOCUMENT',
-          message: 'An active document with the same SHA-256 already exists.',
-        });
-        return { kind: 'duplicate' };
-      }
-
-      const activeDocumentCount = await transaction.document.count({
-        where: {
-          analysisId: input.analysisId,
-          deletedAt: null,
-          ownerId: input.ownerId,
-        },
-      });
-      if (activeDocumentCount >= 3) {
-        await rejectWithCleanup(transaction, upload, {
-          code: 'DOCUMENT_LIMIT_EXCEEDED',
-          message: 'An analysis can contain at most three active documents.',
-        });
-        return { kind: 'limit-exceeded' };
-      }
-
-      const document = await transaction.document.create({
-        data: {
-          analysisId: input.analysisId,
-          documentType: upload.documentType,
-          mimeType: upload.declaredMimeType,
-          originalName: upload.originalName,
-          ownerId: input.ownerId,
-          sha256: input.sha256,
-          sizeBytes: BigInt(input.sizeBytes),
-          storageBucket: upload.storageBucket,
-          storageKey: upload.storageKey,
-          uploadedAt: input.now,
-        },
+      const document = await this.prisma.document.findFirst({
         select: finalizedDocumentSelection,
-      });
-      await transaction.documentUpload.update({
-        data: {
-          completedAt: input.now,
-          finalizedDocumentId: document.id,
-          status: 'COMPLETED',
-        },
-        where: { id: upload.id },
-      });
-      await transaction.analysis.updateMany({
-        data: { status: 'UPLOADED' },
         where: {
-          deletedAt: null,
-          id: input.analysisId,
+          analysisId: input.analysisId,
+          id: upload.finalizedDocumentId,
           ownerId: input.ownerId,
-          status: 'DRAFT',
         },
       });
+      if (document === null || document.uploadedAt === null) {
+        throw error;
+      }
       return { document, kind: 'completed' };
-    });
+    }
   }
+}
+
+function isUniqueConflict(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2002'
+  );
 }
 
 async function findFinalizedDocument(

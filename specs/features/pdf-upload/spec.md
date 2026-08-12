@@ -5,10 +5,10 @@
 | Field                 | Value                 |
 | --------------------- | --------------------- |
 | Spec status           | `Approved`            |
-| Implementation status | `Implementing`        |
+| Implementation status | `Implemented`         |
 | Verification status   | `Partial`             |
 | Approval              | `Approved 2026-07-24` |
-| Last updated          | `2026-08-10`          |
+| Last updated          | `2026-08-12`          |
 
 ## Goal
 

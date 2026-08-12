@@ -10,21 +10,25 @@ StockLens AI は、User がアップロードした公開 IR PDF を非同期に
 
 ```text
 Browser
-  │ HTTPS / JSON / PDF upload
+  │ HTTPS / JSON
   ▼
 Next.js Web ─────► NestJS + Fastify API ─────► PostgreSQL + pgvector
-                           │                  ├► Private Object Storage
-                           │ BullMQ           └► Redis
-                           ▼
-                     Independent Worker ─────► LLM / Embedding Provider
+  │                        │  Presign/Head/Get         ▲
+  │ Presigned PUT          ├──────────────────► Private Object Storage
+  └────────────────────────┘                           ▲
+                           │ BullMQ via Redis          │ Delete
+                           ▼                           │
+                     Independent Worker ───────────────┘
+                           │ future analysis pipeline
+                           └────────────────────► LLM / Embedding Provider
 ```
 
 - `apps/web`: UI、TanStack Query、Form Validation、Evidence Drawer、PDF Page Navigation を担当します。現時点では Skeleton です。
 - `apps/api`: HTTP、Authentication、Analysis Management、Authorization Boundary、Validation、OpenAPI、Job Enqueue を担当します。Controller は Prisma を直接呼びません。
-- `apps/worker`: PDF Parse、Chunking、Embedding、Structured Extraction、Evidence Validation、View Generation を担当する予定です。現時点の Core Pipeline は未実装です。
+- `apps/worker`: 現在は Upload Orphan Expiry Scan、Durable Cleanup Redispatch、Object Delete、Retry/Attempt Tracking を実装済みです。PDF Parse、Chunking、Embedding、Structured Extraction、Evidence Validation、View Generation は未実装です。
 - PostgreSQL: Transactional Data、Owner Scope、JSONB Output、Full Text Search、pgvector を一つの整合性境界で管理します。
 - Redis/BullMQ: Retry 可能で冪等な非同期 Step を実行します。
-- Object Storage: PDF を Private Bucket に保存し、短命 Presigned URL だけを発行する予定です。
+- Object Storage: PDF を Private Bucket に保存し、API が最大 5 分の Presigned PUT を発行します。Bucket と Object Key は API Response に公開しません。
 
 ## 3. Repository Architecture
 
@@ -82,7 +86,28 @@ Analysis は Upload 前に `DRAFT` で作成し、最初の Document Finalize �
 - 重要 Finding は `Document → Page → Chunk → Excerpt` の Evidence を必須とします。
 - Uploaded Text は命令ではなく Untrusted Data として明確に Delimit します。
 
-S3-compatible Object Storage Interface と MinIO/AWS Adapter は `@stocklens/object-storage` に実装済みです。Object Cleanup は PostgreSQL の `JobExecution` を Durable Source、BullMQ を Dispatch Layer とし、独立 Worker が Idempotent Delete と Retry Tracking を行います。Upload Finalize の Reject と Document Delete は Durable Cleanup Job の永続化と Queue Dispatch に接続済みです。
+### PDF Upload / Cleanup Flow
+
+```text
+Create DRAFT Analysis
+  → Start Upload Session (PENDING, TTL 24 h)
+  → API returns constrained Presigned PUT (TTL ≤ 5 min)
+  → Browser PUTs directly to Private Object Storage
+  → API claims Session (VALIDATING)
+  → Trusted streaming validation
+      ├─ valid   → Document + COMPLETED + Analysis UPLOADED
+      ├─ invalid → REJECTED + durable OBJECT_CLEANUP
+      └─ storage failure → PENDING for retry
+
+Worker maintenance (startup + every 60 s)
+  → PENDING/VALIDATING expiresAt ≤ now → EXPIRED + durable OBJECT_CLEANUP
+  → dispatch QUEUED execution to Redis/BullMQ
+  → delete object, retry up to 3 attempts, persist JobAttempt
+```
+
+S3-compatible Object Storage Interface と MinIO/AWS Adapter は `@stocklens/object-storage` に実装済みです。Object Cleanup は PostgreSQL の `JobExecution` を Durable Source、BullMQ を Dispatch Layer とし、Queue Payload を `jobExecutionId` のみに限定します。独立 Worker は Database Relation から Target を解決し、Idempotent Delete、最大 3 Attempt の Exponential Backoff、Sanitized Failure History を管理します。
+
+Active Document と未期限 Upload Reservation の合計 3 件制限、Finalize、Delete、Expiry/Cleanup Upsert は Serializable Transaction で保護します。同一 Session の Concurrent/Repeated Finalize は一つの Completed Document に収束し、Delete/Finalize Race は重複 Cleanup Execution を作りません。
 
 ## 7. Deployment Target
 
@@ -91,6 +116,8 @@ Target は AWS-oriented Architecture です。Web/API/Worker を独立 Deployabl
 ## 8. 現在の既知 Gap
 
 - Analysis と Document HTTP API の Cross-user Authorization は Bearer User A/B で検証済みです。
-- Object Storage Adapter、PDF Upload/Finalize/Delete API、Cleanup Queue/Worker と Real Redis/MinIO Worker Cleanup Acceptance は実装・検証済みです。Parsing、LLM/RAG、Evidence UI は未実装です。
+- Object Storage Adapter、PDF Upload/Finalize/Delete API、Concurrent Reservation/Finalize、24-hour Orphan Scan、Cleanup Queue/Worker と Real PostgreSQL/Redis/MinIO Acceptance は実装・検証済みです。Parsing、LLM/RAG、Evidence UI は未実装です。
+- Production Private Bucket Policy、Browser PUT CORS、API/Worker IAM Policy と Presigned Download/PDF Viewer Flow は未実装・未検証です。
+- FAILED Cleanup を既存 Job ID で再実行する内部 Repository/Publisher Contract はありますが、Operator 向け Endpoint/CLI と Runbook は未実装です。User 承認済み Risk Acceptance により Phase 3 の統一 Job Re-run Feature へ延期します。
 - Rate Limit Store は Process Local であり、Multi-instance 前に Redis-backed Store が必要です。
 - Required ADR、AI Pipeline、Evidence、Evaluation、Deployment の詳細文書は段階的に追加します。

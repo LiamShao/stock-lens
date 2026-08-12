@@ -50,7 +50,22 @@
 - `Analysis(ownerId, id)` と `Document(ownerId, analysisId)` の Composite FK で Parent/Child Owner Equality を Database でも強制します。
 - PostgreSQL RLS は MVP 必須ではありません。Repository Boundary と Authorization Test で保証します。
 
-## 5. Error と Log
+## 5. PDF Upload と Object Storage
+
+PDF Upload は二段階の信頼境界を持ちます。
+
+1. Presign 前に Original Filename、Declared MIME、Declared Size、Claimed SHA-256 を Zod で検証します。Filename は path separator と Control Character を拒否し、case-insensitive `.pdf` に限定します。MIME は exact `application/pdf`、Size は 1 byte〜20 MB です。
+2. Direct PUT 後の Finalize で、Private Object を Trusted Server-side Code が Streaming Read します。Head Metadata、Content Type/Length、Signed SHA Metadata、Actual Size、Actual SHA-256、先頭 `%PDF-` を相互検証し、20 MB + 1 byte または不正 Header を検出した時点で Stream を破棄します。
+
+Presigned PUT は単一の Random Object Key、Content Length、Content Type、SHA Metadata に署名し、有効期限を最大 300 秒に制限します。Object Key は Owner/Analysis/Upload Session Prefix と Random UUID から作り、Original Filename を含めません。API Response は Bucket、Object Key、Credential を返しません。
+
+Upload Session は 24 時間で期限切れになります。Worker は起動時と 60 秒ごとに期限切れ `PENDING` / `VALIDATING` Session を bounded scan し、`EXPIRED` Transition と Durable Cleanup Execution を同じ Serializable Transaction に保存します。Invalid/Expired Upload と Soft-deleted Document の Object Delete は最大 3 Attempt の Exponential Backoff で再試行します。Queue Payload は `jobExecutionId` のみで、Storage Coordinate や Credential を Redis に複製しません。
+
+Object Storage の Missing Object は Idempotent Success とします。Provider Error、Endpoint、Bucket、Key は Client Error、Job Detail、通常 Log に転送せず、`OBJECT_STORAGE_DELETE_FAILED` などの Stable Code と Sanitized Message だけを保存します。
+
+Production Bucket は Public Access を全面拒否し、API Role には対象 Prefixへの `s3:PutObject`（Presigned PUT の署名元）と `s3:GetObject`、Worker Role には `s3:DeleteObject` の必要最小権限だけを付与します。Browser からの PUT は Application Origin、PUT Method、署名対象 Header だけを許可する Bucket CORS が必要です。この IAM/CORS Policy と Direct Access Acceptance は Deployment Phase の未検証項目です。
+
+## 6. Error と Log
 
 - API Error は `code`、`message`、`requestId`、`details` の統一形式で返します。
 - 予期しない Error は Client に内部 Detail を返しません。
@@ -60,13 +75,15 @@
 - Client Request ID は最大 128 文字の限定文字種だけを受理し、Log Injection/Storage Abuse を抑えます。
 - User-Agent は必要な場合も平文ではなく SHA-256 Hash として Token Record に保存します。
 
-## 6. 環境変数
+## 7. 環境変数
 
 - `ACCESS_TOKEN_SECRET` は 32 文字以上を必須とし、Production では Secrets Manager などから注入します。
 - Repository の `.env.example` は Local Development 専用です。
 - `.env`、Credential、Production Secret は Commit しません。
+- Local MinIO だけが `S3_ENDPOINT`、`S3_FORCE_PATH_STYLE=true`、Static `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` を使用します。AWS Runtime は Endpoint と Static Credential を省略し、IAM Role の Default Credential Provider Chain を使用します。
+- `S3_BUCKET` は事前作成済み Private Bucket、`S3_PRESIGN_EXPIRES_IN_SECONDS` は 1〜300 秒、`REDIS_URL` は `redis:` または TLS の `rediss:` に限定します。
 
-## 7. 残存 Security 項目
+## 8. 残存 Security 項目
 
 - Browser CORS、Production Private Bucket Policy、IAM Policy
 - Redis-backed Distributed Rate Limit

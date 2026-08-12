@@ -4,31 +4,37 @@
 
 ## Summary
 
-| ID                 | Area           | Severity | Status              | Recommended disposition                                       |
-| ------------------ | -------------- | -------: | ------------------- | ------------------------------------------------------------- |
-| `SDD-DEV-001`      | Process        |   Medium | Resolved 2026-07-22 | Backfilled Spec を Review して Baseline 承認                  |
-| `SDD-DEV-002`      | Governance     |   Medium | Resolved 2026-07-22 | `AGENTS.md` を Git 管理して SDD Agent Rule を共有             |
-| `AUTH-DEV-001`     | Test           |     High | Resolved 2026-07-22 | Auth PostgreSQL / HTTP Integration Test を次作業で追加        |
-| `AUTH-DEV-002`     | Security       |   Medium | Resolved 2026-07-22 | Unknown Email でも Dummy Argon2 Verify を実行                 |
-| `AUTH-DEV-003`     | Consistency    |      Low | Resolved 2026-07-22 | Login Token 作成と `lastLoginAt` を Transaction 化            |
-| `AUTH-DEV-004`     | API Contract   |   Medium | Resolved 2026-07-22 | OpenAPI Response / Error Schema を具体化                      |
-| `AUTH-DEV-005`     | Security       |   Medium | Resolved 2026-07-22 | JWT Sign/Verify を `HS256` Allowlist に固定                   |
-| `PLATFORM-DEV-001` | Logging        |   Medium | Resolved 2026-07-22 | Client Request ID を長さ・文字種で検証                        |
-| `PLATFORM-DEV-002` | Logging        |     High | Resolved 2026-07-22 | Authorization/Cookie/Secret の明示的 Log Redaction を設定     |
-| `DEMO-DEV-001`     | Security       |     High | Resolved 2026-07-22 | Production で明示的 Allow Flag と非 Default Password を必須化 |
-| `DEMO-DEV-002`     | Security       |   Medium | Resolved 2026-07-22 | Password 更新時に既存 Refresh Token Family を失効             |
-| `DEMO-DEV-003`     | Consistency    |      Low | Resolved 2026-07-22 | Concurrent Provision の Unique Conflict を再読込して収束      |
-| `DEMO-DEV-004`     | Logging        |   Medium | Resolved 2026-07-22 | Unknown CLI Error を Stable Sanitized Message に変換          |
-| `OWN-DEV-001`      | Data integrity |     High | Resolved 2026-07-22 | Composite Ownership Constraint を Migration で追加            |
-| `OWN-DEV-002`      | Test isolation |   Medium | Resolved 2026-07-22 | Testcontainers PostgreSQL に移行                              |
-| `OWN-DEV-003`      | Concurrency    |      Low | Resolved 2026-07-22 | Parent Check/Create の Isolation Strategy を明示              |
-| `OWN-DEV-004`      | Authorization  |     High | Resolved 2026-08-10 | Analysis/Document Bearer A/B HTTP Test を追加                 |
-| `ANALYSIS-DEV-001` | Status model   |     High | Resolved 2026-07-24 | `DRAFT` Status と Default を Migration/Test で検証            |
-| `DOC-DEV-001`      | Documentation  |   Medium | Partial             | Architecture/Testing は追加、残り Required Docs/ADR は未作成  |
-| `CI-DEV-001`       | CI             |   Medium | Resolved 2026-07-22 | Integration Test を CI Quality Gate に追加                    |
-| `TEST-DEV-001`     | Test bootstrap |   Medium | Resolved 2026-08-10 | Integration Command 内で PostgreSQL Image を自動 Build        |
+| ID                 | Area           | Severity | Status              | Recommended disposition                                         |
+| ------------------ | -------------- | -------: | ------------------- | --------------------------------------------------------------- |
+| `SDD-DEV-001`      | Process        |   Medium | Resolved 2026-07-22 | Backfilled Spec を Review して Baseline 承認                    |
+| `SDD-DEV-002`      | Governance     |   Medium | Resolved 2026-07-22 | `AGENTS.md` を Git 管理して SDD Agent Rule を共有               |
+| `AUTH-DEV-001`     | Test           |     High | Resolved 2026-07-22 | Auth PostgreSQL / HTTP Integration Test を次作業で追加          |
+| `AUTH-DEV-002`     | Security       |   Medium | Resolved 2026-07-22 | Unknown Email でも Dummy Argon2 Verify を実行                   |
+| `AUTH-DEV-003`     | Consistency    |      Low | Resolved 2026-07-22 | Login Token 作成と `lastLoginAt` を Transaction 化              |
+| `AUTH-DEV-004`     | API Contract   |   Medium | Resolved 2026-07-22 | OpenAPI Response / Error Schema を具体化                        |
+| `AUTH-DEV-005`     | Security       |   Medium | Resolved 2026-07-22 | JWT Sign/Verify を `HS256` Allowlist に固定                     |
+| `PLATFORM-DEV-001` | Logging        |   Medium | Resolved 2026-07-22 | Client Request ID を長さ・文字種で検証                          |
+| `PLATFORM-DEV-002` | Logging        |     High | Resolved 2026-07-22 | Authorization/Cookie/Secret の明示的 Log Redaction を設定       |
+| `DEMO-DEV-001`     | Security       |     High | Resolved 2026-07-22 | Production で明示的 Allow Flag と非 Default Password を必須化   |
+| `DEMO-DEV-002`     | Security       |   Medium | Resolved 2026-07-22 | Password 更新時に既存 Refresh Token Family を失効               |
+| `DEMO-DEV-003`     | Consistency    |      Low | Resolved 2026-07-22 | Concurrent Provision の Unique Conflict を再読込して収束        |
+| `DEMO-DEV-004`     | Logging        |   Medium | Resolved 2026-07-22 | Unknown CLI Error を Stable Sanitized Message に変換            |
+| `OWN-DEV-001`      | Data integrity |     High | Resolved 2026-07-22 | Composite Ownership Constraint を Migration で追加              |
+| `OWN-DEV-002`      | Test isolation |   Medium | Resolved 2026-07-22 | Testcontainers PostgreSQL に移行                                |
+| `OWN-DEV-003`      | Concurrency    |      Low | Resolved 2026-07-22 | Parent Check/Create の Isolation Strategy を明示                |
+| `OWN-DEV-004`      | Authorization  |     High | Resolved 2026-08-10 | Analysis/Document Bearer A/B HTTP Test を追加                   |
+| `ANALYSIS-DEV-001` | Status model   |     High | Resolved 2026-07-24 | `DRAFT` Status と Default を Migration/Test で検証              |
+| `DOC-DEV-001`      | Documentation  |   Medium | Partial             | Architecture/Testing は追加、残り Required Docs/ADR は未作成    |
+| `CI-DEV-001`       | CI             |   Medium | Resolved 2026-07-22 | Integration Test を CI Quality Gate に追加                      |
+| `TEST-DEV-001`     | Test bootstrap |   Medium | Resolved 2026-08-10 | Integration Command 内で PostgreSQL Image を自動 Build          |
+| `PDF-DEV-001`      | Lifecycle      |     High | Resolved 2026-08-12 | 24-hour Orphan Expiry の Worker Scan と Integration Test を追加 |
+| `PDF-DEV-002`      | Operations     |   Medium | Accepted 2026-08-12 | 統一 Job Re-run Feature まで期限付き Risk Acceptance            |
 
 2026-08-10 の `PDF-TASK-012`〜`PDF-TASK-014` Review では新規 Deviation は検出されませんでした。Real MinIO Storage、Document Bearer A/B HTTP、Redis/BullMQ Worker Cleanup の Acceptance Evidence を追加し、`OWN-DEV-004` を解消しました。
+
+2026-08-12 の `PDF-TASK-015` Review で、期限切れ Session は Finalize Request 時にのみ `EXPIRED` へ遷移し、未 Finalize Object を自動検出する Worker Scan が存在しない `PDF-DEV-001` を検出しました。Approved `PDF-Q-005` と Technical Plan の 24-hour Cleanup Contract を満たす最小修正として、Worker Scan と実 PostgreSQL/Redis/MinIO Verification を追加します。
+
+2026-08-12 の `PDF-TASK-016` Documentation Review で、FAILED Cleanup を Reset/Retry する内部 Repository/Publisher Contract は存在する一方、Operator が実行できる CLI/API/Runbook が存在しない `PDF-DEV-002` を検出しました。Manual Re-run Requirement の Operational Acceptance には Surface と Authorization/Audit Contract の明示的決定が必要です。
 
 ## Resolution Evidence
 
@@ -44,6 +50,7 @@
 | `ANALYSIS-DEV-001`                     | Split Enum/Default Migrations、`DRAFT` Create HTTP Test、空 PostgreSQL への全 Migration                           |
 | `CI-DEV-001`                           | Tracked GitHub Actions が `spec:check` と Docker-based `test:integration` を必須 Step として実行                  |
 | `TEST-DEV-001`                         | Root `test:integration` が Project PostgreSQL Image を準備してから Testcontainers Suite を実行                    |
+| `PDF-DEV-001`                          | Worker の bounded Expiry Scan、Stable Cleanup Upsert、Redis/BullMQ/MinIO End-to-end Orphan Delete Test            |
 
 ## Detail
 
@@ -169,6 +176,25 @@
 - Impact: Docker Image Tag が存在しない Environment では Testcontainers が Local-only Name を Registry から Pull しようとして `pull access denied` で失敗し、Application Test に到達しません。
 - Resolution: Root `test:integration` に Cacheable `test:integration:prepare` を組み込み、Local/CI/Agent の単一 Command で Image Build と Test を完結させました。CI の重複 Build Step と README の Manual Prerequisite を削除しました。
 
+### PDF-DEV-001 — Expired orphan uploads are not discovered automatically
+
+- Evidence: `DocumentUploadRepository.claimForFinalize` は Request 時に期限切れ Session を `EXPIRED` にして Cleanup を保存しますが、Worker は既存 `QUEUED` Cleanup の Redis Dispatch だけを Scan し、期限切れ `PENDING` / `VALIDATING` Session 自体を検索しません。
+- Conflict: Approved `PDF-Q-005` は未 Finalize Object/Session を 24 時間で Expire し、Retry 可能な Cleanup Job で削除することを要求します。
+- Impact: Client が Finalize を呼ばない場合、Private Bucket の孤児 Object と Upload Slot が永続的に残る可能性があります。
+- Disposition: `PDF-TASK-015` で bounded / idempotent Worker Expiry Scan を追加し、PostgreSQL State、Stable Cleanup Execution、Redis/BullMQ Dispatch、MinIO Delete を Integration Test で検証します。Public API と Database Schema は変更しません。
+- Resolution: Worker 起動時と 60 秒 Interval の Scan を追加しました。Status/Expiry 条件付き Update と Cleanup Upsert を Serializable Transaction にまとめ、同じ Scan の再実行が Job を増やさないこと、および実 Redis/BullMQ Worker が MinIO Object を削除することを検証しました。
+
+### PDF-DEV-002 — Failed cleanup has no operator-facing manual re-run surface
+
+- Evidence: `ObjectCleanupRepository.markQueuedForRetry`、`ObjectCleanupQueuePublisher.enqueue`、BullMQ `retry()` は FAILED Execution の再利用を Unit Test していますが、Operator が Target/Execution を指定して呼べる CLI、Admin API、Runbook はありません。
+- Conflict: Cross-cutting Async Status Machine は Failed Job の Manual Re-run を要求し、Technical Plan も最終失敗後の明示的 Retry を Contract としています。
+- Impact: Automatic 3 Attempt を使い切った Object は、Application Code を直接追加・実行しない限り運用者が安全に Cleanup へ戻せません。
+- Options: `A` Authenticated Admin/Operator CLI と Audit Log、`B` Internal Admin API と専用 Authorization、`C` Phase 3 の統一 Job Re-run Feature まで期限付き Risk Acceptance。
+- Recommendation: `A`。MVP の Public User API を広げず、Execution ID、対象確認、Audit、Stable Output を持つ CLI を Spec 化します。
+- Decision: User は 2026-08-12 に Option `C` を選択しました。PDF Upload Feature では新しい CLI/API を追加せず、Operator-facing Manual Re-run を Phase 3 の統一 Job Re-run Feature へ延期します。
+- Accepted risk: Automatic 3 Attempt 後に FAILED のまま残る Cleanup は Durable Record と Sanitized Attempt History を保持しますが、現時点では Operator が Supported Surface から再実行できません。
+- Follow-up owner: Phase 3 Job Execution / Manual Re-run Specification。Public API、Authorization、Audit、Runbook を実装前に承認します。
+
 ### ANALYSIS-DEV-001 — Pre-upload Analysis has no valid status
 
 - Evidence: Approved `PDF-Q-006` は Analysis を Upload Intent より前に作成しますが、`AnalysisStatus` と `AGENTS.md` の Async Status Machine は `UPLOADED` から始まり、Pre-upload State を持ちません。
@@ -203,3 +229,4 @@
 | 2026-07-22 | `OWN-DEV-001`〜`OWN-DEV-003`           | Recommended disposition approved | Composite FK、Testcontainers、Serializable Retry を実装する                     |
 | 2026-07-22 | `CI-DEV-001`                           | Recommended disposition approved | Integration Test を CI Gate に追加する                                          |
 | 2026-07-24 | `ANALYSIS-DEV-001`                     | `DRAFT` Status approved          | Pre-upload Analysis を `DRAFT`、最初の Document Finalize 後を `UPLOADED` とする |
+| 2026-08-12 | `PDF-DEV-002`                          | Option `C` approved              | Operator Manual Re-run を統一 Job Re-run Feature まで延期                       |

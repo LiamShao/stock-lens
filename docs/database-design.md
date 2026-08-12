@@ -245,7 +245,9 @@ Direct Presigned Upload の発行から Trusted Finalize までを追跡する�
 
 `DocumentUpload(ownerId, analysisId)` は `Analysis(ownerId, id)`、`DocumentUpload(ownerId, analysisId, finalizedDocumentId)` は `Document(ownerId, analysisId, id)` を参照します。後者は Composite Unique Constraint を持ち、同じ Finalized Document を複数 Session が完了扱いにすることを拒否します。Cleanup Scan 用 `(status, expiresAt)`、Ownership/List 用 `(ownerId, analysisId, status)`、Duplicate Lookup 用 `(ownerId, analysisId, claimedSha256)` に Index を設定します。
 
-Session と Active Document の合計最大 3 件、重複 SHA-256、Finalization Transaction は API/Repository の Serializable Transaction で実装します。Database Trigger は使用しません。
+Session と Active Document の合計最大 3 件、重複 SHA-256、Finalization Transaction は API/Repository の Serializable Transaction と限定 `P2034` Retry で実装します。Concurrent Start は最大 3 Reservation に収束します。同一 Session の Concurrent Finalize で `Document.storageKey` Unique Conflict が発生した場合は、先に完了した Session/Document を Owner Scope で再読込し、同じ Document を返します。Database Trigger は使用しません。
+
+Session TTL は作成から 24 時間です。Worker は起動時と 60 秒ごとに `(status, expiresAt)` Index を使って期限切れ `PENDING` / `VALIDATING` Session を最大 100 件ずつ取得します。Status/Expiry 条件付き Update と Stable `OBJECT_CLEANUP` Upsert は Serializable Transaction 内で実行し、Finalize または別 Scanner が先に状態を確定した場合は何も作成しません。`EXPIRED` Session の再 Scan は Cleanup Execution を重複させません。
 
 ### 4.6 DocumentPage
 
@@ -373,11 +375,11 @@ BullMQ Job の実行履歴と Step 単位の状態を保持します。
 | `createdAt`        | Timestamptz          | 作成日時                           |
 | `updatedAt`        | Timestamptz          | 更新日時                           |
 
-`idempotencyKey` は `analysisId:documentId-or-analysis:step:inputVersion` から生成します。同一 Key の成功済み Job は派生 Record を再作成しません。
+Analysis Pipeline の `idempotencyKey` は `analysisId:documentId-or-analysis:step:inputVersion` から生成する予定です。Object Cleanup は `object-cleanup:document:<documentId>:v1` または `object-cleanup:document-upload:<uploadId>:v1` を使用します。同一 Key の成功済み Job は派生 Record や Object Delete を再実行しません。
 
-Object Cleanup は `step = OBJECT_CLEANUP` とし、`documentId` または `documentUploadId` のちょうど一方を Target にします。Database `CHECK` と Owner/Analysis Composite Foreign Key がこの条件を強制し、Worker は Relation から Private Storage Location を取得します。Queue Payload 自体には Storage Location を保存しません。
+Object Cleanup は `step = OBJECT_CLEANUP` とし、`documentId` または `documentUploadId` のちょうど一方を Target にします。Database `CHECK` と Owner/Analysis Composite Foreign Key がこの条件を強制し、Worker は Relation から Private Storage Location を取得します。Queue Payload は `jobExecutionId` UUID だけで、Storage Location、Owner ID、Credential を保存しません。
 
-各 Retry は `JobAttempt` に保存します。`JobAttempt` は `ownerId`、`jobExecutionId`、`attempt`、`bullmqJobId`、`status`、`startedAt`、`finishedAt`、失敗情報を持ち、`jobExecutionId, attempt` を Unique とします。これにより、論理 Job の冪等性を保ちながら各試行の履歴を失いません。既存の成功結果は Upsert または置換 Transaction で扱います。
+各 Retry は `JobAttempt` に保存します。`JobAttempt` は `ownerId`、`jobExecutionId`、`attempt`、`bullmqJobId`、`status`、`startedAt`、`finishedAt`、失敗情報を持ち、`jobExecutionId, attempt` を Unique とします。Object Cleanup は最大 3 Attempt の Exponential Backoff で、Provider Detail を保存せず `OBJECT_STORAGE_DELETE_FAILED` と Sanitized Message だけを記録します。成功時は Execution と最後の Attempt を `SUCCEEDED` にし、Object が既に存在しない場合も成功扱いです。
 
 ### 4.13 PromptVersion
 

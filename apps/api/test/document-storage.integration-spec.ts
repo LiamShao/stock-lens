@@ -29,6 +29,8 @@ import { OBJECT_STORAGE } from '../src/documents/object-storage.module';
 import { getRedisConnectionOptions } from '../../worker/src/config';
 import { ObjectCleanupProcessor } from '../../worker/src/object-cleanup.processor';
 import { ObjectCleanupJobRepository } from '../../worker/src/object-cleanup.repository';
+import { ExpiredDocumentUploadScanner } from '../../worker/src/expired-document-upload.scanner';
+import { PendingObjectCleanupDispatcher } from '../../worker/src/pending-object-cleanup.dispatcher';
 import {
   startMinio,
   type StartedMinioContainer,
@@ -135,20 +137,36 @@ describe('document storage integration (PDF-TASK-012, PDF-TASK-014)', () => {
       metadata: { 'stocklens-sha256': sha256 },
     });
 
+    const headSpy = jest.spyOn(objectStorage, 'headObject');
+    const streamSpy = jest.spyOn(objectStorage, 'getObjectStream');
     const finalized = await request(auth, {
       method: 'POST',
       url: `/api/analyses/${analysisId}/document-uploads/${started.uploadSession.id}/finalize`,
     });
     expect(finalized.statusCode).toBe(200);
-    expect(
-      documentResourceSchema.parse(finalized.json<unknown>()),
-    ).toMatchObject({
+    const document = documentResourceSchema.parse(finalized.json<unknown>());
+    expect(document).toMatchObject({
       analysisId,
       mimeType: 'application/pdf',
       originalName: 'results.pdf',
       sha256,
       sizeBytes: pdf.byteLength,
     });
+    expect(headSpy).toHaveBeenCalledTimes(1);
+    expect(streamSpy).toHaveBeenCalledTimes(1);
+
+    const repeated = await request(auth, {
+      method: 'POST',
+      url: `/api/analyses/${analysisId}/document-uploads/${started.uploadSession.id}/finalize`,
+    });
+    expect(repeated.statusCode).toBe(200);
+    expect(documentResourceSchema.parse(repeated.json<unknown>())).toEqual(
+      document,
+    );
+    expect(headSpy).toHaveBeenCalledTimes(1);
+    expect(streamSpy).toHaveBeenCalledTimes(1);
+    headSpy.mockRestore();
+    streamSpy.mockRestore();
 
     const persisted = await prisma.documentUpload.findUniqueOrThrow({
       include: { finalizedDocument: true },
@@ -313,6 +331,113 @@ describe('document storage integration (PDF-TASK-012, PDF-TASK-014)', () => {
     });
   });
 
+  it('PDF-TASK-015 retries transient cleanup failure three times and persists attempt history', async () => {
+    const finalized = await createFinalizedDocument();
+    let targetDeleteAttempts = 0;
+    const retryingStorage: ObjectStorage = {
+      createPresignedPdfUpload: (input) =>
+        objectStorage.createPresignedPdfUpload(input),
+      deleteObject: async (objectKey) => {
+        if (objectKey === finalized.storageKey) {
+          targetDeleteAttempts += 1;
+          if (targetDeleteAttempts < 3) {
+            throw new Error('test-only transient object storage failure');
+          }
+        }
+        await objectStorage.deleteObject(objectKey);
+      },
+      getObjectStream: (objectKey) => objectStorage.getObjectStream(objectKey),
+      headObject: (objectKey) => objectStorage.headObject(objectKey),
+    };
+
+    const deleted = await request(finalized.auth, {
+      method: 'DELETE',
+      url: `/api/analyses/${finalized.analysisId}/documents/${finalized.documentId}`,
+    });
+    expect(deleted.statusCode).toBe(204);
+    await startCleanupWorker(retryingStorage);
+
+    const completedExecution = await waitForCleanupSuccess(
+      finalized.documentId,
+    );
+    expect(targetDeleteAttempts).toBe(3);
+    expect(completedExecution).toMatchObject({
+      currentAttempt: 3,
+      errorCode: null,
+      errorDetails: null,
+      errorMessage: null,
+      status: 'SUCCEEDED',
+    });
+    expect(completedExecution.attempts).toHaveLength(3);
+    expect(completedExecution.attempts).toEqual([
+      expect.objectContaining({
+        attempt: 1,
+        errorCode: 'OBJECT_STORAGE_DELETE_FAILED',
+        status: 'FAILED',
+      }),
+      expect.objectContaining({
+        attempt: 2,
+        errorCode: 'OBJECT_STORAGE_DELETE_FAILED',
+        status: 'FAILED',
+      }),
+      expect.objectContaining({
+        attempt: 3,
+        errorCode: null,
+        status: 'SUCCEEDED',
+      }),
+    ]);
+    await expect(
+      objectStorage.headObject(finalized.storageKey),
+    ).resolves.toBeNull();
+  });
+
+  it('PDF-Q-005 expires an orphan and deletes it through the real cleanup pipeline', async () => {
+    const pdf = Buffer.from('%PDF-1.7\norphan cleanup acceptance\n%%EOF\n');
+    const sha256 = createHash('sha256').update(pdf).digest('hex');
+    const { analysisId, auth } = await createOwnedAnalysis();
+    const started = await startUpload(auth, analysisId, pdf, sha256);
+    const storedUpload = await rememberStoredObject(started.uploadSession.id);
+    const putResponse = await fetch(started.upload.url, {
+      body: pdf,
+      headers: started.upload.headers,
+      method: 'PUT',
+    });
+    expect(putResponse.status).toBe(200);
+
+    const scanNow = new Date(
+      new Date(started.uploadSession.expiresAt).getTime() + 1,
+    );
+    const scanner = new ExpiredDocumentUploadScanner(prisma);
+    await expect(scanner.scan(scanNow)).resolves.toBe(1);
+    await expect(
+      prisma.documentUpload.findUniqueOrThrow({
+        where: { id: started.uploadSession.id },
+      }),
+    ).resolves.toMatchObject({ status: 'EXPIRED' });
+
+    const dispatcher = new PendingObjectCleanupDispatcher(prisma, cleanupQueue);
+    await expect(dispatcher.dispatch()).resolves.toBeGreaterThanOrEqual(1);
+    await startCleanupWorker();
+    const execution = await waitForUploadCleanupSuccess(
+      started.uploadSession.id,
+    );
+    expect(execution).toMatchObject({
+      currentAttempt: 1,
+      status: 'SUCCEEDED',
+    });
+    expect(execution.attempts).toHaveLength(1);
+    await expect(
+      objectStorage.headObject(storedUpload.storageKey),
+    ).resolves.toBeNull();
+
+    await expect(scanner.scan(scanNow)).resolves.toBe(0);
+    await expect(
+      prisma.jobExecution.count({
+        where: { documentUploadId: started.uploadSession.id },
+      }),
+    ).resolves.toBe(1);
+  });
+
   async function createFinalizedDocument(): Promise<{
     analysisId: string;
     auth: AuthResponse;
@@ -344,10 +469,12 @@ describe('document storage integration (PDF-TASK-012, PDF-TASK-014)', () => {
     };
   }
 
-  async function startCleanupWorker(): Promise<void> {
+  async function startCleanupWorker(
+    workerStorage: ObjectStorage = objectStorage,
+  ): Promise<void> {
     const processor = new ObjectCleanupProcessor(
       new ObjectCleanupJobRepository(prisma),
-      objectStorage,
+      workerStorage,
       minio.bucket,
     );
     cleanupWorker = new Worker<ObjectCleanupJobData>(
@@ -378,6 +505,21 @@ describe('document storage integration (PDF-TASK-012, PDF-TASK-014)', () => {
       await new Promise<void>((resolve) => setTimeout(resolve, 50));
     }
     throw new Error('Object cleanup did not succeed within 15 seconds.');
+  }
+
+  async function waitForUploadCleanupSuccess(documentUploadId: string) {
+    const deadline = Date.now() + 15_000;
+    while (Date.now() < deadline) {
+      const execution = await prisma.jobExecution.findFirst({
+        include: { attempts: { orderBy: { attempt: 'asc' } } },
+        where: { documentUploadId, step: 'OBJECT_CLEANUP' },
+      });
+      if (execution?.status === 'SUCCEEDED') {
+        return execution;
+      }
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
+    }
+    throw new Error('Upload cleanup did not succeed within 15 seconds.');
   }
 
   async function createOwnedAnalysis(): Promise<{

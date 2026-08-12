@@ -11,6 +11,7 @@ import {
 
 import { getRedisConnectionOptions, getWorkerConfig } from './config';
 import { loadLocalEnvironment } from './environment';
+import { ExpiredDocumentUploadScanner } from './expired-document-upload.scanner';
 import { ObjectCleanupProcessor } from './object-cleanup.processor';
 import { ObjectCleanupJobRepository } from './object-cleanup.repository';
 import { PendingObjectCleanupDispatcher } from './pending-object-cleanup.dispatcher';
@@ -33,6 +34,19 @@ const pendingCleanupDispatcher = new PendingObjectCleanupDispatcher(
   prisma,
   cleanupQueue,
 );
+const expiredUploadScanner = new ExpiredDocumentUploadScanner(prisma);
+async function expireOrphanUploads(): Promise<void> {
+  try {
+    await expiredUploadScanner.scan();
+  } catch {
+    console.error(
+      JSON.stringify({
+        error: 'Expired document upload scan failed.',
+        event: 'worker.expired_upload_scan_failed',
+      }),
+    );
+  }
+}
 async function dispatchPendingCleanup(): Promise<void> {
   try {
     await pendingCleanupDispatcher.dispatch();
@@ -46,8 +60,12 @@ async function dispatchPendingCleanup(): Promise<void> {
     );
   }
 }
+async function runCleanupMaintenance(): Promise<void> {
+  await expireOrphanUploads();
+  await dispatchPendingCleanup();
+}
 const pendingCleanupDispatchInterval = setInterval(
-  () => void dispatchPendingCleanup(),
+  () => void runCleanupMaintenance(),
   60_000,
 );
 pendingCleanupDispatchInterval.unref();
@@ -93,7 +111,7 @@ cleanupWorker.on('ready', () => {
       queue: OBJECT_CLEANUP_QUEUE_NAME,
     }),
   );
-  void dispatchPendingCleanup();
+  void runCleanupMaintenance();
 });
 
 cleanupWorker.on('failed', (job) => {

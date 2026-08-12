@@ -61,24 +61,24 @@ Status は Requirement の実装・検証状況を表します。`Partial` は C
 
 ## PDF Upload
 
-| Requirement   | Implementation                                               | Verification                                | Status    |
-| ------------- | ------------------------------------------------------------ | ------------------------------------------- | --------- |
-| `PDF-FR-001`  | Owner-scoped Start Controller/Service/Repository + FK        | Bearer Owner A/B HTTP + No Side Effect      | `Passed`  |
-| `PDF-FR-002`  | Serializable Start Reservation + Finalize Limit Recheck      | 4th Slot HTTP Passed、concurrency planned   | `Partial` |
-| `PDF-FR-003`  | DB/Zod Boundary + Streaming 20 MB Cutoff                     | Inclusive Unit + Invalid Size HTTP Passed   | `Partial` |
-| `PDF-FR-004`  | Filename/MIME Start Zod + Trusted `%PDF-` Finalize           | Extension/MIME HTTP + Invalid MinIO Header  | `Passed`  |
-| `PDF-FR-005`  | Random Private Key + `@stocklens/object-storage`             | Unit + Isolated Private MinIO               | `Passed`  |
-| `PDF-FR-006`  | Start/Re-presign API + Signed PUT max 300 seconds            | Real Presigned PUT + Signed Headers         | `Passed`  |
-| `PDF-FR-007`  | Trusted Stream + Atomic Document/Upload Finalize             | Real MinIO + HTTP/PostgreSQL Finalize       | `Passed`  |
-| `PDF-FR-008`  | Document List/Delete + Atomic Soft Delete/Cleanup Queue      | HTTP + PostgreSQL/Redis/BullMQ/MinIO Worker | `Passed`  |
-| `PDF-FR-009`  | Finalize Lifecycle + Durable Reject Cleanup + Retry Tracking | Service/Queue/Worker Unit + DB Integration  | `Partial` |
-| `PDF-SEC-001` | Case-insensitive `.pdf` Shared Zod Validation                | Schema Unit + Invalid Extension HTTP        | `Passed`  |
-| `PDF-SEC-002` | Exact `application/pdf` Shared Zod Validation                | Schema Unit + Invalid MIME HTTP             | `Passed`  |
-| `PDF-SEC-003` | Trusted chunk-safe `%PDF-` Check + Invalid Reject/Cleanup    | Real MinIO Invalid Header + Durable Cleanup | `Passed`  |
-| `PDF-SEC-004` | Size/Type/SHA Header-constrained Signed PUT                  | Real MinIO Signed PUT                       | `Passed`  |
-| `PDF-SEC-005` | Random Key + Bounded Stream + PDF/Storage Log Redaction      | Real Stream + Key/Log Regression            | `Passed`  |
-| `PDF-SEC-006` | Owner-scoped Start/Finalize/List/Delete Not Found Boundary   | Bearer A/B HTTP + PostgreSQL No Side Effect | `Passed`  |
-| `PDF-SEC-007` | Typed/Escaped Untrusted PDF User Context Builder             | Injection Delimiter Unit、Provider planned  | `Partial` |
+| Requirement   | Implementation                                             | Verification                                | Status    |
+| ------------- | ---------------------------------------------------------- | ------------------------------------------- | --------- |
+| `PDF-FR-001`  | Owner-scoped Start Controller/Service/Repository + FK      | Bearer Owner A/B HTTP + No Side Effect      | `Passed`  |
+| `PDF-FR-002`  | Serializable Start Reservation + Finalize Limit Recheck    | 4th Slot HTTP + Concurrent Reservation      | `Passed`  |
+| `PDF-FR-003`  | DB/Zod Boundary + Streaming 20 MB Cutoff                   | Inclusive Unit + HTTP + Stream Cutoff       | `Passed`  |
+| `PDF-FR-004`  | Filename/MIME Start Zod + Trusted `%PDF-` Finalize         | Extension/MIME HTTP + Invalid MinIO Header  | `Passed`  |
+| `PDF-FR-005`  | Random Private Key + `@stocklens/object-storage`           | Unit + Isolated Private MinIO               | `Passed`  |
+| `PDF-FR-006`  | Start/Re-presign API + Signed PUT max 300 seconds          | Real Presigned PUT + Signed Headers         | `Passed`  |
+| `PDF-FR-007`  | Trusted Stream + Atomic Document/Upload Finalize           | Real MinIO + HTTP/PostgreSQL Finalize       | `Passed`  |
+| `PDF-FR-008`  | Document List/Delete + Atomic Soft Delete/Cleanup Queue    | HTTP + PostgreSQL/Redis/BullMQ/MinIO Worker | `Passed`  |
+| `PDF-FR-009`  | Finalize Lifecycle + Expiry Scan + Durable Retry Tracking  | PostgreSQL/Redis/BullMQ/MinIO Retry/Expiry  | `Passed`  |
+| `PDF-SEC-001` | Case-insensitive `.pdf` Shared Zod Validation              | Schema Unit + Invalid Extension HTTP        | `Passed`  |
+| `PDF-SEC-002` | Exact `application/pdf` Shared Zod Validation              | Schema Unit + Invalid MIME HTTP             | `Passed`  |
+| `PDF-SEC-003` | Trusted chunk-safe `%PDF-` Check + Invalid Reject/Cleanup  | Real MinIO Invalid Header + Durable Cleanup | `Passed`  |
+| `PDF-SEC-004` | Size/Type/SHA Header-constrained Signed PUT                | Real MinIO Signed PUT                       | `Passed`  |
+| `PDF-SEC-005` | Random Key + Bounded Stream + PDF/Storage Log Redaction    | Real Stream + Key/Log Regression            | `Passed`  |
+| `PDF-SEC-006` | Owner-scoped Start/Finalize/List/Delete Not Found Boundary | Bearer A/B HTTP + PostgreSQL No Side Effect | `Passed`  |
+| `PDF-SEC-007` | Typed/Escaped Untrusted PDF User Context Builder           | Injection Delimiter Unit、Provider planned  | `Partial` |
 
 ## Analysis Management
 

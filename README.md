@@ -31,7 +31,9 @@ docs/              プロジェクト文書と進捗記録
 
 ```bash
 cp .env.example .env
-docker compose up -d
+docker compose up -d --wait
+docker exec stocklens-minio mc alias set local http://127.0.0.1:9000 stocklens stocklens-dev-password
+docker exec stocklens-minio mc mb --ignore-existing local/stocklens-dev
 pnpm install
 pnpm db:migrate:deploy
 pnpm db:generate
@@ -69,6 +71,22 @@ pnpm db:validate
 Prisma Schema と Migration には、User、Analysis、Document、Evidence、Job などの Domain Model を定義しています。論理設計と Ownership Rule は [docs/database-design.md](./docs/database-design.md) を参照してください。
 
 `@stocklens/object-storage` は AWS S3 と Local MinIO を共通 Interface で扱います。S3 Operation には `@aws-sdk/client-s3`、短命 Presigned PUT には `@aws-sdk/s3-request-presigner` のみを追加し、API/Worker から Provider 固有処理を分離しています。詳細は [packages/object-storage/README.md](./packages/object-storage/README.md) を参照してください。
+
+PDF Upload は `DRAFT` Analysis に対して Session を作成し、Browser から MinIO/S3 の Private Bucket へ Presigned PUT した後、API の Finalize を呼ぶ二段階方式です。1 File は 1 byte〜20 MB、1 Analysis は Active Document と未期限 Session の合計 3 件までです。未 Finalize Session は 24 時間で期限切れとなり、Worker が起動時と 60 秒ごとに Cleanup を登録します。
+
+主要な Storage/Queue 環境変数は次のとおりです。
+
+| Key                              | Host Local                   | Compose Network / AWS                         |
+| -------------------------------- | ---------------------------- | --------------------------------------------- |
+| `REDIS_URL`                      | `redis://localhost:6379`     | `redis://redis:6379` / Managed Redis endpoint |
+| `S3_ENDPOINT`                    | `http://localhost:9000`      | `http://minio:9000` / AWS では省略            |
+| `S3_BUCKET`                      | 事前作成した `stocklens-dev` | 事前作成した Private Bucket                   |
+| `S3_FORCE_PATH_STYLE`            | `true`                       | MinIO は `true`、AWS は `false` または省略    |
+| `S3_ACCESS_KEY_ID` / `SECRET...` | Local MinIO Credential       | AWS では省略し IAM Role を使用                |
+| `S3_PRESIGN_EXPIRES_IN_SECONDS`  | `300`                        | 1〜300                                        |
+| `WORKER_CONCURRENCY`             | `2`                          | 1 以上の整数                                  |
+
+`.env.example` の Credential は Local Development 専用です。Production では Commit/転用せず、Private Bucket、Browser PUT CORS、API/Worker の最小権限 IAM を Deployment 側で設定します。
 
 Feature Development は Spec-Driven Development で進めます。SDD Workflow、Feature Spec、Requirement Traceability、Deviation は [specs/README.md](./specs/README.md) を参照してください。Authentication、Demo User、Analysis Management、Ownership は承認・検証済みです。
 
