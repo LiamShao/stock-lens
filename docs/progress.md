@@ -1,5 +1,36 @@
 # StockLens AI 開発進捗
 
+## 2026-08-13
+
+### 次回引き継ぎ（2026-08-14 再開予定）
+
+- Phase 3 の Core Runtime、Failure Recovery、Operator Re-run は実装済みです。Working Tree は未 Commit の Phase 3 Changes を保持しているため、再開時に既存差分を破棄・上書きしません。
+- User 承認 Decision は `PROC-Q-001`〜`PROC-Q-007` の Option `A`、`RERUN-Q-001`〜`RERUN-Q-003` の Option `A`、`TEST-DEV-002` Option `C`、`RERUN-DEV-002` Option `B` です。
+- `RERUN-DEV-002` は `READ COMMITTED` + `JobExecution` Row Lock で解消済みです。Concurrent Re-run は 1 `queued` / 1 Stable `not-rerunnable` / 1 Audit に収束します。
+- `PDF-DEV-002` は real Cleanup CLI Inspect/Re-run/Audit → same Execution Attempt 4 Worker Success により解消済みです。
+- Local `test-data/` の Public IR PDFs 3 Files / 509 Pages は Parser Probe に成功し、Git Ignore 済みです。原文 PDF は Commit しません。
+- 最終 Quality Gate は Spec Check 7 Features / 98 Requirements、Lint、Typecheck、137 Unit/Component Tests、Build、Docker Integration 6 Suites / 51 Tests が成功しています。
+- Document Processing の残 Gap は Password-required PDF Fixture、20 MB / 50 MiB Text Limit、Malicious PDF / Log Security Evaluation、Heading Heuristic Semantic Review です。
+- Job Re-run の残 Gap は Phase 7 Workload IAM / Secrets Manager Deployment Evidence です。`TEST-DEV-002` の Production Concurrent Upload Retry Exhaustion Risk は User 承認済みで維持します。
+- 次回は `specs/features/document-processing/verification.md` の Partial 項目を再確認し、Password/Limit/Security Test を Spec → Plan → Task 順に補完します。その後 Full Quality Gate を再実行し、Phase 4 Structured Extraction の Decision Draft に進みます。
+
+### Phase 3 Document Processing / Job Re-run Core
+
+- User 承認済み全 Option `A` に基づき、Document Processing と Job Re-run Spec、Technical Plan、Tasks を Approved としました。
+- Owner-scoped Process API、Durable Parse/Chunk Job、Pending Recovery、`READY_FOR_EMBEDDING` Status を実装しました。
+- `pdfjs-dist` を Worker Runtime Dependency として追加し、OCR なしの Page Text Extraction、Resource Limit、Heading Heuristic、Page-bounded 1,200 Character / 150 Overlap Chunking を実装しました。
+- `DocumentPage` / `DocumentChunk` の Composite Ownership FK と `JobOperationAudit` Migration を追加しました。
+- CLI-only Inspect/Re-run、Explicit Enable/Secret Guard、3 Step Allowlist、5 Manual Re-run Limit、Sanitized JSON Output、Runbook を追加しました。
+- API 88 Unit Tests、Worker 16 Unit Tests、全 Workspace 137 Unit/Component Tests、Lint/Typecheck/Build は成功しました。
+- User は `TEST-DEV-002` に Option `C` を選択しました。Production の Serializable 3 Attempt を変更せず、既存 Concurrent Upload Acceptance Harness にだけ bounded `P2034` Retry を追加し、Production の瞬時 Failure Risk を明示的に保持します。
+- User は `PROC-DEV-002` に Option `A` を承認しました。Password/明示的復号が不要な Permission-encrypted PDF は通常 Limit 内で受け入れ、Local Real IR 3 Files / 509 Pages の Direct Parser Probe が成功しました。
+- Real Presigned PUT / MinIO → Redis/BullMQ Parse/Chunk Worker → PostgreSQL Page/Chunk → `READY_FOR_EMBEDDING` の Happy-path End-to-end Test を追加しました。
+- Empty Page、Malformed/501-page Failure、Attempt 3 Recovery、Duplicate Delivery、Missing Redis Job Recovery、Page/Chunk Composite Ownership FK を Infrastructure Integration で検証しました。
+- Cleanup の real CLI Inspect/Re-run/Audit/Attempt 4 Success、Parse Attempt 4 Recovery、CHUNK Re-dispatch、5 Manual Limit、Status/Allowlist/deleted Target Fail-closed を検証しました。
+- User 承認済み `RERUN-DEV-002` Option `B` として `READ COMMITTED` + `JobExecution` Row Lock を実装し、Concurrent Re-run は 1 `queued` / 1 Stable `not-rerunnable` / 1 Audit に収束しました。
+- Full Docker Integration は PostgreSQL/Redis/BullMQ/MinIO 6 Suites / 51 Tests が成功しました。Open-handle 診断付き再実行も 6 Suites / 50 Tests 時点で成功し、Leak は再現しませんでした。
+- Spec Check は 7 Features / 98 Requirements で成功しました。Document Processing は Password/50 MiB/Security Evaluation、Job Re-run は Phase 7 Workload IAM/Secrets Manager Evidence のため `Partial` を維持します。
+
 ## 2026-08-12
 
 ### PDF Upload Final Quality Gate / Traceability

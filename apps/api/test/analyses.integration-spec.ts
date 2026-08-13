@@ -10,23 +10,28 @@ import {
   analysisPageResponseSchema,
   analysisResourceSchema,
   authResponseSchema,
+  processAnalysisResponseSchema,
   type AuthResponse,
 } from '@stocklens/shared';
 import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import type { InjectOptions, LightMyRequestResponse } from 'fastify';
 
 import { configureApiApplication } from '../src/app-configuration';
+import { AnalysisProcessingQueuePublisher } from '../src/analyses/analysis-processing.queue';
 import { AppModule } from '../src/app.module';
 import { getAuthConfig } from '../src/auth/auth.config';
+import { TokenService } from '../src/auth/token.service';
 import { PrismaService } from '../src/database/prisma.service';
 import { startMigratedPostgres } from './support/postgres-test-container';
 
 jest.setTimeout(120_000);
 
 describe('analysis management HTTP integration', () => {
+  const dispatchProcessing = jest.fn().mockResolvedValue(true);
   let app: NestFastifyApplication;
   let container: StartedPostgreSqlContainer;
   let prisma: PrismaService;
+  let tokenService: TokenService;
 
   beforeAll(async () => {
     container = await startMigratedPostgres();
@@ -48,14 +53,18 @@ describe('analysis management HTTP integration', () => {
     });
     const module = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(AnalysisProcessingQueuePublisher)
+      .useValue({ dispatch: dispatchProcessing })
+      .compile();
     app = module.createNestApplication<NestFastifyApplication>(
       new FastifyAdapter({ logger: false }),
     );
-    await configureApiApplication(app, getAuthConfig());
+    await configureApiApplication(app, getAuthConfig(), { rateLimitMax: 200 });
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
     prisma = module.get(PrismaService);
+    tokenService = module.get(TokenService);
   });
 
   afterAll(async () => {
@@ -66,6 +75,11 @@ describe('analysis management HTTP integration', () => {
       await container.stop();
     }
   });
+
+  it(
+    'PROC-AC-001/005/008 starts one owner-scoped durable parse execution',
+    verifyProcessing,
+  );
 
   it('ANALYSIS-AC-001/002/007/008 creates a validated DRAFT with optional company', async () => {
     const user = await registerUser();
@@ -139,7 +153,10 @@ describe('analysis management HTTP integration', () => {
   });
 
   it('ANALYSIS-AC-003/004 paginates stable owner history and filters status', async () => {
-    const [owner, other] = await Promise.all([registerUser(), registerUser()]);
+    const [owner, other] = await Promise.all([
+      createAuthenticatedUser(),
+      createAuthenticatedUser(),
+    ]);
     const ids: string[] = [];
     for (const title of ['First', 'Second', 'Third']) {
       const response = await request(owner, {
@@ -294,7 +311,71 @@ describe('analysis management HTTP integration', () => {
     expect(resourcePath?.patch?.responses['200']).toBeDefined();
     expect(resourcePath?.patch?.responses['404']).toBeDefined();
     expect(resourcePath?.delete?.responses['204']).toBeDefined();
+    const processPath = document.paths['/api/analyses/{analysisId}/process'];
+    expect(processPath?.post?.responses['202']).toBeDefined();
+    expect(processPath?.post?.responses['404']).toBeDefined();
   });
+
+  async function verifyProcessing(): Promise<void> {
+    const [owner, other] = await Promise.all([registerUser(), registerUser()]);
+    const created = await request(owner, {
+      method: 'POST',
+      payload: { title: 'Process analysis' },
+      url: '/api/analyses',
+    });
+    const analysis = analysisResourceSchema.parse(created.json<unknown>());
+    await prisma.analysis.update({
+      data: { status: 'UPLOADED' },
+      where: { id: analysis.id },
+    });
+    await prisma.document.create({
+      data: {
+        analysisId: analysis.id,
+        mimeType: 'application/pdf',
+        originalName: 'results.pdf',
+        ownerId: owner.user.id,
+        sha256: 'b'.repeat(64),
+        sizeBytes: 1024,
+        storageBucket: 'integration-private',
+        storageKey: `${owner.user.id}/${analysis.id}/${randomUUID()}.pdf`,
+      },
+    });
+
+    const crossUser = await request(other, {
+      method: 'POST',
+      url: `/api/analyses/${analysis.id}/process`,
+    });
+    expect(crossUser.statusCode).toBe(404);
+    expect(
+      await prisma.jobExecution.count({ where: { analysisId: analysis.id } }),
+    ).toBe(0);
+
+    const accepted = await request(owner, {
+      method: 'POST',
+      url: `/api/analyses/${analysis.id}/process`,
+    });
+    expect(accepted.statusCode).toBe(202);
+    const result = processAnalysisResponseSchema.parse(
+      accepted.json<unknown>(),
+    );
+    expect(result).toMatchObject({
+      analysisId: analysis.id,
+      status: 'PARSING',
+    });
+
+    const repeated = await request(owner, {
+      method: 'POST',
+      url: `/api/analyses/${analysis.id}/process`,
+    });
+    expect(repeated.statusCode).toBe(202);
+    expect(repeated.json()).toMatchObject({ executionId: result.executionId });
+    expect(
+      await prisma.jobExecution.count({
+        where: { analysisId: analysis.id, step: 'PARSE' },
+      }),
+    ).toBe(1);
+    expect(dispatchProcessing).toHaveBeenCalledWith(result.executionId);
+  }
 
   async function registerUser(): Promise<AuthResponse> {
     const response = await app.inject({
@@ -308,6 +389,26 @@ describe('analysis management HTTP integration', () => {
     });
     expect(response.statusCode).toBe(201);
     return authResponseSchema.parse(response.json<unknown>());
+  }
+
+  async function createAuthenticatedUser(): Promise<AuthResponse> {
+    const email = `${randomUUID()}@analysis.integration.test`;
+    const user = await prisma.user.create({
+      data: { email, passwordHash: 'not-used-by-bearer-auth' },
+    });
+    return {
+      accessToken: await tokenService.createAccessToken({
+        email,
+        sub: user.id,
+      }),
+      expiresIn: 900,
+      user: {
+        displayName: null,
+        email,
+        id: user.id,
+        isDemo: false,
+      },
+    };
   }
 
   function request(

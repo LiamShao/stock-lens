@@ -179,6 +179,7 @@ DRAFT
 UPLOADED
 PARSING
 CHUNKING
+READY_FOR_EMBEDDING
 EMBEDDING
 EXTRACTING
 VALIDATING
@@ -287,7 +288,11 @@ Retrieval と LLM Context の最小 Unit です。
 | `createdAt`      | Timestamptz          | 作成日時                                |
 | `updatedAt`      | Timestamptz          | 更新日時                                |
 
-`documentId, chunkIndex` に Unique Constraint を設定し、`documentId, contentSha256` には非 Unique Index を設定します。同一 PDF 内でも Header や Footer が同じ Text になる可能性があるため、Content Hash だけでは重複と判断しません。Full Text Search 用の generated `tsvector` Column と GIN Index、Embedding 用の HNSW Index は SQL Migration で追加します。
+`documentId, chunkIndex` に Unique Constraint を設定し、`documentId, contentSha256` には非 Unique Index を設定します。同一 PDF 内でも Header や Footer が同じ Text になる可能性があるため、Content Hash だけでは重複と判断しません。`DocumentPage` と `DocumentChunk` は `(ownerId, documentId)` Composite FK で `Document` との Owner Equality を強制します。Full Text Search 用の generated `tsvector` Column と GIN Index、Embedding 用の HNSW Index は SQL Migration で追加します。
+
+### 4.15 JobOperationAudit
+
+Operator の Manual Re-run Mutation を Durable に監査します。`jobExecutionId`、`operatorId`、`action`、`previousStatus`、`status`、`requestId`、`createdAt`、`updatedAt` を保存します。PDF Text、Storage Coordinate、Secret、Raw Error は保存しません。Manual Re-run Count は Execution に紐づく `action=RERUN` Record を Source とします。
 
 Embedding Dimension は Provider 選定後に固定し、Model / Dimension を変更する場合は新 Column または再 Embedding Migration として扱います。
 

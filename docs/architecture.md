@@ -79,6 +79,8 @@ PostgreSQL constraint
 
 Analysis は Upload 前に `DRAFT` で作成し、最初の Document Finalize 後に `UPLOADED` へ遷移します。その後は `PARSING → CHUNKING → EMBEDDING → EXTRACTING → VALIDATING → COMPLETED` を基本経路とし、各 Step に専用 Failure Status を持ちます。
 
+Phase 3 では User の明示的 Process Request 後に `PARSING → CHUNKING → READY_FOR_EMBEDDING` まで進みます。`READY_FOR_EMBEDDING` は Phase 4 の未開始状態であり、`EMBEDDING` 実行中とは区別します。Parse/Chunk Queue Payload は Durable `JobExecution.id` だけを保持し、Worker は Database から Owner、Parent、Document、Storage Target を再解決します。
+
 - Job は Idempotency Key を持ち、Retry で Chunk、Finding、Evidence、Output を重複作成しません。
 - Page Text、Chunk、Page Number、検出可能な Section Metadata を保存します。
 - Financial Calculation は Deterministic Code で行い、LLM に委譲しません。

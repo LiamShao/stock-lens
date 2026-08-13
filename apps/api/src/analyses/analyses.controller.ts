@@ -16,6 +16,8 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
+  ApiAcceptedResponse,
+  ApiConflictResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -39,6 +41,7 @@ import {
   type AuthUser,
   type CreateAnalysisRequest,
   type RenameAnalysisRequest,
+  type ProcessAnalysisResponse,
 } from '@stocklens/shared';
 
 import { AccessTokenGuard } from '../auth/access-token.guard';
@@ -50,6 +53,7 @@ import {
   AnalysisResourceOpenApi,
   CreateAnalysisOpenApi,
   RenameAnalysisOpenApi,
+  ProcessAnalysisOpenApi,
 } from './analyses.openapi';
 import { AnalysesService } from './analyses.service';
 
@@ -89,6 +93,30 @@ export class AnalysesController {
     body: CreateAnalysisRequest,
   ): Promise<AnalysisResource> {
     return this.analysesService.create(user.id, body);
+  }
+
+  @Post(':analysisId/process')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({ summary: 'Start asynchronous document processing' })
+  @ApiParam({ format: 'uuid', name: 'analysisId' })
+  @ApiAcceptedResponse({
+    description: 'Processing accepted',
+    type: ProcessAnalysisOpenApi,
+  })
+  @ApiConflictResponse({
+    description: 'Analysis has no documents or is not processable',
+    type: ApiErrorOpenApi,
+  })
+  @ApiNotFoundResponse({
+    description: 'Analysis was not found',
+    type: ApiErrorOpenApi,
+  })
+  process(
+    @CurrentUser() user: AuthUser,
+    @Param(new ZodValidationPipe(analysisPathParamsSchema))
+    params: AnalysisPathParams,
+  ): Promise<ProcessAnalysisResponse> {
+    return this.analysesService.process(user.id, params.analysisId);
   }
 
   @Get()

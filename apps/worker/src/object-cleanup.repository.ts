@@ -10,6 +10,7 @@ export type CleanupAttempt =
   | { alreadySucceeded: true }
   | {
       alreadySucceeded: false;
+      attempt: number;
       storageBucket: string;
       storageKey: string;
     };
@@ -54,10 +55,14 @@ export class ObjectCleanupJobRepository {
         ) {
           throw new Error('Object cleanup target is invalid.');
         }
+        const attemptNumber = Math.max(
+          execution.currentAttempt + 1,
+          input.attempt,
+        );
 
         await transaction.jobAttempt.upsert({
           create: {
-            attempt: input.attempt,
+            attempt: attemptNumber,
             bullmqJobId: input.bullmqJobId,
             jobExecutionId: execution.id,
             ownerId: execution.ownerId,
@@ -75,14 +80,14 @@ export class ObjectCleanupJobRepository {
           },
           where: {
             jobExecutionId_attempt: {
-              attempt: input.attempt,
+              attempt: attemptNumber,
               jobExecutionId: execution.id,
             },
           },
         });
         await transaction.jobExecution.update({
           data: {
-            currentAttempt: Math.max(execution.currentAttempt, input.attempt),
+            currentAttempt: attemptNumber,
             errorCode: null,
             errorDetails: Prisma.DbNull,
             errorMessage: null,
@@ -95,6 +100,7 @@ export class ObjectCleanupJobRepository {
 
         return {
           alreadySucceeded: false,
+          attempt: attemptNumber,
           storageBucket: target.storageBucket,
           storageKey: target.storageKey,
         };

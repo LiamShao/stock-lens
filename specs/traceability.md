@@ -99,3 +99,45 @@ Status は Requirement の実装・検証状況を表します。`Partial` は C
 | `ANALYSIS-SEC-005` | Shared Zod Body/Path/Query Schema            | Invalid Input Matrix HTTP Test          | `Passed` |
 | `ANALYSIS-SEC-006` | Metadata-only Projection                     | Response omits `ownerId` + Schema Parse | `Passed` |
 | `ANALYSIS-SEC-007` | ApiException + Stable Analysis/Company Codes | HTTP Error Format Assertions            | `Passed` |
+
+## Document Processing
+
+| Requirement    | Implementation                          | Verification                            | Status    |
+| -------------- | --------------------------------------- | --------------------------------------- | --------- |
+| `PROC-FR-001`  | Process Controller/Service/Repository   | Owner/Cross-user HTTP                   | `Passed`  |
+| `PROC-FR-002`  | Bounded pdfjs Page Extractor            | Unit + 3 Real IR PDFs + Worker E2E      | `Passed`  |
+| `PROC-FR-003`  | Empty Page Record Contract              | Mixed empty/text Worker/DB E2E          | `Passed`  |
+| `PROC-FR-004`  | Heading v1 Heuristic                    | Code/Unit Review                        | `Partial` |
+| `PROC-FR-005`  | Page-bounded Character Chunker          | Chunk Unit + Page/Chunk DB E2E          | `Passed`  |
+| `PROC-FR-006`  | Atomic Page/Chunk Repository            | Success/failure Worker/DB E2E           | `Passed`  |
+| `PROC-FR-007`  | PARSING/CHUNKING/READY Status           | Migration + HTTP + Worker E2E           | `Passed`  |
+| `PROC-FR-008`  | Versioned Idempotency Keys/Set Replace  | Repeated Start + duplicate delivery E2E | `Passed`  |
+| `PROC-FR-009`  | Attempt/Failure Classification          | Non-retryable + Attempt 3 recovery E2E  | `Passed`  |
+| `PROC-FR-010`  | Active Parent/Owner Recheck             | Code Review、Race Test pending          | `Partial` |
+| `PROC-FR-011`  | Pending Analysis Dispatcher             | Missing Redis Job recovery E2E          | `Passed`  |
+| `PROC-SEC-001` | Bearer Owner-only Process Endpoint      | Owner A/B HTTP                          | `Passed`  |
+| `PROC-SEC-002` | Page/Chunk Composite FK                 | Direct cross-owner insert reject        | `Passed`  |
+| `PROC-SEC-003` | Byte-only pdfjs Text Extraction         | Malformed/Valid/501-page Worker E2E     | `Passed`  |
+| `PROC-SEC-004` | Explicit Parser Resource Limits         | Unit/Infra Limit pending                | `Partial` |
+| `PROC-SEC-005` | Sanitized Failure/Log Boundary          | Code Review                             | `Partial` |
+| `PROC-SEC-006` | Existing Untrusted PDF Context Boundary | Existing Regression、Phase 4 pending    | `Partial` |
+| `PROC-SEC-007` | Bounded Memory Read/Destroy             | Unit/Code Review                        | `Partial` |
+
+## Job Re-run
+
+| Requirement     | Implementation                       | Verification                           | Status    |
+| --------------- | ------------------------------------ | -------------------------------------- | --------- |
+| `RERUN-FR-001`  | Inspect CLI/Repository               | Real CLI Cleanup Integration           | `Passed`  |
+| `RERUN-FR-002`  | FAILED → QUEUED Transaction          | Cleanup CLI + Parse DB Integration     | `Passed`  |
+| `RERUN-FR-003`  | Same Execution/Audit Attempt         | Cleanup CLI → Attempt 4 Worker success | `Passed`  |
+| `RERUN-FR-004`  | Status/Target Fail-closed            | Status/allowlist/deleted DB Matrix     | `Passed`  |
+| `RERUN-FR-005`  | Durable QUEUED + Dispatcher          | Missing Redis Job recovery E2E         | `Passed`  |
+| `RERUN-FR-006`  | JobOperationAudit                    | CLI/DB Atomic Audit Integration        | `Passed`  |
+| `RERUN-FR-007`  | Stable JSON CLI + Runbook            | Real JSON CLI + Runbook Review         | `Passed`  |
+| `RERUN-SEC-001` | Enable/Secret Production Guard       | Config Unit                            | `Partial` |
+| `RERUN-SEC-002` | Three-step Allowlist/ID-only Payload | Disallowed Step DB + real queue E2E    | `Passed`  |
+| `RERUN-SEC-003` | Sanitized CLI/Audit Projection       | Real CLI/Audit Redaction Regression    | `Passed`  |
+| `RERUN-SEC-004` | Row Lock Transition/5 Limit          | Concurrent PostgreSQL + limit DB       | `Passed`  |
+| `RERUN-SEC-005` | Parent/Target Revalidation           | Deleted Target + ownership DB FK       | `Passed`  |
+
+`PDF-DEV-002` は real Cleanup CLI → Audit → Worker Attempt 4 Success により解消しました。`RERUN-SEC-001` の Workload IAM/Secrets Manager 実体は Phase 7 Deployment Evidence 待ちです。

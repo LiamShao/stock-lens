@@ -5,9 +5,10 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsx watch src/main.ts",
+    "job:operations": "tsx src/job-operations.ts",
     "lint": "eslint src --max-warnings=0",
     "start": "node dist/main.js",
-    "test": "jest",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -15,7 +16,8 @@
     "@stocklens/object-storage": "workspace:*",
     "@stocklens/shared": "workspace:*",
     "bullmq": "^5.80.2",
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "pdfjs-dist": "^6.2.108"
   },
   "devDependencies": {
     "@stocklens/config": "workspace:*",

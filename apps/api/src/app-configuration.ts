@@ -10,6 +10,7 @@ import { ApiExceptionFilter } from './common/api-exception.filter';
 export async function configureApiApplication(
   app: NestFastifyApplication,
   authConfig: AuthConfig,
+  options: { rateLimitMax?: number } = {},
 ): Promise<void> {
   await app.register(cookie);
   await app.register(rateLimit, {
@@ -19,7 +20,7 @@ export async function configureApiApplication(
         'Too many requests.',
         HttpStatus.TOO_MANY_REQUESTS,
       ),
-    max: 100,
+    max: options.rateLimitMax ?? 100,
     timeWindow: '1 minute',
   });
 

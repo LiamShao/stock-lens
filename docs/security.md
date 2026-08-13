@@ -67,6 +67,10 @@ Production Bucket は Public Access を全面拒否し、API Role には対象 P
 
 ## 6. Error と Log
 
+PDF Parser は Object Byte だけを処理し、外部 URL、Script、Attachment、Form Action を実行しません。20 MB Object、500 Pages、2 MiB Text/Page、50 MiB Text/Document、120 秒 Timeout を適用し、Full PDF/Page/Chunk Text と Storage Coordinate を Log に残しません。
+
+FAILED Job の再実行は Public API へ公開せず、Explicit Enable、Workload Identity、Secret、Execution Confirmation を要求する Operator CLI に限定します。Mutation は `JobOperationAudit` に保存し、許可 Step と 5 回上限を Database Transaction 内で検証します。
+
 - API Error は `code`、`message`、`requestId`、`details` の統一形式で返します。
 - 予期しない Error は Client に内部 Detail を返しません。
 - Password、Access Token、Refresh Token、PDF 全文を Log に記録しません。
@@ -82,6 +86,7 @@ Production Bucket は Public Access を全面拒否し、API Role には対象 P
 - `.env`、Credential、Production Secret は Commit しません。
 - Local MinIO だけが `S3_ENDPOINT`、`S3_FORCE_PATH_STYLE=true`、Static `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` を使用します。AWS Runtime は Endpoint と Static Credential を省略し、IAM Role の Default Credential Provider Chain を使用します。
 - `S3_BUCKET` は事前作成済み Private Bucket、`S3_PRESIGN_EXPIRES_IN_SECONDS` は 1〜300 秒、`REDIS_URL` は `redis:` または TLS の `rediss:` に限定します。
+- Manual Re-run CLI は `ALLOW_JOB_RERUN=true` と 32 Characters 以上の `JOB_OPERATOR_SECRET` を必須とし、Production では Local Default を拒否します。
 
 ## 8. 残存 Security 項目
 

@@ -98,10 +98,12 @@ function createRepository(
     | { alreadySucceeded: true }
     | {
         alreadySucceeded: false;
+        attempt: number;
         storageBucket: string;
         storageKey: string;
       } = {
     alreadySucceeded: false,
+    attempt: 1,
     storageBucket: 'stocklens-dev',
     storageKey: 'owner/analysis/upload/object.pdf',
   },

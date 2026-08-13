@@ -6,24 +6,30 @@ import {
 } from '@stocklens/object-storage';
 import {
   OBJECT_CLEANUP_QUEUE_NAME,
+  ANALYSIS_PROCESSING_QUEUE_NAME,
+  type AnalysisJobData,
   type ObjectCleanupJobData,
 } from '@stocklens/shared';
 
 import { getRedisConnectionOptions, getWorkerConfig } from './config';
 import { loadLocalEnvironment } from './environment';
 import { ExpiredDocumentUploadScanner } from './expired-document-upload.scanner';
+import { AnalysisProcessingJobRepository } from './analysis-processing.repository';
+import { AnalysisProcessingProcessor } from './analysis-processing.processor';
 import { ObjectCleanupProcessor } from './object-cleanup.processor';
 import { ObjectCleanupJobRepository } from './object-cleanup.repository';
 import { PendingObjectCleanupDispatcher } from './pending-object-cleanup.dispatcher';
+import { PendingAnalysisDispatcher } from './pending-analysis.dispatcher';
 
 loadLocalEnvironment();
 const config = getWorkerConfig();
 const connection = getRedisConnectionOptions(config.redisUrl);
 const objectStorageConfig = getObjectStorageConfig();
 const prisma = new PrismaClient();
+const objectStorage = new S3ObjectStorageAdapter(objectStorageConfig);
 const cleanupProcessor = new ObjectCleanupProcessor(
   new ObjectCleanupJobRepository(prisma),
-  new S3ObjectStorageAdapter(objectStorageConfig),
+  objectStorage,
   objectStorageConfig.bucket,
 );
 const cleanupQueue = new Queue<ObjectCleanupJobData>(
@@ -35,6 +41,20 @@ const pendingCleanupDispatcher = new PendingObjectCleanupDispatcher(
   cleanupQueue,
 );
 const expiredUploadScanner = new ExpiredDocumentUploadScanner(prisma);
+const analysisQueue = new Queue<AnalysisJobData>(
+  ANALYSIS_PROCESSING_QUEUE_NAME,
+  { connection },
+);
+const analysisProcessor = new AnalysisProcessingProcessor(
+  new AnalysisProcessingJobRepository(prisma),
+  objectStorage,
+  objectStorageConfig.bucket,
+  analysisQueue,
+);
+const pendingAnalysisDispatcher = new PendingAnalysisDispatcher(
+  prisma,
+  analysisQueue,
+);
 async function expireOrphanUploads(): Promise<void> {
   try {
     await expiredUploadScanner.scan();
@@ -60,9 +80,23 @@ async function dispatchPendingCleanup(): Promise<void> {
     );
   }
 }
+async function dispatchPendingAnalysis(): Promise<void> {
+  try {
+    await pendingAnalysisDispatcher.dispatch();
+  } catch {
+    console.error(
+      JSON.stringify({
+        error: 'Pending analysis dispatch failed.',
+        event: 'worker.dispatch_failed',
+        queue: ANALYSIS_PROCESSING_QUEUE_NAME,
+      }),
+    );
+  }
+}
 async function runCleanupMaintenance(): Promise<void> {
   await expireOrphanUploads();
   await dispatchPendingCleanup();
+  await dispatchPendingAnalysis();
 }
 const pendingCleanupDispatchInterval = setInterval(
   () => void runCleanupMaintenance(),
@@ -70,11 +104,9 @@ const pendingCleanupDispatchInterval = setInterval(
 );
 pendingCleanupDispatchInterval.unref();
 
-const worker = new Worker(
-  'analysis',
-  () => {
-    throw new Error('Analysis pipeline is not implemented yet.');
-  },
+const worker = new Worker<AnalysisJobData>(
+  ANALYSIS_PROCESSING_QUEUE_NAME,
+  (job) => analysisProcessor.process(job),
   {
     concurrency: config.concurrency,
     connection,
@@ -91,7 +123,12 @@ const cleanupWorker = new Worker<ObjectCleanupJobData>(
 );
 
 worker.on('ready', () => {
-  console.info(JSON.stringify({ event: 'worker.ready', queue: 'analysis' }));
+  console.info(
+    JSON.stringify({
+      event: 'worker.ready',
+      queue: ANALYSIS_PROCESSING_QUEUE_NAME,
+    }),
+  );
 });
 
 worker.on('failed', (job, error) => {
@@ -132,6 +169,7 @@ async function shutdown(signal: string): Promise<void> {
     worker.close(),
     cleanupWorker.close(),
     cleanupQueue.close(),
+    analysisQueue.close(),
   ]);
   await prisma.$disconnect();
 }

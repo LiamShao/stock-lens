@@ -114,7 +114,15 @@ Document List Response は `{ "items": DocumentResource[] }` です。`DocumentR
 
 Delete、Invalid/Expired Finalize は、Database に Durable `OBJECT_CLEANUP` を保存してから Redis/BullMQ Dispatch を試行します。Queue 障害があっても HTTP Outcome と Cleanup Pending State は失われません。
 
-## 7. Validation
+## 7. Document Processing Endpoint
+
+| Method | Path                            | 成功 | 説明                                   |
+| ------ | ------------------------------- | ---- | -------------------------------------- |
+| POST   | `/analyses/:analysisId/process` | 202  | Active PDF の非同期 Parse/Chunk を開始 |
+
+Request Body はありません。`UPLOADED` の Owner-scoped Analysis と 1〜3 件の Active Document を確認し、`executionId`、`analysisId`、`status=PARSING`、`acceptedAt` を返します。同一実行中 Request は同じ Execution ID に収束します。Cross-user は `404 ANALYSIS_NOT_FOUND`、Document 0 件は `409 ANALYSIS_HAS_NO_DOCUMENTS`、不正な Status は `409 ANALYSIS_NOT_PROCESSABLE` です。Public Job List や Attempt Detail API は追加しません。
+
+## 8. Validation
 
 - 外部入力は Controller Boundary で Zod Schema により検証します。
 - Email は trim と lowercase を適用してから保存・検索します。
@@ -123,10 +131,11 @@ Delete、Invalid/Expired Finalize は、Database に Durable `OBJECT_CLEANUP` �
 - 不正な入力は HTTP 400 / `VALIDATION_ERROR` とします。
 - PDF Upload は Extension、Declared MIME、Declared Size、SHA-256 を Presign 前に検証し、Finalize 時に実 Object を再検証します。
 
-## 8. Status Code
+## 9. Status Code
 
 - `200 OK`: Login、Refresh、通常の取得
 - `201 Created`: Register、Resource 作成
+- `202 Accepted`: 非同期 Analysis Processing の受付
 - `204 No Content`: Logout、Response Body のない削除
 - `400 Bad Request`: Validation Error
 - `401 Unauthorized`: Credential / Token Error

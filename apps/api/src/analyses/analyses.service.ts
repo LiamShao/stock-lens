@@ -5,6 +5,7 @@ import type {
   AnalysisResource,
   CreateAnalysisRequest,
   RenameAnalysisRequest,
+  ProcessAnalysisResponse,
 } from '@stocklens/shared';
 
 import { ApiException } from '../common/api-exception';
@@ -12,11 +13,46 @@ import {
   AnalysisRepository,
   type AnalysisRecord,
 } from '../database/analysis.repository';
+import { AnalysisProcessingRepository } from '../database/analysis-processing.repository';
+import { AnalysisProcessingQueuePublisher } from './analysis-processing.queue';
 import { decodeAnalysisCursor, encodeAnalysisCursor } from './analysis-cursor';
 
 @Injectable()
 export class AnalysesService {
-  constructor(private readonly repository: AnalysisRepository) {}
+  constructor(
+    private readonly repository: AnalysisRepository,
+    private readonly processingRepository: AnalysisProcessingRepository,
+    private readonly processingQueue: AnalysisProcessingQueuePublisher,
+  ) {}
+
+  async process(
+    ownerId: string,
+    analysisId: string,
+  ): Promise<ProcessAnalysisResponse> {
+    const result = await this.processingRepository.start(ownerId, analysisId);
+    if (result.kind === 'not-found') throw analysisNotFound();
+    if (result.kind === 'no-documents') {
+      throw new ApiException(
+        'ANALYSIS_HAS_NO_DOCUMENTS',
+        'Analysis has no documents.',
+        HttpStatus.CONFLICT,
+      );
+    }
+    if (result.kind === 'not-processable') {
+      throw new ApiException(
+        'ANALYSIS_NOT_PROCESSABLE',
+        'Analysis cannot be processed in its current status.',
+        HttpStatus.CONFLICT,
+      );
+    }
+    await this.processingQueue.dispatch(result.executionId);
+    return {
+      acceptedAt: result.acceptedAt.toISOString(),
+      analysisId: result.analysisId,
+      executionId: result.executionId,
+      status: 'PARSING',
+    };
+  }
 
   async create(
     ownerId: string,

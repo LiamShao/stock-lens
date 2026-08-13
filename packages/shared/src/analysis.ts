@@ -5,6 +5,7 @@ export const analysisStatusSchema = z.enum([
   'UPLOADED',
   'PARSING',
   'CHUNKING',
+  'READY_FOR_EMBEDDING',
   'EMBEDDING',
   'EXTRACTING',
   'VALIDATING',
@@ -91,3 +92,14 @@ export const analysisPageResponseSchema = z.object({
 });
 
 export type AnalysisPageResponse = z.infer<typeof analysisPageResponseSchema>;
+
+export const processAnalysisResponseSchema = z.object({
+  acceptedAt: z.iso.datetime(),
+  analysisId: z.uuid(),
+  executionId: z.uuid(),
+  status: z.literal('PARSING'),
+});
+
+export type ProcessAnalysisResponse = z.infer<
+  typeof processAnalysisResponseSchema
+>;

@@ -4,37 +4,52 @@
 
 ## Summary
 
-| ID                 | Area           | Severity | Status              | Recommended disposition                                         |
-| ------------------ | -------------- | -------: | ------------------- | --------------------------------------------------------------- |
-| `SDD-DEV-001`      | Process        |   Medium | Resolved 2026-07-22 | Backfilled Spec を Review して Baseline 承認                    |
-| `SDD-DEV-002`      | Governance     |   Medium | Resolved 2026-07-22 | `AGENTS.md` を Git 管理して SDD Agent Rule を共有               |
-| `AUTH-DEV-001`     | Test           |     High | Resolved 2026-07-22 | Auth PostgreSQL / HTTP Integration Test を次作業で追加          |
-| `AUTH-DEV-002`     | Security       |   Medium | Resolved 2026-07-22 | Unknown Email でも Dummy Argon2 Verify を実行                   |
-| `AUTH-DEV-003`     | Consistency    |      Low | Resolved 2026-07-22 | Login Token 作成と `lastLoginAt` を Transaction 化              |
-| `AUTH-DEV-004`     | API Contract   |   Medium | Resolved 2026-07-22 | OpenAPI Response / Error Schema を具体化                        |
-| `AUTH-DEV-005`     | Security       |   Medium | Resolved 2026-07-22 | JWT Sign/Verify を `HS256` Allowlist に固定                     |
-| `PLATFORM-DEV-001` | Logging        |   Medium | Resolved 2026-07-22 | Client Request ID を長さ・文字種で検証                          |
-| `PLATFORM-DEV-002` | Logging        |     High | Resolved 2026-07-22 | Authorization/Cookie/Secret の明示的 Log Redaction を設定       |
-| `DEMO-DEV-001`     | Security       |     High | Resolved 2026-07-22 | Production で明示的 Allow Flag と非 Default Password を必須化   |
-| `DEMO-DEV-002`     | Security       |   Medium | Resolved 2026-07-22 | Password 更新時に既存 Refresh Token Family を失効               |
-| `DEMO-DEV-003`     | Consistency    |      Low | Resolved 2026-07-22 | Concurrent Provision の Unique Conflict を再読込して収束        |
-| `DEMO-DEV-004`     | Logging        |   Medium | Resolved 2026-07-22 | Unknown CLI Error を Stable Sanitized Message に変換            |
-| `OWN-DEV-001`      | Data integrity |     High | Resolved 2026-07-22 | Composite Ownership Constraint を Migration で追加              |
-| `OWN-DEV-002`      | Test isolation |   Medium | Resolved 2026-07-22 | Testcontainers PostgreSQL に移行                                |
-| `OWN-DEV-003`      | Concurrency    |      Low | Resolved 2026-07-22 | Parent Check/Create の Isolation Strategy を明示                |
-| `OWN-DEV-004`      | Authorization  |     High | Resolved 2026-08-10 | Analysis/Document Bearer A/B HTTP Test を追加                   |
-| `ANALYSIS-DEV-001` | Status model   |     High | Resolved 2026-07-24 | `DRAFT` Status と Default を Migration/Test で検証              |
-| `DOC-DEV-001`      | Documentation  |   Medium | Partial             | Architecture/Testing は追加、残り Required Docs/ADR は未作成    |
-| `CI-DEV-001`       | CI             |   Medium | Resolved 2026-07-22 | Integration Test を CI Quality Gate に追加                      |
-| `TEST-DEV-001`     | Test bootstrap |   Medium | Resolved 2026-08-10 | Integration Command 内で PostgreSQL Image を自動 Build          |
-| `PDF-DEV-001`      | Lifecycle      |     High | Resolved 2026-08-12 | 24-hour Orphan Expiry の Worker Scan と Integration Test を追加 |
-| `PDF-DEV-002`      | Operations     |   Medium | Accepted 2026-08-12 | 統一 Job Re-run Feature まで期限付き Risk Acceptance            |
+| ID                 | Area              | Severity | Status              | Recommended disposition                                         |
+| ------------------ | ----------------- | -------: | ------------------- | --------------------------------------------------------------- |
+| `SDD-DEV-001`      | Process           |   Medium | Resolved 2026-07-22 | Backfilled Spec を Review して Baseline 承認                    |
+| `SDD-DEV-002`      | Governance        |   Medium | Resolved 2026-07-22 | `AGENTS.md` を Git 管理して SDD Agent Rule を共有               |
+| `AUTH-DEV-001`     | Test              |     High | Resolved 2026-07-22 | Auth PostgreSQL / HTTP Integration Test を次作業で追加          |
+| `AUTH-DEV-002`     | Security          |   Medium | Resolved 2026-07-22 | Unknown Email でも Dummy Argon2 Verify を実行                   |
+| `AUTH-DEV-003`     | Consistency       |      Low | Resolved 2026-07-22 | Login Token 作成と `lastLoginAt` を Transaction 化              |
+| `AUTH-DEV-004`     | API Contract      |   Medium | Resolved 2026-07-22 | OpenAPI Response / Error Schema を具体化                        |
+| `AUTH-DEV-005`     | Security          |   Medium | Resolved 2026-07-22 | JWT Sign/Verify を `HS256` Allowlist に固定                     |
+| `PLATFORM-DEV-001` | Logging           |   Medium | Resolved 2026-07-22 | Client Request ID を長さ・文字種で検証                          |
+| `PLATFORM-DEV-002` | Logging           |     High | Resolved 2026-07-22 | Authorization/Cookie/Secret の明示的 Log Redaction を設定       |
+| `DEMO-DEV-001`     | Security          |     High | Resolved 2026-07-22 | Production で明示的 Allow Flag と非 Default Password を必須化   |
+| `DEMO-DEV-002`     | Security          |   Medium | Resolved 2026-07-22 | Password 更新時に既存 Refresh Token Family を失効               |
+| `DEMO-DEV-003`     | Consistency       |      Low | Resolved 2026-07-22 | Concurrent Provision の Unique Conflict を再読込して収束        |
+| `DEMO-DEV-004`     | Logging           |   Medium | Resolved 2026-07-22 | Unknown CLI Error を Stable Sanitized Message に変換            |
+| `OWN-DEV-001`      | Data integrity    |     High | Resolved 2026-07-22 | Composite Ownership Constraint を Migration で追加              |
+| `OWN-DEV-002`      | Test isolation    |   Medium | Resolved 2026-07-22 | Testcontainers PostgreSQL に移行                                |
+| `OWN-DEV-003`      | Concurrency       |      Low | Resolved 2026-07-22 | Parent Check/Create の Isolation Strategy を明示                |
+| `OWN-DEV-004`      | Authorization     |     High | Resolved 2026-08-10 | Analysis/Document Bearer A/B HTTP Test を追加                   |
+| `ANALYSIS-DEV-001` | Status model      |     High | Resolved 2026-07-24 | `DRAFT` Status と Default を Migration/Test で検証              |
+| `DOC-DEV-001`      | Documentation     |   Medium | Partial             | Architecture/Testing は追加、残り Required Docs/ADR は未作成    |
+| `CI-DEV-001`       | CI                |   Medium | Resolved 2026-07-22 | Integration Test を CI Quality Gate に追加                      |
+| `TEST-DEV-001`     | Test bootstrap    |   Medium | Resolved 2026-08-10 | Integration Command 内で PostgreSQL Image を自動 Build          |
+| `PDF-DEV-001`      | Lifecycle         |     High | Resolved 2026-08-12 | 24-hour Orphan Expiry の Worker Scan と Integration Test を追加 |
+| `PDF-DEV-002`      | Operations        |   Medium | Resolved 2026-08-13 | Real CLI/Audit/Worker Manual Re-run を追加                      |
+| `PROC-DEV-001`     | Status model      |     High | Resolved 2026-08-13 | `READY_FOR_EMBEDDING` を追加する                                |
+| `PROC-DEV-002`     | PDF compatibility |   Medium | Resolved 2026-08-13 | Password 不要の Permission-encrypted PDF を受け入れる           |
+| `RERUN-DEV-001`    | Authorization     |     High | Resolved 2026-08-13 | CLI + Workload Identity/Secret + DB Audit を採用する            |
+| `RERUN-DEV-002`    | Concurrency       |   Medium | Resolved 2026-08-13 | `JobExecution` Row Lock で Concurrent CLI を直列化              |
+| `TEST-DEV-002`     | Test/Concurrency  |   Medium | Accepted 2026-08-13 | Production 3 Attempt を維持し Test-side Retry のみ追加          |
 
 2026-08-10 の `PDF-TASK-012`〜`PDF-TASK-014` Review では新規 Deviation は検出されませんでした。Real MinIO Storage、Document Bearer A/B HTTP、Redis/BullMQ Worker Cleanup の Acceptance Evidence を追加し、`OWN-DEV-004` を解消しました。
 
 2026-08-12 の `PDF-TASK-015` Review で、期限切れ Session は Finalize Request 時にのみ `EXPIRED` へ遷移し、未 Finalize Object を自動検出する Worker Scan が存在しない `PDF-DEV-001` を検出しました。Approved `PDF-Q-005` と Technical Plan の 24-hour Cleanup Contract を満たす最小修正として、Worker Scan と実 PostgreSQL/Redis/MinIO Verification を追加します。
 
 2026-08-12 の `PDF-TASK-016` Documentation Review で、FAILED Cleanup を Reset/Retry する内部 Repository/Publisher Contract は存在する一方、Operator が実行できる CLI/API/Runbook が存在しない `PDF-DEV-002` を検出しました。Manual Re-run Requirement の Operational Acceptance には Surface と Authorization/Audit Contract の明示的決定が必要です。
+
+2026-08-13 の Phase 3 Draft で、Parse/Chunk 完了後に次の未実装 Phase へ渡す際、既存 Status Enum だけでは「現在実行中」と「次 Step 待機中」を正確に区別できない `PROC-DEV-001` を記録しました。また `PDF-DEV-002` を解消する Operator CLI は Authentication と Audit の Security Contract が未決定のため `RERUN-DEV-001` として明示します。いずれも Draft Approval 前に Production Behavior は変更しません。
+
+2026-08-13 の Phase 3 Quality Gate で、既存 `PDF-TASK-015` Concurrent Upload Reservation Test が 3 回の Full Integration Run のうち 2 回、3 回の Serializable `P2034` Retry を使い切りました。Phase 3 HTTP Integration 自体と他 4 Suites / 37 Tests は成功しています。既存 Concurrency Policy の Retry/Backoff 変更は Scope と運用挙動に影響するため `TEST-DEV-002` として記録し、黙って変更しません。
+
+2026-08-13 の Real IR PDF Probe で、3 Files は PDF Metadata 上 Encryption/Permission Restriction を持つ一方、Password 入力なしで現行 `pdfjs-dist` Parser が全 509 Pages を抽出できました。Approved Spec は `encrypted` を一律 Non-retryable Failure と読めるため、実装との差を `PROC-DEV-002` として記録し、Decision 前に Spec または Runtime Behavior を変更しません。
+
+User は同日 `PROC-DEV-002` Option `A` を承認しました。Password/明示的復号を必要とする PDF のみ Reject し、Password 不要で安全に抽出できる Permission-encrypted PDF を受け入れるよう Spec と Verification Boundary を更新しました。
+
+2026-08-13 の `RERUN-TASK-007` Integration で、同じ FAILED Execution への 2 Concurrent Re-run の一方が `QUEUED` + 1 Audit に正しく収束する一方、他方は PostgreSQL Serializable `P2034` を返し、Stable `not-rerunnable` Result にならない `RERUN-DEV-002` を検出しました。重複 Mutation/Audit はありませんが、Approved Concurrency Contract と CLI Stable Output を満たさないため Decision 前に Production Retry/Lock Behavior を変更しません。
 
 ## Resolution Evidence
 
@@ -51,6 +66,9 @@
 | `CI-DEV-001`                           | Tracked GitHub Actions が `spec:check` と Docker-based `test:integration` を必須 Step として実行                  |
 | `TEST-DEV-001`                         | Root `test:integration` が Project PostgreSQL Image を準備してから Testcontainers Suite を実行                    |
 | `PDF-DEV-001`                          | Worker の bounded Expiry Scan、Stable Cleanup Upsert、Redis/BullMQ/MinIO End-to-end Orphan Delete Test            |
+| `PDF-DEV-002`                          | Cleanup Attempt 3 FAILED → Real CLI Inspect/Re-run → Audit → same Execution Attempt 4 Worker Success              |
+| `PROC-DEV-002`                         | `PROC-Q-007` Approved A、Real IR 3 Files / 509 Pages Direct Parser Probe、Spec/Plan/Acceptance Boundary Update    |
+| `RERUN-DEV-002`                        | Approved B、`READ COMMITTED` + `FOR UPDATE`、Concurrent 1 queued / 1 not-rerunnable / 1 Audit Integration         |
 
 ## Detail
 
@@ -194,6 +212,7 @@
 - Decision: User は 2026-08-12 に Option `C` を選択しました。PDF Upload Feature では新しい CLI/API を追加せず、Operator-facing Manual Re-run を Phase 3 の統一 Job Re-run Feature へ延期します。
 - Accepted risk: Automatic 3 Attempt 後に FAILED のまま残る Cleanup は Durable Record と Sanitized Attempt History を保持しますが、現時点では Operator が Supported Surface から再実行できません。
 - Follow-up owner: Phase 3 Job Execution / Manual Re-run Specification。Public API、Authorization、Audit、Runbook を実装前に承認します。
+- Resolution: Phase 3 で CLI-only Inspect/Re-run、Production Guard、`JobOperationAudit`、Redis Recovery を実装し、Cleanup Attempt 3 FAILED から同一 Execution Attempt 4 Success まで real PostgreSQL/Redis/BullMQ/MinIO Integration で検証しました。
 
 ### ANALYSIS-DEV-001 — Pre-upload Analysis has no valid status
 
@@ -202,6 +221,52 @@
 - Options: `A` `DRAFT` Status を追加して最初の Document Finalize 後に `UPLOADED` へ遷移、`B` `UPLOADED` を「Analysis Container Created」の意味に拡張、`C` 別 Draft Entity を追加して Upload 後に Analysis を作成。
 - Recommendation: `A`。Approved PDF Flow を保ちつつ、Status の意味と遷移を明示できます。
 - Decision: User は 2026-07-24 に `DRAFT` Status の追加と最初の Document Finalize 後の `UPLOADED` 遷移を承認しました。
+
+### PROC-DEV-001 — Phase 3 handoff has no unambiguous status
+
+- Evidence: 現行 `AnalysisStatus` は `CHUNKING` の次を `EMBEDDING` としますが、Embedding Processor は Phase 4 まで未実装です。`CHUNKING` のままでは実行中に見え、`EMBEDDING` のままでは未稼働 Step が実行中に見えます。
+- Impact: User-facing Status、Worker Recovery Scan、Manual Re-run、Phase 4 Handoff が同じ値を異なる意味で扱う可能性があります。
+- Options: `A` `READY_FOR_EMBEDDING` を追加、`B` Phase 3 Runtime を Feature Flag で無効にして Phase 4 と同時 Release、`C` `EMBEDDING` を Queued/Waiting も含む Status として仕様化し Job Status で実行中を区別。
+- Recommendation: `A`。State の意味が最も明確ですが、Database/API Enum 変更を伴います。
+- Decision: User は 2026-08-13 に Option `A`、`READY_FOR_EMBEDDING` の追加を承認しました。
+
+### RERUN-DEV-001 — Operator authentication and audit persistence are undecided
+
+- Evidence: `PDF-DEV-002` は Operator-facing Supported Surface を要求しますが、Application に Admin Role/Audit Table はなく、AWS IAM/Deployment Design も Phase 7 です。
+- Impact: Environment access だけで Production Mutation を許可するか、Application-level Authorization/Audit を追加するかで Security、Schema、運用 Scope が大きく変わります。
+- Options: `A` CLI-only + Workload IAM/Secrets + 専用 DB Audit Table、`B` Admin Role + Internal API + Audit Table、`C` CLI-only + Central Structured Log Audit。
+- Recommendation: `A`。Public Attack Surface を増やさず、Durable Queryable Audit を保持します。
+- Decision: User は 2026-08-13 に Option `A`、CLI-only + Workload Identity/Secret + Production Enable Flag + `JobOperationAudit` を承認しました。
+
+### PROC-DEV-002 — Permission-encrypted PDFs have an ambiguous acceptance boundary
+
+- Evidence: `test-data/` の 3 Public IR PDFs は `pdfinfo` 上 Encryption/Permission Restriction を持ちますが、Password は不要で Copy が許可され、現行 Byte-only `pdfjs-dist` Parser は 63 / 124 / 322 Pages を正常抽出しました。
+- Conflict: Approved `PROC-AC-007` と Edge Case 表は `encrypted` PDF を Non-retryable `FAILED_PARSING` としますが、Non-goal は「Password 付きまたは暗号化 PDF の解除」であり、解除を必要としない Permission-encrypted PDF を Reject するかは明確ではありません。
+- Impact: 一律 Reject は一般的な Public IR PDF を不要に排除する可能性があり、現行 Accept は Acceptance Criterion の字面と一致しません。
+- Options: `A` Password 入力または復号を要求する PDF のみ Reject し、Password 不要で安全に Text 抽出できる Permission-encrypted PDF は Accept、`B` Encryption Flag がある PDF を一律 Reject、`C` 現行挙動を暫定維持して Phase 7 Compatibility Policy まで延期。
+- Recommendation: `A`。Security Boundary を維持しつつ、実際の Public IR Dataset と互換性があります。承認後に Spec/Test を更新します。
+- Decision: User は 2026-08-13 に Option `A` を承認しました。Password/明示的復号が必要な PDF のみ Reject し、Password 不要で安全に抽出できる Permission-encrypted PDF は通常 Limit 内で受け入れます。
+- Resolution evidence: Approved Spec/Plan/Acceptance を更新し、Local Real IR 3 Files / 509 Pages の Direct Parser Probe が成功しました。Repeatable CI Fixture と Full Worker E2E は Verification Gap として維持します。
+
+### RERUN-DEV-002 — Concurrent re-run exposes a serializable conflict
+
+- Evidence: Isolated PostgreSQL Integration で同じ FAILED `PARSE` Execution に 2 Concurrent `rerun` を実行すると、一方は `QUEUED` + 1 `JobOperationAudit` に成功し、他方は Prisma `P2034` で Reject されました。
+- Conflict: `RERUN-AC-003` / `RERUN-SEC-004` は Concurrent Duplicate Command が一つの Transition に収束し、Supported CLI が Stable Result/Error を返すことを要求します。
+- Impact: Data/監査の重複はありませんが、競合した Operator は Generic `JOB_OPERATION_FAILED` を受け、実際には同 Job が Queue 済みか判断できません。
+- Options: `A` Repository 内で `P2034` を最大 3 回 bounded retry し、再読込後 `not-rerunnable` へ収束、`B` Execution Row を `SELECT ... FOR UPDATE` で直列化、`C` 現状を Risk Accept して `RERUN-AC-003` を Partial のまま維持。
+- Recommendation: `A`。CLI は低頻度 Operation で、Schema/Architecture を変えず既存 Serializable Contract と Stable Result を満たします。
+- Decision: User は 2026-08-13 に Option `B` を承認しました。`READ COMMITTED` Transaction 内で対象 `JobExecution` を `SELECT ... FOR UPDATE` し、Lock 待機後に Status/Limit/Target を再読込します。
+- Resolution: Option `B` の `READ COMMITTED` + `SELECT ... FOR UPDATE` を実装しました。Concurrent PostgreSQL Regression は 1 `queued` / 1 Stable `not-rerunnable` / 1 Audit に成功し、Full Integration Gate 6 Suites / 51 Tests も成功しました。
+
+### TEST-DEV-002 — Serializable retry exhaustion is flaky under concurrent upload reservation
+
+- Evidence: `PDF-TASK-015` の 4 Concurrent Start は Serializable Transaction を使用しますが、同時 Retry が再衝突し、現行 3 Attempt を使い切る Run があります。2026-08-13 の Full Integration 3 Runs は 1 Passed / 2 Failed でした。
+- Impact: Data Corruption や 3 File Limit 違反は観測されませんが、正当な Concurrent Request の一つが Stable Limit Result ではなく Internal Failure になります。CI Gate も非決定的です。
+- Options: `A` 5 Attempt + bounded jittered backoff、`B` Parent Row Lock で Slot Reservation を直列化、`C` 現行 3 Attempt を維持して Test Retry のみ追加。
+- Recommendation: `A`。Architecture を変えず Thundering Retry を分散できます。ただし Production Retry Latency の変更なので User Approval 前に実装しません。
+- Decision: User は 2026-08-13 に Option `C` を選択しました。Production の 3 Attempt は維持し、`PDF-TASK-015` Acceptance Harness だけが外側で `P2034` を最大 3 回再試行します。
+- Accepted risk: Production Request は高競合時に 3 Attempt を使い切り、Stable Limit Result ではなく Sanitized Internal Failure になる可能性があります。Data Corruption や 3 File Limit 違反は許容しません。
+- Verification: Option `C` 適用後の Full Integration 5 Suites / 38 Tests は成功しました。これは Production Retry Exhaustion Risk を解消した Evidence ではなく、明示的 Risk Acceptance 下の Test Gate Stabilization です。
 
 ### DOC-DEV-001 — Required cross-cutting documents are incomplete
 
@@ -230,3 +295,4 @@
 | 2026-07-22 | `CI-DEV-001`                           | Recommended disposition approved | Integration Test を CI Gate に追加する                                          |
 | 2026-07-24 | `ANALYSIS-DEV-001`                     | `DRAFT` Status approved          | Pre-upload Analysis を `DRAFT`、最初の Document Finalize 後を `UPLOADED` とする |
 | 2026-08-12 | `PDF-DEV-002`                          | Option `C` approved              | Operator Manual Re-run を統一 Job Re-run Feature まで延期                       |
+| 2026-08-13 | `RERUN-DEV-002`                        | Option `B` approved              | `READ COMMITTED` + `JobExecution` Row Lock で Concurrent CLI を直列化           |

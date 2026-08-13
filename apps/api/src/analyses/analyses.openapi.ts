@@ -54,3 +54,17 @@ export class RenameAnalysisOpenApi {
   @ApiProperty({ maxLength: 120, minLength: 1 })
   declare title: string;
 }
+
+export class ProcessAnalysisOpenApi {
+  @ApiProperty({ format: 'uuid' })
+  declare executionId: string;
+
+  @ApiProperty({ format: 'uuid' })
+  declare analysisId: string;
+
+  @ApiProperty({ enum: ['PARSING'] })
+  declare status: 'PARSING';
+
+  @ApiProperty({ format: 'date-time' })
+  declare acceptedAt: string;
+}

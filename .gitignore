@@ -34,3 +34,6 @@ yarn-debug.log*
 # Runtime files
 tmp/
 uploads/
+
+# Local public IR PDFs used for manual acceptance; keep synthetic fixtures tracked.
+/test-data/*.pdf

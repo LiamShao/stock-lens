@@ -29,16 +29,20 @@ export class ObjectCleanupProcessor {
     if (attempt.alreadySucceeded) {
       return;
     }
+    const effectiveAttemptInput = {
+      ...attemptInput,
+      attempt: attempt.attempt,
+    };
     if (attempt.storageBucket !== this.configuredBucket) {
-      await this.markFailedSafely(attemptInput);
+      await this.markFailedSafely(effectiveAttemptInput);
       throw new Error('Object cleanup storage configuration mismatch.');
     }
 
     try {
       await this.objectStorage.deleteObject(attempt.storageKey);
-      await this.repository.markSucceeded(attemptInput);
+      await this.repository.markSucceeded(effectiveAttemptInput);
     } catch {
-      await this.markFailedSafely(attemptInput);
+      await this.markFailedSafely(effectiveAttemptInput);
       throw new Error('Object cleanup failed.');
     }
   }

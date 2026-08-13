@@ -12,6 +12,7 @@ enum AnalysisStatus {
   UPLOADED
   PARSING
   CHUNKING
+  READY_FOR_EMBEDDING
   EMBEDDING
   EXTRACTING
   VALIDATING
@@ -235,6 +236,7 @@ model Document {
   evidences     Evidence[]
   jobExecutions JobExecution[]
 
+  @@unique([ownerId, id])
   @@unique([ownerId, analysisId, id])
   @@index([ownerId, analysisId])
   @@index([analysisId, createdAt])
@@ -286,7 +288,7 @@ model DocumentPage {
   updatedAt       DateTime @updatedAt @db.Timestamptz(3)
 
   owner     User            @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  document  Document        @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  document  Document        @relation(fields: [ownerId, documentId], references: [ownerId, id], onDelete: Restrict)
   chunks    DocumentChunk[]
   evidences Evidence[]
 
@@ -310,7 +312,7 @@ model DocumentChunk {
   updatedAt      DateTime               @updatedAt @db.Timestamptz(3)
 
   owner     User         @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  document  Document     @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  document  Document     @relation(fields: [ownerId, documentId], references: [ownerId, id], onDelete: Restrict)
   page      DocumentPage @relation(fields: [pageId], references: [id], onDelete: Restrict)
   evidences Evidence[]
 
@@ -506,17 +508,35 @@ model JobExecution {
   createdAt        DateTime  @default(now()) @db.Timestamptz(3)
   updatedAt        DateTime  @updatedAt @db.Timestamptz(3)
 
-  owner          User            @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  analysis       Analysis        @relation(fields: [analysisId], references: [id], onDelete: Restrict)
-  document       Document?       @relation(fields: [ownerId, analysisId, documentId], references: [ownerId, analysisId, id], onDelete: Restrict)
-  documentUpload DocumentUpload? @relation(fields: [ownerId, analysisId, documentUploadId], references: [ownerId, analysisId, id], onDelete: Restrict)
-  attempts       JobAttempt[]
-  aiUsageLogs    AiUsageLog[]
+  owner           User                @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  analysis        Analysis            @relation(fields: [analysisId], references: [id], onDelete: Restrict)
+  document        Document?           @relation(fields: [ownerId, analysisId, documentId], references: [ownerId, analysisId, id], onDelete: Restrict)
+  documentUpload  DocumentUpload?     @relation(fields: [ownerId, analysisId, documentUploadId], references: [ownerId, analysisId, id], onDelete: Restrict)
+  attempts        JobAttempt[]
+  aiUsageLogs     AiUsageLog[]
+  operationAudits JobOperationAudit[]
 
   @@index([ownerId, analysisId])
   @@index([analysisId, step, status])
   @@index([documentId])
   @@index([documentUploadId])
+}
+
+model JobOperationAudit {
+  id             String    @id @default(uuid()) @db.Uuid
+  jobExecutionId String    @db.Uuid
+  operatorId     String
+  action         String
+  previousStatus JobStatus
+  status         JobStatus
+  requestId      String    @db.Uuid
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(3)
+
+  jobExecution JobExecution @relation(fields: [jobExecutionId], references: [id], onDelete: Restrict)
+
+  @@index([jobExecutionId, createdAt])
+  @@index([operatorId, createdAt])
 }
 
 model JobAttempt {

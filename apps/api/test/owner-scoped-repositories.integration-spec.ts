@@ -111,6 +111,38 @@ describe('owner-scoped repositories', () => {
       }),
     ).rejects.toMatchObject({ code: 'P2003' });
     await expect(
+      prisma.documentPage.create({
+        data: {
+          documentId: document.id,
+          ownerId: ownerB,
+          pageNumber: 1,
+          text: 'cross-owner page',
+          textSha256: '1'.repeat(64),
+        },
+      }),
+    ).rejects.toMatchObject({ code: 'P2003' });
+    const page = await prisma.documentPage.create({
+      data: {
+        documentId: document.id,
+        ownerId: ownerA,
+        pageNumber: 1,
+        text: 'owned page',
+        textSha256: '2'.repeat(64),
+      },
+    });
+    await expect(
+      prisma.documentChunk.create({
+        data: {
+          chunkIndex: 0,
+          content: 'cross-owner chunk',
+          contentSha256: '3'.repeat(64),
+          documentId: document.id,
+          ownerId: ownerB,
+          pageId: page.id,
+        },
+      }),
+    ).rejects.toMatchObject({ code: 'P2003' });
+    await expect(
       documentRepository.findActiveById(ownerB, document.id),
     ).resolves.toBeNull();
     await expect(
@@ -537,20 +569,22 @@ describe('owner-scoped repositories', () => {
     const now = new Date();
     const results = await Promise.all(
       Array.from({ length: 4 }, (_, index) =>
-        documentUploadRepository.createPending({
-          analysisId: analysis.id,
-          claimedSha256: String(index).repeat(64),
-          declaredMimeType: 'application/pdf',
-          declaredSizeBytes: 1024,
-          documentType: 'UNKNOWN',
-          expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000),
-          id: randomUUID(),
-          now,
-          originalName: `concurrent-${index}.pdf`,
-          ownerId: ownerA,
-          storageBucket: 'stocklens-test',
-          storageKey: `${testRunId}/${randomUUID()}.pdf`,
-        }),
+        retryP2034ForAcceptance(() =>
+          documentUploadRepository.createPending({
+            analysisId: analysis.id,
+            claimedSha256: String(index).repeat(64),
+            declaredMimeType: 'application/pdf',
+            declaredSizeBytes: 1024,
+            documentType: 'UNKNOWN',
+            expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+            id: randomUUID(),
+            now,
+            originalName: `concurrent-${index}.pdf`,
+            ownerId: ownerA,
+            storageBucket: 'stocklens-test',
+            storageKey: `${testRunId}/${randomUUID()}.pdf`,
+          }),
+        ),
       ),
     );
 
@@ -959,6 +993,29 @@ describe('owner-scoped repositories', () => {
     ).toBe(1);
   });
 });
+
+async function retryP2034ForAcceptance<T>(
+  operation: () => Promise<T>,
+  attempts = 3,
+): Promise<T> {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error: unknown) {
+      if (!hasPrismaCode(error, 'P2034') || attempt === attempts) throw error;
+    }
+  }
+  throw new Error('Test-only P2034 retry loop exhausted.');
+}
+
+function hasPrismaCode(error: unknown, code: string): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    error.code === code
+  );
+}
 
 function createUploadData(
   ownerId: string,

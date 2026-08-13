@@ -1,4 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+import { resolve } from 'node:path';
 
 import { Test, type TestingModule } from '@nestjs/testing';
 import {
@@ -8,13 +10,17 @@ import {
 import { Queue, Worker } from 'bullmq';
 import type { ObjectStorage } from '@stocklens/object-storage';
 import {
+  ANALYSIS_PROCESSING_QUEUE_NAME,
+  ANALYSIS_PARSE_JOB_NAME,
   analysisResourceSchema,
   authResponseSchema,
   documentListResponseSchema,
   documentResourceSchema,
   OBJECT_CLEANUP_JOB_NAME,
   OBJECT_CLEANUP_QUEUE_NAME,
+  processAnalysisResponseSchema,
   startDocumentUploadResponseSchema,
+  type AnalysisJobData,
   type AuthResponse,
   type ObjectCleanupJobData,
 } from '@stocklens/shared';
@@ -26,11 +32,15 @@ import { AppModule } from '../src/app.module';
 import { getAuthConfig } from '../src/auth/auth.config';
 import { PrismaService } from '../src/database/prisma.service';
 import { OBJECT_STORAGE } from '../src/documents/object-storage.module';
+import { AnalysisProcessingProcessor } from '../../worker/src/analysis-processing.processor';
+import { AnalysisProcessingJobRepository } from '../../worker/src/analysis-processing.repository';
 import { getRedisConnectionOptions } from '../../worker/src/config';
+import { JobOperationRepository } from '../../worker/src/job-operation.repository';
 import { ObjectCleanupProcessor } from '../../worker/src/object-cleanup.processor';
 import { ObjectCleanupJobRepository } from '../../worker/src/object-cleanup.repository';
 import { ExpiredDocumentUploadScanner } from '../../worker/src/expired-document-upload.scanner';
 import { PendingObjectCleanupDispatcher } from '../../worker/src/pending-object-cleanup.dispatcher';
+import { PendingAnalysisDispatcher } from '../../worker/src/pending-analysis.dispatcher';
 import {
   startMinio,
   type StartedMinioContainer,
@@ -43,8 +53,12 @@ import {
 
 jest.setTimeout(180_000);
 
-describe('document storage integration (PDF-TASK-012, PDF-TASK-014)', () => {
+const repositoryRoot = resolve(__dirname, '../../..');
+
+describe('document storage integration (PDF-TASK-012/014, PROC-TASK-011)', () => {
   const objectKeysToDelete = new Set<string>();
+  let analysisQueue: Queue<AnalysisJobData>;
+  let analysisWorker: Worker<AnalysisJobData> | undefined;
   let app: NestFastifyApplication;
   let cleanupQueue: Queue<ObjectCleanupJobData>;
   let cleanupWorker: Worker<ObjectCleanupJobData> | undefined;
@@ -86,12 +100,17 @@ describe('document storage integration (PDF-TASK-012, PDF-TASK-014)', () => {
     await app.getHttpAdapter().getInstance().ready();
     objectStorage = module.get<ObjectStorage>(OBJECT_STORAGE);
     prisma = module.get(PrismaService);
+    analysisQueue = new Queue<AnalysisJobData>(ANALYSIS_PROCESSING_QUEUE_NAME, {
+      connection: getRedisConnectionOptions(redis.url),
+    });
     cleanupQueue = new Queue<ObjectCleanupJobData>(OBJECT_CLEANUP_QUEUE_NAME, {
       connection: getRedisConnectionOptions(redis.url),
     });
   });
 
   afterEach(async () => {
+    await analysisWorker?.close();
+    analysisWorker = undefined;
     await cleanupWorker?.close();
     cleanupWorker = undefined;
     await Promise.all(
@@ -106,6 +125,7 @@ describe('document storage integration (PDF-TASK-012, PDF-TASK-014)', () => {
     if (app !== undefined) {
       await app.close();
     }
+    await analysisQueue?.close();
     await cleanupQueue?.close();
     await Promise.all([
       minio?.container.stop(),
@@ -181,6 +201,343 @@ describe('document storage integration (PDF-TASK-012, PDF-TASK-014)', () => {
     await expect(
       prisma.analysis.findUniqueOrThrow({ where: { id: analysisId } }),
     ).resolves.toMatchObject({ status: 'UPLOADED' });
+  });
+
+  it('PROC-AC-002 PROC-AC-004 PROC-AC-012 completes the real processing pipeline', async () => {
+    const pdf = createTextPdf([
+      `First page ${'A'.repeat(1_350)}`,
+      'Second page evidence for StockLens processing.',
+    ]);
+    const sha256 = createHash('sha256').update(pdf).digest('hex');
+    const { analysisId, auth } = await createOwnedAnalysis();
+    const started = await startUpload(auth, analysisId, pdf, sha256);
+    const storedUpload = await rememberStoredObject(started.uploadSession.id);
+    const putResponse = await fetch(started.upload.url, {
+      body: pdf,
+      headers: started.upload.headers,
+      method: 'PUT',
+    });
+    expect(putResponse.status).toBe(200);
+    const finalized = await request(auth, {
+      method: 'POST',
+      url: `/api/analyses/${analysisId}/document-uploads/${started.uploadSession.id}/finalize`,
+    });
+    expect(finalized.statusCode).toBe(200);
+    const document = documentResourceSchema.parse(finalized.json<unknown>());
+
+    await startAnalysisWorker();
+    const processResponse = await request(auth, {
+      method: 'POST',
+      url: `/api/analyses/${analysisId}/process`,
+    });
+    expect(processResponse.statusCode).toBe(202);
+    const accepted = processAnalysisResponseSchema.parse(
+      processResponse.json<unknown>(),
+    );
+    expect(accepted).toMatchObject({ analysisId, status: 'PARSING' });
+
+    const completed = await waitForAnalysisReady(analysisId);
+    expect(completed.analysis).toMatchObject({
+      failureCode: null,
+      failureMessage: null,
+      status: 'READY_FOR_EMBEDDING',
+    });
+    expect(completed.executions).toHaveLength(2);
+    expect(completed.executions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          currentAttempt: 1,
+          id: accepted.executionId,
+          status: 'SUCCEEDED',
+          step: 'PARSE',
+        }),
+        expect.objectContaining({
+          currentAttempt: 1,
+          status: 'SUCCEEDED',
+          step: 'CHUNK',
+        }),
+      ]),
+    );
+    expect(
+      completed.executions.every(({ attempts }) => attempts.length === 1),
+    ).toBe(true);
+
+    const pages = await prisma.documentPage.findMany({
+      orderBy: { pageNumber: 'asc' },
+      where: { documentId: document.id },
+    });
+    expect(pages.map(({ pageNumber }) => pageNumber)).toEqual([1, 2]);
+    expect(
+      pages.every(
+        ({ text, textSha256 }) =>
+          createHash('sha256').update(text).digest('hex') === textSha256,
+      ),
+    ).toBe(true);
+    const chunks = await prisma.documentChunk.findMany({
+      orderBy: { chunkIndex: 'asc' },
+      where: { documentId: document.id },
+    });
+    expect(chunks).toHaveLength(2);
+    expect(new Set(chunks.map(({ pageId }) => pageId))).toEqual(
+      new Set(pages.map(({ id }) => id)),
+    );
+    expect(
+      chunks.every(({ content }) => Array.from(content).length <= 1_200),
+    ).toBe(true);
+    await expect(
+      prisma.document.findUniqueOrThrow({ where: { id: document.id } }),
+    ).resolves.toMatchObject({ pageCount: 2 });
+    await expect(
+      objectStorage.headObject(storedUpload.storageKey),
+    ).resolves.not.toBeNull();
+  });
+
+  it('PROC-AC-003 preserves an empty page while chunking extractable pages', async () => {
+    const finalized = await createFinalizedPdf(
+      createTextPdf(['', 'Extractable evidence remains page two.']),
+    );
+    await startAnalysisWorker();
+    await startProcessing(finalized.auth, finalized.analysisId);
+    await waitForAnalysisReady(finalized.analysisId);
+
+    const pages = await prisma.documentPage.findMany({
+      orderBy: { pageNumber: 'asc' },
+      where: { documentId: finalized.documentId },
+    });
+    expect(pages).toEqual([
+      expect.objectContaining({ pageNumber: 1, text: '' }),
+      expect.objectContaining({ pageNumber: 2 }),
+    ]);
+    const chunks = await prisma.documentChunk.findMany({
+      where: { documentId: finalized.documentId },
+    });
+    expect(chunks).toHaveLength(1);
+    expect(chunks[0]).toMatchObject({ pageId: pages[1]?.id });
+  });
+
+  it.each([
+    {
+      code: 'PDF_PARSE_INVALID',
+      label: 'malformed input',
+      pdf: Buffer.from('%PDF-not-valid'),
+    },
+    {
+      code: 'PDF_PAGE_LIMIT_EXCEEDED',
+      label: '501 page input',
+      pdf: createTextPdf(Array.from({ length: 501 }, () => '')),
+    },
+  ])(
+    'PROC-AC-007 persists a sanitized non-retryable failure for $label',
+    async ({ code, pdf }) => {
+      const finalized = await createFinalizedPdf(pdf);
+      await startAnalysisWorker();
+      await startProcessing(finalized.auth, finalized.analysisId);
+      const failed = await waitForAnalysisFailure(finalized.analysisId);
+
+      expect(failed.analysis).toMatchObject({
+        failureCode: code,
+        failureMessage: 'PDF parsing failed.',
+        status: 'FAILED_PARSING',
+      });
+      expect(failed.execution).toMatchObject({
+        currentAttempt: 1,
+        errorCode: code,
+        errorDetails: null,
+        errorMessage: 'PDF parsing failed.',
+        status: 'FAILED',
+      });
+      expect(failed.execution.attempts).toHaveLength(1);
+      await expect(
+        prisma.documentPage.count({
+          where: { documentId: finalized.documentId },
+        }),
+      ).resolves.toBe(0);
+      await expect(
+        prisma.documentChunk.count({
+          where: { documentId: finalized.documentId },
+        }),
+      ).resolves.toBe(0);
+    },
+  );
+
+  it('PROC-AC-006 retries transient storage failure and succeeds on attempt three', async () => {
+    const finalized = await createFinalizedPdf(
+      createTextPdf(['Retryable storage evidence.']),
+    );
+    let reads = 0;
+    const retryingStorage: ObjectStorage = {
+      createPresignedPdfUpload: (input) =>
+        objectStorage.createPresignedPdfUpload(input),
+      deleteObject: (objectKey) => objectStorage.deleteObject(objectKey),
+      getObjectStream: (objectKey) => {
+        reads += 1;
+        if (reads < 3) {
+          throw new Error('test-only transient object read failure');
+        }
+        return objectStorage.getObjectStream(objectKey);
+      },
+      headObject: (objectKey) => objectStorage.headObject(objectKey),
+    };
+    await startAnalysisWorker(retryingStorage);
+    await startProcessing(finalized.auth, finalized.analysisId);
+    const completed = await waitForAnalysisReady(finalized.analysisId);
+    const parse = completed.executions.find(({ step }) => step === 'PARSE');
+
+    expect(reads).toBe(3);
+    expect(parse).toMatchObject({ currentAttempt: 3, status: 'SUCCEEDED' });
+    expect(parse?.attempts).toEqual([
+      expect.objectContaining({
+        attempt: 1,
+        errorCode: 'PROCESSING_DEPENDENCY_FAILED',
+        status: 'FAILED',
+      }),
+      expect.objectContaining({
+        attempt: 2,
+        errorCode: 'PROCESSING_DEPENDENCY_FAILED',
+        status: 'FAILED',
+      }),
+      expect.objectContaining({ attempt: 3, status: 'SUCCEEDED' }),
+    ]);
+  });
+
+  it('PROC-AC-005 PROC-AC-010 recovers a missing queue job and ignores duplicate delivery', async () => {
+    const finalized = await createFinalizedPdf(
+      createTextPdf(['Durable queue recovery evidence.']),
+    );
+    const accepted = await startProcessing(
+      finalized.auth,
+      finalized.analysisId,
+    );
+    const queued = await analysisQueue.getJob(accepted.executionId);
+    expect(queued).toBeDefined();
+    await queued?.remove();
+
+    const dispatcher = new PendingAnalysisDispatcher(prisma, analysisQueue);
+    await expect(dispatcher.dispatch()).resolves.toBeGreaterThanOrEqual(1);
+    await startAnalysisWorker();
+    await waitForAnalysisReady(finalized.analysisId);
+    const pageCount = await prisma.documentPage.count({
+      where: { documentId: finalized.documentId },
+    });
+    const chunkCount = await prisma.documentChunk.count({
+      where: { documentId: finalized.documentId },
+    });
+
+    await analysisQueue.add(
+      ANALYSIS_PARSE_JOB_NAME,
+      { jobExecutionId: accepted.executionId },
+      {
+        jobId: accepted.executionId,
+        removeOnComplete: true,
+        removeOnFail: false,
+      },
+    );
+    await waitForQueueJobRemoval(accepted.executionId);
+    await expect(
+      prisma.documentPage.count({
+        where: { documentId: finalized.documentId },
+      }),
+    ).resolves.toBe(pageCount);
+    await expect(
+      prisma.documentChunk.count({
+        where: { documentId: finalized.documentId },
+      }),
+    ).resolves.toBe(chunkCount);
+    await expect(
+      prisma.jobExecution.count({
+        where: { analysisId: finalized.analysisId },
+      }),
+    ).resolves.toBe(2);
+  });
+
+  it('RERUN-AC-002 RERUN-AC-005 recovers failed parse through the durable dispatcher', async () => {
+    const finalized = await createFinalizedPdf(
+      createTextPdf(['Parse re-run recovery evidence.']),
+    );
+    const unavailableStorage: ObjectStorage = {
+      createPresignedPdfUpload: (input) =>
+        objectStorage.createPresignedPdfUpload(input),
+      deleteObject: (objectKey) => objectStorage.deleteObject(objectKey),
+      getObjectStream: () => {
+        throw new Error('test-only persistent object read failure');
+      },
+      headObject: (objectKey) => objectStorage.headObject(objectKey),
+    };
+    await startAnalysisWorker(unavailableStorage);
+    const accepted = await startProcessing(
+      finalized.auth,
+      finalized.analysisId,
+    );
+    const failed = await waitForFinalAnalysisFailure(finalized.analysisId);
+    expect(failed.execution).toMatchObject({
+      currentAttempt: 3,
+      id: accepted.executionId,
+      status: 'FAILED',
+    });
+    await analysisWorker?.close();
+    analysisWorker = undefined;
+    await (await analysisQueue.getJob(accepted.executionId))?.remove();
+
+    const operations = new JobOperationRepository(prisma);
+    await expect(
+      operations.rerun(
+        accepted.executionId,
+        'dispatcher-recovery-operator',
+        randomUUID(),
+      ),
+    ).resolves.toMatchObject({
+      kind: 'queued',
+      summary: { status: 'QUEUED', step: 'PARSE' },
+    });
+    await expect(
+      analysisQueue.getJob(accepted.executionId),
+    ).resolves.toBeUndefined();
+
+    const dispatcher = new PendingAnalysisDispatcher(prisma, analysisQueue);
+    await expect(dispatcher.dispatch()).resolves.toBeGreaterThanOrEqual(1);
+    await startAnalysisWorker();
+    const completed = await waitForAnalysisReady(finalized.analysisId);
+    const parse = completed.executions.find(({ step }) => step === 'PARSE');
+    expect(parse).toMatchObject({ currentAttempt: 4, status: 'SUCCEEDED' });
+    expect(parse?.attempts).toHaveLength(4);
+  });
+
+  it('RERUN-AC-002 re-dispatches a failed chunk to the chunk processor', async () => {
+    const finalized = await createFinalizedPdf(createTextPdf(['']));
+    await startAnalysisWorker();
+    await startProcessing(finalized.auth, finalized.analysisId);
+    const firstFailure = await waitForChunkFailure(finalized.analysisId, 1);
+    expect(firstFailure.execution).toMatchObject({
+      errorCode: 'PDF_HAS_NO_TEXT',
+      status: 'FAILED',
+      step: 'CHUNK',
+    });
+    await analysisWorker?.close();
+    analysisWorker = undefined;
+    await (await analysisQueue.getJob(firstFailure.execution.id))?.remove();
+
+    const operations = new JobOperationRepository(prisma);
+    await expect(
+      operations.rerun(
+        firstFailure.execution.id,
+        'chunk-rerun-operator',
+        randomUUID(),
+      ),
+    ).resolves.toMatchObject({
+      kind: 'queued',
+      summary: { status: 'QUEUED', step: 'CHUNK' },
+    });
+    const dispatcher = new PendingAnalysisDispatcher(prisma, analysisQueue);
+    await expect(dispatcher.dispatch()).resolves.toBeGreaterThanOrEqual(1);
+    await startAnalysisWorker();
+    const repeatedFailure = await waitForChunkFailure(finalized.analysisId, 2);
+    expect(repeatedFailure.execution).toMatchObject({
+      currentAttempt: 2,
+      errorCode: 'PDF_HAS_NO_TEXT',
+      id: firstFailure.execution.id,
+      status: 'FAILED',
+    });
+    expect(repeatedFailure.execution.attempts).toHaveLength(2);
   });
 
   it('PDF-AC-005 rejects a real MinIO object with an invalid header and persists cleanup tracking', async () => {
@@ -391,6 +748,87 @@ describe('document storage integration (PDF-TASK-012, PDF-TASK-014)', () => {
     ).resolves.toBeNull();
   });
 
+  it('RERUN-AC-001 RERUN-AC-007 inspects and re-runs failed cleanup through the real CLI', async () => {
+    const finalized = await createFinalizedDocument();
+    const failingStorage: ObjectStorage = {
+      createPresignedPdfUpload: (input) =>
+        objectStorage.createPresignedPdfUpload(input),
+      deleteObject: async (objectKey) => {
+        if (objectKey === finalized.storageKey) {
+          throw new Error('test-only cleanup dependency failure');
+        }
+        await objectStorage.deleteObject(objectKey);
+      },
+      getObjectStream: (objectKey) => objectStorage.getObjectStream(objectKey),
+      headObject: (objectKey) => objectStorage.headObject(objectKey),
+    };
+    const deleted = await request(finalized.auth, {
+      method: 'DELETE',
+      url: `/api/analyses/${finalized.analysisId}/documents/${finalized.documentId}`,
+    });
+    expect(deleted.statusCode).toBe(204);
+    await startCleanupWorker(failingStorage);
+    const failed = await waitForCleanupFailure(finalized.documentId);
+    expect(failed).toMatchObject({ currentAttempt: 3, status: 'FAILED' });
+    await cleanupWorker?.close();
+    cleanupWorker = undefined;
+
+    const operatorId = 'phase3-integration-operator';
+    const inspected = runJobCli([
+      'inspect',
+      '--execution-id',
+      failed.id,
+      '--operator-id',
+      operatorId,
+    ]);
+    expect(inspected).toMatchObject({
+      code: 'JOB_INSPECTED',
+      currentAttempt: 3,
+      executionId: failed.id,
+      manualReruns: 0,
+      status: 'FAILED',
+      step: 'OBJECT_CLEANUP',
+    });
+
+    const rerun = runJobCli([
+      'rerun',
+      '--execution-id',
+      failed.id,
+      '--operator-id',
+      operatorId,
+      '--confirm',
+      failed.id,
+    ]);
+    expect(rerun).toMatchObject({
+      code: 'JOB_RERUN_QUEUED',
+      executionId: failed.id,
+      manualReruns: 1,
+      status: 'QUEUED',
+      step: 'OBJECT_CLEANUP',
+    });
+    const audit = await prisma.jobOperationAudit.findFirstOrThrow({
+      where: { jobExecutionId: failed.id },
+    });
+    expect(audit).toMatchObject({
+      action: 'RERUN',
+      operatorId,
+      previousStatus: 'FAILED',
+      status: 'QUEUED',
+    });
+
+    await startCleanupWorker();
+    const completed = await waitForCleanupSuccess(finalized.documentId);
+    expect(completed).toMatchObject({ currentAttempt: 4, status: 'SUCCEEDED' });
+    expect(completed.attempts).toHaveLength(4);
+    await expect(
+      objectStorage.headObject(finalized.storageKey),
+    ).resolves.toBeNull();
+    const output = JSON.stringify({ audit, inspected, rerun });
+    expect(output).not.toContain(finalized.storageKey);
+    expect(output).not.toContain('stocklens-integration-job-secret');
+    expect(output).not.toContain('cleanup acceptance');
+  });
+
   it('PDF-Q-005 expires an orphan and deletes it through the real cleanup pipeline', async () => {
     const pdf = Buffer.from('%PDF-1.7\norphan cleanup acceptance\n%%EOF\n');
     const sha256 = createHash('sha256').update(pdf).digest('hex');
@@ -469,6 +907,36 @@ describe('document storage integration (PDF-TASK-012, PDF-TASK-014)', () => {
     };
   }
 
+  async function createFinalizedPdf(pdf: Buffer<ArrayBuffer>): Promise<{
+    analysisId: string;
+    auth: AuthResponse;
+    documentId: string;
+    storageKey: string;
+  }> {
+    const sha256 = createHash('sha256').update(pdf).digest('hex');
+    const { analysisId, auth } = await createOwnedAnalysis();
+    const started = await startUpload(auth, analysisId, pdf, sha256);
+    const storedUpload = await rememberStoredObject(started.uploadSession.id);
+    const putResponse = await fetch(started.upload.url, {
+      body: pdf,
+      headers: started.upload.headers,
+      method: 'PUT',
+    });
+    expect(putResponse.status).toBe(200);
+    const finalized = await request(auth, {
+      method: 'POST',
+      url: `/api/analyses/${analysisId}/document-uploads/${started.uploadSession.id}/finalize`,
+    });
+    expect(finalized.statusCode).toBe(200);
+    const document = documentResourceSchema.parse(finalized.json<unknown>());
+    return {
+      analysisId,
+      auth,
+      documentId: document.id,
+      storageKey: storedUpload.storageKey,
+    };
+  }
+
   async function startCleanupWorker(
     workerStorage: ObjectStorage = objectStorage,
   ): Promise<void> {
@@ -492,6 +960,136 @@ describe('document storage integration (PDF-TASK-012, PDF-TASK-014)', () => {
     await cleanupWorker.waitUntilReady();
   }
 
+  async function startAnalysisWorker(
+    workerStorage: ObjectStorage = objectStorage,
+  ): Promise<void> {
+    const processor = new AnalysisProcessingProcessor(
+      new AnalysisProcessingJobRepository(prisma),
+      workerStorage,
+      minio.bucket,
+      analysisQueue,
+    );
+    analysisWorker = new Worker<AnalysisJobData>(
+      ANALYSIS_PROCESSING_QUEUE_NAME,
+      (job) => processor.process(job),
+      {
+        connection: getRedisConnectionOptions(redis.url),
+        concurrency: 1,
+      },
+    );
+    analysisWorker.on('error', () => {
+      // Durable execution state is asserted below without exposing connection
+      // details in test output.
+    });
+    await analysisWorker.waitUntilReady();
+  }
+
+  async function waitForAnalysisReady(analysisId: string) {
+    const deadline = Date.now() + 30_000;
+    while (Date.now() < deadline) {
+      const analysis = await prisma.analysis.findUniqueOrThrow({
+        where: { id: analysisId },
+      });
+      const executions = await prisma.jobExecution.findMany({
+        include: { attempts: { orderBy: { attempt: 'asc' } } },
+        orderBy: { createdAt: 'asc' },
+        where: { analysisId },
+      });
+      if (analysis.status === 'READY_FOR_EMBEDDING') {
+        return { analysis, executions };
+      }
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
+    }
+    throw new Error('Analysis processing did not complete within 30 seconds.');
+  }
+
+  async function waitForAnalysisFailure(analysisId: string) {
+    const deadline = Date.now() + 15_000;
+    while (Date.now() < deadline) {
+      const analysis = await prisma.analysis.findUniqueOrThrow({
+        where: { id: analysisId },
+      });
+      const execution = await prisma.jobExecution.findFirst({
+        include: { attempts: { orderBy: { attempt: 'asc' } } },
+        where: { analysisId, step: 'PARSE' },
+      });
+      if (
+        analysis.status === 'FAILED_PARSING' &&
+        execution?.status === 'FAILED'
+      )
+        return { analysis, execution };
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
+    }
+    throw new Error('Analysis processing did not fail within 15 seconds.');
+  }
+
+  async function waitForFinalAnalysisFailure(analysisId: string) {
+    const deadline = Date.now() + 15_000;
+    while (Date.now() < deadline) {
+      const analysis = await prisma.analysis.findUniqueOrThrow({
+        where: { id: analysisId },
+      });
+      const execution = await prisma.jobExecution.findFirst({
+        include: { attempts: { orderBy: { attempt: 'asc' } } },
+        where: { analysisId, step: 'PARSE' },
+      });
+      if (
+        analysis.status === 'FAILED_PARSING' &&
+        execution?.status === 'FAILED' &&
+        execution.currentAttempt === 3
+      ) {
+        return { analysis, execution };
+      }
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
+    }
+    throw new Error(
+      'Analysis processing did not exhaust retries in 15 seconds.',
+    );
+  }
+
+  async function waitForChunkFailure(
+    analysisId: string,
+    currentAttempt: number,
+  ) {
+    const deadline = Date.now() + 15_000;
+    while (Date.now() < deadline) {
+      const analysis = await prisma.analysis.findUniqueOrThrow({
+        where: { id: analysisId },
+      });
+      const execution = await prisma.jobExecution.findFirst({
+        include: { attempts: { orderBy: { attempt: 'asc' } } },
+        where: { analysisId, step: 'CHUNK' },
+      });
+      if (
+        analysis.status === 'FAILED_CHUNKING' &&
+        execution?.status === 'FAILED' &&
+        execution.currentAttempt === currentAttempt
+      ) {
+        return { analysis, execution };
+      }
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
+    }
+    throw new Error('Document chunking did not fail within 15 seconds.');
+  }
+
+  async function waitForQueueJobRemoval(jobId: string): Promise<void> {
+    const deadline = Date.now() + 10_000;
+    while (Date.now() < deadline) {
+      if ((await analysisQueue.getJob(jobId)) === undefined) return;
+      await new Promise<void>((resolve) => setTimeout(resolve, 25));
+    }
+    throw new Error('Analysis queue job was not removed within 10 seconds.');
+  }
+
+  async function startProcessing(auth: AuthResponse, analysisId: string) {
+    const response = await request(auth, {
+      method: 'POST',
+      url: `/api/analyses/${analysisId}/process`,
+    });
+    expect(response.statusCode).toBe(202);
+    return processAnalysisResponseSchema.parse(response.json<unknown>());
+  }
+
   async function waitForCleanupSuccess(documentId: string) {
     const deadline = Date.now() + 15_000;
     while (Date.now() < deadline) {
@@ -505,6 +1103,21 @@ describe('document storage integration (PDF-TASK-012, PDF-TASK-014)', () => {
       await new Promise<void>((resolve) => setTimeout(resolve, 50));
     }
     throw new Error('Object cleanup did not succeed within 15 seconds.');
+  }
+
+  async function waitForCleanupFailure(documentId: string) {
+    const deadline = Date.now() + 15_000;
+    while (Date.now() < deadline) {
+      const execution = await prisma.jobExecution.findFirst({
+        include: { attempts: { orderBy: { attempt: 'asc' } } },
+        where: { documentId, step: 'OBJECT_CLEANUP' },
+      });
+      if (execution?.status === 'FAILED' && execution.currentAttempt === 3) {
+        return execution;
+      }
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
+    }
+    throw new Error('Object cleanup did not fail within 15 seconds.');
   }
 
   async function waitForUploadCleanupSuccess(documentUploadId: string) {
@@ -590,5 +1203,69 @@ describe('document storage integration (PDF-TASK-012, PDF-TASK-014)', () => {
         authorization: `Bearer ${auth.accessToken}`,
       },
     });
+  }
+
+  function createTextPdf(pageTexts: readonly string[]) {
+    const pageObjectStart = 3;
+    const streamObjectStart = pageObjectStart + pageTexts.length;
+    const fontObjectId = streamObjectStart + pageTexts.length;
+    const pageIds = pageTexts.map((_, index) => pageObjectStart + index);
+    const objects = [
+      '<< /Type /Catalog /Pages 2 0 R >>',
+      `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pageTexts.length} >>`,
+      ...pageTexts.map(
+        (_, index) =>
+          `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 ${fontObjectId} 0 R >> >> /Contents ${streamObjectStart + index} 0 R >>`,
+      ),
+      ...pageTexts.map((text) => {
+        const escaped = text.replace(/([\\()])/g, '\\$1');
+        const stream = `BT /F1 12 Tf 72 720 Td (${escaped}) Tj ET`;
+        return `<< /Length ${Buffer.byteLength(stream)} >>\nstream\n${stream}\nendstream`;
+      }),
+      '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    ];
+    let pdf = '%PDF-1.4\n';
+    const offsets = [0];
+    objects.forEach((object, index) => {
+      offsets.push(Buffer.byteLength(pdf));
+      pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+    });
+    const xrefOffset = Buffer.byteLength(pdf);
+    pdf += `xref\n0 ${objects.length + 1}\n`;
+    pdf += '0000000000 65535 f \n';
+    pdf += offsets
+      .slice(1)
+      .map((offset) => `${String(offset).padStart(10, '0')} 00000 n \n`)
+      .join('');
+    pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
+    return Buffer.from(pdf);
+  }
+
+  function runJobCli(args: readonly string[]): Record<string, unknown> {
+    const stdout = execFileSync(
+      'pnpm',
+      [
+        '--filter',
+        '@stocklens/worker',
+        'exec',
+        'tsx',
+        'src/job-operations.ts',
+        ...args,
+      ],
+      {
+        cwd: repositoryRoot,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          ALLOW_JOB_RERUN: 'true',
+          JOB_OPERATOR_SECRET:
+            'stocklens-integration-job-secret-at-least-32-characters',
+          NODE_ENV: 'test',
+          REDIS_URL: redis.url,
+        },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      },
+    );
+    return JSON.parse(stdout.trim()) as Record<string, unknown>;
   }
 });

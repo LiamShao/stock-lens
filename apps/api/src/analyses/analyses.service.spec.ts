@@ -1,4 +1,6 @@
 import type { AnalysisRepository } from '../database/analysis.repository';
+import type { AnalysisProcessingRepository } from '../database/analysis-processing.repository';
+import type { AnalysisProcessingQueuePublisher } from './analysis-processing.queue';
 import { AnalysesService } from './analyses.service';
 
 const ownerId = '2f7cbd41-9fb4-42c6-94b8-e10ee9642947';
@@ -27,11 +29,47 @@ describe('AnalysesService', () => {
     renameActive: jest.fn(),
     softDelete: jest.fn(),
   };
+  const processingRepository = { start: jest.fn() };
+  const processingQueue = { dispatch: jest.fn() };
   let service: AnalysesService;
 
   beforeEach(() => {
     jest.resetAllMocks();
-    service = new AnalysesService(repository as unknown as AnalysisRepository);
+    service = new AnalysesService(
+      repository as unknown as AnalysisRepository,
+      processingRepository as unknown as AnalysisProcessingRepository,
+      processingQueue as unknown as AnalysisProcessingQueuePublisher,
+    );
+  });
+
+  it('PROC-AC-001 returns a durable processing execution', async () => {
+    processingRepository.start.mockResolvedValue({
+      acceptedAt: new Date('2026-08-13T09:00:00.000Z'),
+      analysisId,
+      executionId: 'df415a37-d409-4d7d-9227-b777948b10f4',
+      kind: 'started',
+      ownerId,
+    });
+    processingQueue.dispatch.mockResolvedValue(true);
+
+    await expect(service.process(ownerId, analysisId)).resolves.toEqual({
+      acceptedAt: '2026-08-13T09:00:00.000Z',
+      analysisId,
+      executionId: 'df415a37-d409-4d7d-9227-b777948b10f4',
+      status: 'PARSING',
+    });
+    expect(processingQueue.dispatch).toHaveBeenCalledWith(
+      'df415a37-d409-4d7d-9227-b777948b10f4',
+    );
+  });
+
+  it('PROC-AC-001 rejects an analysis without documents', async () => {
+    processingRepository.start.mockResolvedValue({ kind: 'no-documents' });
+
+    await expect(service.process(ownerId, analysisId)).rejects.toMatchObject({
+      code: 'ANALYSIS_HAS_NO_DOCUMENTS',
+    });
+    expect(processingQueue.dispatch).not.toHaveBeenCalled();
   });
 
   it('ANALYSIS-AC-002 rejects an unknown company without creating data', async () => {
