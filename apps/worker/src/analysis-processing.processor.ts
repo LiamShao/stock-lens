@@ -51,7 +51,7 @@ export class AnalysisProcessingProcessor {
               'PDF_STORAGE_MISMATCH',
               'PDF storage target is invalid.',
             );
-          const bytes = await readBounded(
+          const bytes = await readPdfStreamBounded(
             await this.storage.getObjectStream(document.storageKey),
           );
           results.push({
@@ -122,7 +122,9 @@ export class AnalysisProcessingProcessor {
   }
 }
 
-async function readBounded(stream: Readable): Promise<Uint8Array> {
+export async function readPdfStreamBounded(
+  stream: Readable,
+): Promise<Uint8Array> {
   const chunks: Buffer[] = [];
   let size = 0;
   for await (const raw of stream) {

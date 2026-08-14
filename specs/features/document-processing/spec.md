@@ -9,7 +9,7 @@
 | Verification status   | `Partial`                                    |
 | Owner                 | `TBD`                                        |
 | Approval              | `Approved 2026-08-13; PROC-Q-007 Approved A` |
-| Last updated          | `2026-08-13`                                 |
+| Last updated          | `2026-08-14`                                 |
 
 ## Goal
 

@@ -20,3 +20,5 @@
 - [x] `PROC-TASK-011` (`PROC-AC-002`, `PROC-AC-004`, `PROC-AC-012`) MinIO/Redis/BullMQ/Worker/PostgreSQL Happy-path End-to-end
 - [x] `PROC-TASK-012` (`PROC-AC-003`, `PROC-AC-005`〜`PROC-AC-007`, `PROC-AC-010`) Empty/Malformed/Limit/Duplicate/Recovery Infrastructure Tests
 - [x] `PROC-TASK-013` (`PROC-AC-009`) DocumentPage/DocumentChunk Composite Ownership FK Integration Test
+- [x] `PROC-TASK-014` (`PROC-AC-007`, `PROC-AC-011`, `PROC-SEC-004`, `PROC-SEC-005`, `PROC-SEC-007`) Deterministic Password/Malicious PDF、Text/Stream Limit、Sanitized Failure Unit Tests
+- [x] `PROC-TASK-015` (`PROC-TASK-007`) Acceptance 再監査、Full Quality Gate、Verification/Traceability/Progress Update

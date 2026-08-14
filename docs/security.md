@@ -48,6 +48,7 @@
 - Analysis HTTP API は Bearer User から Repository まで `ownerId` を伝播し、Cross-user Read、Update、Delete を同じ `404 ANALYSIS_NOT_FOUND` とする Testcontainers HTTP Test を持ちます。
 - Document Start/Re-presign/Finalize/List/Delete は Bearer User A/B の End-to-end Authorization Test を持ち、Cross-user Request は Stable Not Found かつ Database/Storage/Cleanup Side Effect なしです。
 - `Analysis(ownerId, id)` と `Document(ownerId, analysisId)` の Composite FK で Parent/Child Owner Equality を Database でも強制します。
+- `AnalysisFinding`、`Evidence`、`FindingEvidence` は Owner/Analysis Composite FK を持ち、Evidence は Document/Page/Chunk の同一 Lineage まで Database Constraint で強制します。
 - PostgreSQL RLS は MVP 必須ではありません。Repository Boundary と Authorization Test で保証します。
 
 ## 5. PDF Upload と Object Storage

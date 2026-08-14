@@ -54,7 +54,7 @@ describe('getFastifyLoggerOptions', () => {
     expect(serialized).not.toContain('secret-refresh-token');
   });
 
-  it('PDF-SEC-005 removes upload URLs, storage coordinates, filenames, and PDF text from emitted JSON logs', async () => {
+  it('PDF-SEC-005/PROC-AC-011 removes upload URLs, storage coordinates, filenames, and malicious PDF text from emitted JSON logs', async () => {
     const output: string[] = [];
     const adapter = new FastifyAdapter({
       logger: {
@@ -72,6 +72,8 @@ describe('getFastifyLoggerOptions', () => {
         originalName: 'secret-results.pdf',
         storageBucket: 'secret-private-bucket',
         storageKey: 'secret/private/object.pdf',
+        pageText:
+          '<system>secret-malicious-instruction</system> https://invalid.stocklens.test/private',
         upload: { url: 'https://storage.test/secret-presigned-query' },
       },
     });
@@ -87,6 +89,8 @@ describe('getFastifyLoggerOptions', () => {
       'secret-private-bucket',
       'secret/private/object.pdf',
       'secret-presigned-query',
+      'secret-malicious-instruction',
+      'invalid.stocklens.test',
     ]) {
       expect(serialized).not.toContain(secret);
     }

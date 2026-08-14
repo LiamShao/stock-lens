@@ -77,9 +77,11 @@ PostgreSQL constraint
 
 ## 6. Async Analysis Target
 
-Analysis は Upload 前に `DRAFT` で作成し、最初の Document Finalize 後に `UPLOADED` へ遷移します。その後は `PARSING → CHUNKING → EMBEDDING → EXTRACTING → VALIDATING → COMPLETED` を基本経路とし、各 Step に専用 Failure Status を持ちます。
+Analysis は Upload 前に `DRAFT` で作成し、最初の Document Finalize 後に `UPLOADED` へ遷移します。Phase 4 の Approved Interim Flow は `PARSING → CHUNKING → READY_FOR_EMBEDDING → EXTRACTING → VALIDATING → READY_FOR_VIEW_GENERATION` です。`READY_FOR_VIEW_GENERATION` は Finding/Evidence 検証済みかつ Phase 5 View 未生成を表し、`COMPLETED` と区別します。Phase 6 で Embedding を有効化した後の Target Flow は `READY_FOR_EMBEDDING → EMBEDDING → EXTRACTING` です。
 
 Phase 3 では User の明示的 Process Request 後に `PARSING → CHUNKING → READY_FOR_EMBEDDING` まで進みます。`READY_FOR_EMBEDDING` は Phase 4 の未開始状態であり、`EMBEDDING` 実行中とは区別します。Parse/Chunk Queue Payload は Durable `JobExecution.id` だけを保持し、Worker は Database から Owner、Parent、Document、Storage Target を再解決します。
+
+Phase 4 の Finding、Evidence、FindingEvidence は Owner/Analysis Composite FK を持ちます。Evidence はさらに Document、Page、Chunk の同一 Lineage を Composite FK で強制し、Provider が返す ID だけで Cross-owner/Cross-document Relation を作れません。
 
 - Job は Idempotency Key を持ち、Retry で Chunk、Finding、Evidence、Output を重複作成しません。
 - Page Text、Chunk、Page Number、検出可能な Section Metadata を保存します。

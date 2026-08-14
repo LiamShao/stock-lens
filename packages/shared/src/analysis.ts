@@ -9,6 +9,7 @@ export const analysisStatusSchema = z.enum([
   'EMBEDDING',
   'EXTRACTING',
   'VALIDATING',
+  'READY_FOR_VIEW_GENERATION',
   'COMPLETED',
   'FAILED_PARSING',
   'FAILED_CHUNKING',

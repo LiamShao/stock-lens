@@ -16,6 +16,7 @@ enum AnalysisStatus {
   EMBEDDING
   EXTRACTING
   VALIDATING
+  READY_FOR_VIEW_GENERATION
   COMPLETED
   FAILED_PARSING
   FAILED_CHUNKING
@@ -293,6 +294,7 @@ model DocumentPage {
   evidences Evidence[]
 
   @@unique([documentId, pageNumber])
+  @@unique([ownerId, documentId, id])
   @@index([ownerId, documentId])
 }
 
@@ -313,10 +315,11 @@ model DocumentChunk {
 
   owner     User         @relation(fields: [ownerId], references: [id], onDelete: Restrict)
   document  Document     @relation(fields: [ownerId, documentId], references: [ownerId, id], onDelete: Restrict)
-  page      DocumentPage @relation(fields: [pageId], references: [id], onDelete: Restrict)
+  page      DocumentPage @relation(fields: [ownerId, documentId, pageId], references: [ownerId, documentId, id], onDelete: Restrict)
   evidences Evidence[]
 
   @@unique([documentId, chunkIndex])
+  @@unique([ownerId, documentId, pageId, id])
   @@index([documentId, contentSha256])
   @@index([ownerId, documentId])
   @@index([pageId])
@@ -336,10 +339,11 @@ model AnalysisFinding {
   updatedAt  DateTime        @updatedAt @db.Timestamptz(3)
 
   owner         User              @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  analysis      Analysis          @relation(fields: [analysisId], references: [id], onDelete: Restrict)
+  analysis      Analysis          @relation(fields: [ownerId, analysisId], references: [ownerId, id], onDelete: Restrict)
   evidenceLinks FindingEvidence[]
 
   @@unique([analysisId, findingKey])
+  @@unique([ownerId, analysisId, id])
   @@index([ownerId, analysisId])
   @@index([analysisId, category])
 }
@@ -360,15 +364,16 @@ model Evidence {
   updatedAt     DateTime @updatedAt @db.Timestamptz(3)
 
   owner            User                  @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  analysis         Analysis              @relation(fields: [analysisId], references: [id], onDelete: Restrict)
-  document         Document              @relation(fields: [documentId], references: [id], onDelete: Restrict)
-  page             DocumentPage          @relation(fields: [pageId], references: [id], onDelete: Restrict)
-  chunk            DocumentChunk         @relation(fields: [chunkId], references: [id], onDelete: Restrict)
+  analysis         Analysis              @relation(fields: [ownerId, analysisId], references: [ownerId, id], onDelete: Restrict)
+  document         Document              @relation(fields: [ownerId, analysisId, documentId], references: [ownerId, analysisId, id], onDelete: Restrict)
+  page             DocumentPage          @relation(fields: [ownerId, documentId, pageId], references: [ownerId, documentId, id], onDelete: Restrict)
+  chunk            DocumentChunk         @relation(fields: [ownerId, documentId, pageId, chunkId], references: [ownerId, documentId, pageId, id], onDelete: Restrict)
   findingLinks     FindingEvidence[]
   chatMessageLinks ChatMessageEvidence[]
   relationships    Relationship[]
 
   @@unique([analysisId, documentId, pageNumber, excerptSha256])
+  @@unique([ownerId, analysisId, id])
   @@index([ownerId, analysisId])
   @@index([documentId, pageNumber])
   @@index([pageId])
@@ -377,17 +382,18 @@ model Evidence {
 
 model FindingEvidence {
   ownerId    String   @db.Uuid
+  analysisId String   @db.Uuid
   findingId  String   @db.Uuid
   evidenceId String   @db.Uuid
   createdAt  DateTime @default(now()) @db.Timestamptz(3)
   updatedAt  DateTime @updatedAt @db.Timestamptz(3)
 
   owner    User            @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  finding  AnalysisFinding @relation(fields: [findingId], references: [id], onDelete: Cascade)
-  evidence Evidence        @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  finding  AnalysisFinding @relation(fields: [ownerId, analysisId, findingId], references: [ownerId, analysisId, id], onDelete: Cascade)
+  evidence Evidence        @relation(fields: [ownerId, analysisId, evidenceId], references: [ownerId, analysisId, id], onDelete: Cascade)
 
   @@id([findingId, evidenceId])
-  @@index([ownerId, findingId])
+  @@index([ownerId, analysisId, findingId])
   @@index([evidenceId])
 }
 

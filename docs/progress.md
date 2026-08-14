@@ -1,5 +1,38 @@
 # StockLens AI 開発進捗
 
+## 2026-08-14
+
+### 次回引き継ぎ
+
+- Phase 4 Structured Extraction は User 承認済み `EXTRACT-Q-001`〜`EXTRACT-Q-007` Option `A` を Baseline とし、`EXTRACT-TASK-001`〜`003` が完了しています。
+- Shared Strict Finding/Evidence Schema、Budget、Compliance Validator、`READY_FOR_VIEW_GENERATION`、Finding/Evidence/Link Composite FK、Importance Check は実装済みです。
+- 最新 Gate は Format、Spec Check 8 Features / 119 Requirements、Prisma Validate/Generate、Lint、Typecheck、154 Unit/Component Tests、Build、Docker Integration 6 Suites / 52 Tests、Owner/Lineage Targeted 17 Tests が成功しています。
+- Working Tree は本日の Phase 3 Security Acceptance と Phase 4 Task 001〜003 の未 Commit Changes を保持しています。再開時に既存差分を破棄・上書きしません。
+- 次回は Approved `EXTRACT-TASK-004` から開始し、Git-tracked Prompt Asset、Explicit Idempotent Activation CLI、PromptVersion/AiUsage Audit Foundation を実装します。
+- OpenAI SDK/Runtime Adapter、Live Provider Call、Metric Parser、Map/Merge、Evidence Content Validation、Durable Phase 4 Queue はまだ未実装です。Live Provider Evidence がない限り OpenAI Integration は `Partial` とします。
+
+### Phase 4 Structured Extraction Draft
+
+- `specs/features/structured-extraction/spec.md` を Draft として作成し、Finding、Evidence、Deterministic Financial Metrics、Prompt/Usage Audit、Zod/Evidence/Compliance Validation、Untrusted PDF Boundary を Requirement/Acceptance Criteria 化しました。
+- Phase 4 完了時点では Phase 5/6 View が未生成であるのに既存 Status が `COMPLETED` しか持たない `EXTRACT-DEV-001` を検出し、Decision 前に Runtime/Database を変更せず記録しました。
+- Handoff Status、Pre-embedding Long-document Strategy、Production Provider、Metric Scope、Prompt Activation、Repair/Retry Budget、Live Verification の 7 Decisions を `decision-request.md` に提示しました。
+- User は `EXTRACT-Q-001`〜`EXTRACT-Q-007` の Option `A` をすべて承認しました。Spec を `Approved` とし、Technical Plan と 12 Tasks を作成、`EXTRACT-DEV-001` を `READY_FOR_VIEW_GENERATION` Decision で解消しました。
+- `EXTRACT-TASK-002` として Shared Strict Finding/Evidence Zod Schema、32 Chunks / 48,000 Characters / 4,096 Output Tokens / 3 Calls / 60 Seconds の Budget Contract、6 Category の Deterministic Investment-advice Compliance Validator を追加しました。
+- Compliance Scan は Model-authored Title/Body だけを対象とし、Original Evidence Excerpt に同じ表現が含まれても Source Data を改変または誤 Reject しません。
+- Spec Check 8 Features / 119 Requirements、Lint、Typecheck、153 Unit/Component Tests、Build が成功しました。Database/API Runtime は未変更のため Docker Integration は再実行していません。
+- `EXTRACT-TASK-003` として `READY_FOR_VIEW_GENERATION` Enum/Migration/Shared Contract、Finding Importance Check、Finding/Evidence/Link の Owner/Analysis/Document/Page/Chunk Composite FK を追加しました。
+- Fresh PostgreSQL Migration と Owner Repository 17 Tests で Valid Lineage、Cross-owner Finding/Evidence、Cross-document Page/Chunk、Importance Check、Handoff Status を検証しました。
+- Task 003 Full Gate は Format、Spec Check 8 Features / 119 Requirements、Prisma Validate/Generate、Lint、Typecheck、154 Unit/Component Tests、Build、Docker Integration 6 Suites / 52 Tests が成功しました。
+
+### Phase 3 Parser Security Acceptance
+
+- `PROC-TASK-014` として deterministic Password-required PDF、JavaScript `OpenAction` / External URI / Instruction-like Text を含む malicious PDF を Test 内で生成し、実 `pdfjs-dist` の Non-retryable Classification と Inert Data Boundary を検証しました。
+- 2 MiB/Page、50 MiB/Document、20 MB Object の Inclusive Boundary と +1 Byte Failure、Over-limit Stream Cleanup を Unit Test で固定しました。Production Limit と Dependency は変更していません。
+- Emitted JSON Log で malicious `pageText`、URI、Storage Coordinate、Filename、Presigned URL が Redact される Regression を追加しました。
+- `PROC-AC-007` と `PROC-AC-011`、`PROC-SEC-004`、`PROC-SEC-005`、`PROC-SEC-007` は `Passed` へ更新しました。
+- Permission-encrypted CI Fixture、Heading Semantic Review、Active Parent Race、Phase 4 Untrusted Context E2E は残るため Document Processing 全体は正確に `Partial` を維持します。
+- Format Check、Spec Check 7 Features / 98 Requirements、Lint、Typecheck、143 Unit/Component Tests、Build、Docker Integration 6 Suites / 51 Tests が成功しました。
+
 ## 2026-08-13
 
 ### 次回引き継ぎ（2026-08-14 再開予定）

@@ -57,20 +57,10 @@ export async function extractPdfPages(
         .join('')
         .replace(/[ \t]+\n/g, '\n')
         .trim();
-      const size = Buffer.byteLength(text, 'utf8');
-      if (size > MAX_PAGE_TEXT_BYTES) {
-        throw new NonRetryablePdfError(
-          'PDF_PAGE_TEXT_LIMIT_EXCEEDED',
-          'PDF page text limit exceeded.',
-        );
-      }
-      totalBytes += size;
-      if (totalBytes > MAX_DOCUMENT_TEXT_BYTES) {
-        throw new NonRetryablePdfError(
-          'PDF_TEXT_LIMIT_EXCEEDED',
-          'PDF text limit exceeded.',
-        );
-      }
+      totalBytes = addPageTextBytes(
+        totalBytes,
+        Buffer.byteLength(text, 'utf8'),
+      );
       pages.push({
         pageNumber,
         sectionMetadata: detectSection(text),
@@ -93,6 +83,26 @@ export async function extractPdfPages(
   } finally {
     await task.destroy();
   }
+}
+
+export function addPageTextBytes(
+  currentDocumentBytes: number,
+  pageBytes: number,
+): number {
+  if (pageBytes > MAX_PAGE_TEXT_BYTES) {
+    throw new NonRetryablePdfError(
+      'PDF_PAGE_TEXT_LIMIT_EXCEEDED',
+      'PDF page text limit exceeded.',
+    );
+  }
+  const nextDocumentBytes = currentDocumentBytes + pageBytes;
+  if (nextDocumentBytes > MAX_DOCUMENT_TEXT_BYTES) {
+    throw new NonRetryablePdfError(
+      'PDF_TEXT_LIMIT_EXCEEDED',
+      'PDF text limit exceeded.',
+    );
+  }
+  return nextDocumentBytes;
 }
 
 function detectSection(text: string): ExtractedPage['sectionMetadata'] {

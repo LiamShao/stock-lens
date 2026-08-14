@@ -118,10 +118,36 @@ Status は Requirement の実装・検証状況を表します。`Partial` は C
 | `PROC-SEC-001` | Bearer Owner-only Process Endpoint      | Owner A/B HTTP                          | `Passed`  |
 | `PROC-SEC-002` | Page/Chunk Composite FK                 | Direct cross-owner insert reject        | `Passed`  |
 | `PROC-SEC-003` | Byte-only pdfjs Text Extraction         | Malformed/Valid/501-page Worker E2E     | `Passed`  |
-| `PROC-SEC-004` | Explicit Parser Resource Limits         | Unit/Infra Limit pending                | `Partial` |
-| `PROC-SEC-005` | Sanitized Failure/Log Boundary          | Code Review                             | `Partial` |
+| `PROC-SEC-004` | Explicit Parser Resource Limits         | Exact Text/Stream Unit + 501-page E2E   | `Passed`  |
+| `PROC-SEC-005` | Sanitized Failure/Log Boundary          | Stable Error + emitted log redaction    | `Passed`  |
 | `PROC-SEC-006` | Existing Untrusted PDF Context Boundary | Existing Regression、Phase 4 pending    | `Partial` |
-| `PROC-SEC-007` | Bounded Memory Read/Destroy             | Unit/Code Review                        | `Partial` |
+| `PROC-SEC-007` | Bounded Memory Read/Destroy             | 20 MB/+1 Byte Unit + stream destroy     | `Passed`  |
+
+## Structured Extraction
+
+| Requirement       | Implementation                        | Verification                          | Status        |
+| ----------------- | ------------------------------------- | ------------------------------------- | ------------- |
+| `EXTRACT-FR-001`  | Durable Pipeline planned              | Not started                           | `Not started` |
+| `EXTRACT-FR-002`  | Shared Output Contract                | Strict Zod Unit                       | `Partial`     |
+| `EXTRACT-FR-003`  | Bounded Context planned               | Not started                           | `Not started` |
+| `EXTRACT-FR-004`  | Prompt/Usage Audit planned            | Not started                           | `Not started` |
+| `EXTRACT-FR-005`  | Strict Finding Candidate Schema       | Bounds/Unknown-field Unit             | `Partial`     |
+| `EXTRACT-FR-006`  | Deterministic Metrics planned         | Not started                           | `Not started` |
+| `EXTRACT-FR-007`  | Evidence Validator planned            | Not started                           | `Not started` |
+| `EXTRACT-FR-008`  | Supported/Evidence Rule planned       | Not started                           | `Not started` |
+| `EXTRACT-FR-009`  | Atomic Publish planned                | Not started                           | `Not started` |
+| `EXTRACT-FR-010`  | Bounded Repair planned                | Not started                           | `Not started` |
+| `EXTRACT-FR-011`  | Provider Retry planned                | Not started                           | `Not started` |
+| `EXTRACT-FR-012`  | READY_FOR_VIEW_GENERATION Enum/Schema | Shared Unit + PostgreSQL Migration    | `Partial`     |
+| `EXTRACT-FR-013`  | AiUsageLog planned                    | Not started                           | `Not started` |
+| `EXTRACT-SEC-001` | Composite Finding/Evidence Lineage FK | PostgreSQL valid/cross-owner matrix   | `Partial`     |
+| `EXTRACT-SEC-002` | Untrusted Context Integration planned | Not started                           | `Not started` |
+| `EXTRACT-SEC-003` | No-tool Provider Boundary planned     | Not started                           | `Not started` |
+| `EXTRACT-SEC-004` | Provider Redaction planned            | Not started                           | `Not started` |
+| `EXTRACT-SEC-005` | Strict Schema/Length/Count Contract   | Invalid/oversized Unit                | `Partial`     |
+| `EXTRACT-SEC-006` | Deterministic Compliance Validator    | Six Categories + Source Boundary Unit | `Partial`     |
+| `EXTRACT-SEC-007` | Shared Budget Ceiling                 | Provider/context/output bounds Unit   | `Partial`     |
+| `EXTRACT-SEC-008` | Composite Parent Integrity            | PostgreSQL cross-lineage reject       | `Partial`     |
 
 ## Job Re-run
 

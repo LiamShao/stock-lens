@@ -183,6 +183,7 @@ READY_FOR_EMBEDDING
 EMBEDDING
 EXTRACTING
 VALIDATING
+READY_FOR_VIEW_GENERATION
 COMPLETED
 FAILED_PARSING
 FAILED_CHUNKING
@@ -314,7 +315,7 @@ Embedding Dimension は Provider 選定後に固定し、Model / Dimension を�
 | `createdAt`  | Timestamptz     | 作成日時                         |
 | `updatedAt`  | Timestamptz     | 更新日時                         |
 
-`analysisId, findingKey` に Unique Constraint、`ownerId, analysisId` と `analysisId, category` に Index を設定します。Evidence がない重要判断は `SUPPORTED` にできません。
+`analysisId, findingKey` に Unique Constraint、`ownerId, analysisId` と `analysisId, category` に Index を設定します。`(ownerId, analysisId)` は `Analysis(ownerId, id)` を参照し、`importance` は Database Check と Zod の両方で 1〜5 に限定します。Evidence がない重要判断は `SUPPORTED` にできません。
 
 ### 4.9 Evidence
 
@@ -336,9 +337,9 @@ Embedding Dimension は Provider 選定後に固定し、Model / Dimension を�
 | `createdAt`     | Timestamptz      | 作成日時               |
 | `updatedAt`     | Timestamptz      | 更新日時               |
 
-`analysisId, documentId, pageNumber, excerptSha256` に Unique Constraint を設定します。`documentName` は `Document.originalName` を Join して API Response に含めます。
+`analysisId, documentId, pageNumber, excerptSha256` に Unique Constraint を設定します。Owner/Analysis/Document、Owner/Document/Page、Owner/Document/Page/Chunk の Composite FK により Original Lineage の一致を強制します。`documentName` は `Document.originalName` を Join して API Response に含めます。
 
-`FindingEvidence` は `ownerId` を持ち、`findingId, evidenceId` を Composite Primary Key とする Join Table です。`ChatMessageEvidence` も `ownerId` を持ち、同様に Evidence を再利用します。
+`FindingEvidence` は `ownerId` と `analysisId` を持ち、`findingId, evidenceId` を Composite Primary Key とする Join Table です。Finding と Evidence の両方を `(ownerId, analysisId, id)` で参照し、Cross-owner/Cross-analysis Link を Database で拒否します。`ChatMessageEvidence` も `ownerId` を持ち、同様に Evidence を再利用します。
 
 ### 4.10 Entity / Relationship
 

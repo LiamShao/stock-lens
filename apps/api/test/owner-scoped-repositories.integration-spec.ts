@@ -165,6 +165,154 @@ describe('owner-scoped repositories', () => {
     expect(uploadedDocument?.uploadedAt).toBeInstanceOf(Date);
   });
 
+  it('EXTRACT-SEC-001 enforces owner-consistent finding and evidence lineage', async () => {
+    const [ownerA, ownerB] = await createOwners(prisma, testRunId);
+    const analysisA = await analysisRepository.create({
+      ownerId: ownerA,
+      title: 'Structured extraction owner A',
+    });
+    const analysisB = await analysisRepository.create({
+      ownerId: ownerB,
+      title: 'Structured extraction owner B',
+    });
+    await prisma.analysis.update({
+      data: { status: 'READY_FOR_VIEW_GENERATION' },
+      where: { id: analysisA.id },
+    });
+    await expect(
+      prisma.analysis.findUnique({ where: { id: analysisA.id } }),
+    ).resolves.toMatchObject({ status: 'READY_FOR_VIEW_GENERATION' });
+
+    await expect(
+      prisma.analysisFinding.create({
+        data: createFindingData(ownerB, analysisA.id, 'cross-owner'),
+      }),
+    ).rejects.toMatchObject({ code: 'P2003' });
+    await expect(
+      prisma.analysisFinding.create({
+        data: createFindingData(ownerA, analysisA.id, 'invalid-importance', 6),
+      }),
+    ).rejects.toThrow('AnalysisFinding_importance_check');
+
+    const findingA = await prisma.analysisFinding.create({
+      data: createFindingData(ownerA, analysisA.id, 'owned'),
+    });
+    const documentA = await prisma.document.create({
+      data: createDocumentData(ownerA, analysisA.id, testRunId),
+    });
+    const pageA = await prisma.documentPage.create({
+      data: {
+        documentId: documentA.id,
+        ownerId: ownerA,
+        pageNumber: 1,
+        text: '売上高は前年同期比10%増加した。',
+        textSha256: 'a'.repeat(64),
+      },
+    });
+    const chunkA = await prisma.documentChunk.create({
+      data: {
+        chunkIndex: 0,
+        content: pageA.text,
+        contentSha256: 'b'.repeat(64),
+        documentId: documentA.id,
+        ownerId: ownerA,
+        pageId: pageA.id,
+      },
+    });
+    const evidenceA = await prisma.evidence.create({
+      data: {
+        analysisId: analysisA.id,
+        chunkId: chunkA.id,
+        documentId: documentA.id,
+        excerpt: '売上高は前年同期比10%増加',
+        excerptSha256: 'c'.repeat(64),
+        ownerId: ownerA,
+        pageId: pageA.id,
+        pageNumber: 1,
+      },
+    });
+    await expect(
+      prisma.findingEvidence.create({
+        data: {
+          analysisId: analysisA.id,
+          evidenceId: evidenceA.id,
+          findingId: findingA.id,
+          ownerId: ownerA,
+        },
+      }),
+    ).resolves.toMatchObject({ analysisId: analysisA.id, ownerId: ownerA });
+
+    const analysisA2 = await analysisRepository.create({
+      ownerId: ownerA,
+      title: 'Structured extraction second analysis',
+    });
+    const findingA2 = await prisma.analysisFinding.create({
+      data: createFindingData(ownerA, analysisA2.id, 'other-analysis'),
+    });
+    await expect(
+      prisma.findingEvidence.create({
+        data: {
+          analysisId: analysisA.id,
+          evidenceId: evidenceA.id,
+          findingId: findingA2.id,
+          ownerId: ownerA,
+        },
+      }),
+    ).rejects.toMatchObject({ code: 'P2003' });
+
+    await expect(
+      prisma.evidence.create({
+        data: {
+          analysisId: analysisB.id,
+          chunkId: chunkA.id,
+          documentId: documentA.id,
+          excerpt: 'cross-analysis evidence',
+          excerptSha256: 'd'.repeat(64),
+          ownerId: ownerB,
+          pageId: pageA.id,
+          pageNumber: 1,
+        },
+      }),
+    ).rejects.toMatchObject({ code: 'P2003' });
+
+    const documentA2 = await prisma.document.create({
+      data: createDocumentData(ownerA, analysisA.id, testRunId),
+    });
+    const pageA2 = await prisma.documentPage.create({
+      data: {
+        documentId: documentA2.id,
+        ownerId: ownerA,
+        pageNumber: 1,
+        text: '営業利益は増加した。',
+        textSha256: 'e'.repeat(64),
+      },
+    });
+    const chunkA2 = await prisma.documentChunk.create({
+      data: {
+        chunkIndex: 0,
+        content: pageA2.text,
+        contentSha256: 'f'.repeat(64),
+        documentId: documentA2.id,
+        ownerId: ownerA,
+        pageId: pageA2.id,
+      },
+    });
+    await expect(
+      prisma.evidence.create({
+        data: {
+          analysisId: analysisA.id,
+          chunkId: chunkA2.id,
+          documentId: documentA.id,
+          excerpt: 'cross-document lineage',
+          excerptSha256: '1'.repeat(64),
+          ownerId: ownerA,
+          pageId: pageA.id,
+          pageNumber: 1,
+        },
+      }),
+    ).rejects.toMatchObject({ code: 'P2003' });
+  });
+
   it('soft-deletes an owned analysis and its active documents together', async () => {
     const [ownerA] = await createOwners(prisma, testRunId);
     const analysis = await analysisRepository.create({
@@ -1032,6 +1180,41 @@ function createUploadData(
     ownerId,
     storageBucket: 'stocklens-test',
     storageKey: `${testRunId}/${randomUUID()}.pdf`,
+  };
+}
+
+function createDocumentData(
+  ownerId: string,
+  analysisId: string,
+  testRunId: string,
+) {
+  return {
+    analysisId,
+    mimeType: 'application/pdf',
+    originalName: 'structured-extraction.pdf',
+    ownerId,
+    sha256: randomUUID().replaceAll('-', '').padEnd(64, '0'),
+    sizeBytes: 1024n,
+    storageBucket: 'stocklens-test',
+    storageKey: `${testRunId}/${randomUUID()}.pdf`,
+  };
+}
+
+function createFindingData(
+  ownerId: string,
+  analysisId: string,
+  findingKey: string,
+  importance = 3,
+) {
+  return {
+    analysisId,
+    body: '現在の資料に基づく Finding。',
+    category: 'RISK' as const,
+    findingKey,
+    importance,
+    ownerId,
+    status: 'SUPPORTED' as const,
+    title: 'Finding',
   };
 }
 

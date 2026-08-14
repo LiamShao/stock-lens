@@ -34,6 +34,7 @@
 | `RERUN-DEV-001`    | Authorization     |     High | Resolved 2026-08-13 | CLI + Workload Identity/Secret + DB Audit を採用する            |
 | `RERUN-DEV-002`    | Concurrency       |   Medium | Resolved 2026-08-13 | `JobExecution` Row Lock で Concurrent CLI を直列化              |
 | `TEST-DEV-002`     | Test/Concurrency  |   Medium | Accepted 2026-08-13 | Production 3 Attempt を維持し Test-side Retry のみ追加          |
+| `EXTRACT-DEV-001`  | Status model      |     High | Resolved 2026-08-14 | `READY_FOR_VIEW_GENERATION` を Phase 4 Handoff に追加           |
 
 2026-08-10 の `PDF-TASK-012`〜`PDF-TASK-014` Review では新規 Deviation は検出されませんでした。Real MinIO Storage、Document Bearer A/B HTTP、Redis/BullMQ Worker Cleanup の Acceptance Evidence を追加し、`OWN-DEV-004` を解消しました。
 
@@ -50,6 +51,14 @@
 User は同日 `PROC-DEV-002` Option `A` を承認しました。Password/明示的復号を必要とする PDF のみ Reject し、Password 不要で安全に抽出できる Permission-encrypted PDF を受け入れるよう Spec と Verification Boundary を更新しました。
 
 2026-08-13 の `RERUN-TASK-007` Integration で、同じ FAILED Execution への 2 Concurrent Re-run の一方が `QUEUED` + 1 Audit に正しく収束する一方、他方は PostgreSQL Serializable `P2034` を返し、Stable `not-rerunnable` Result にならない `RERUN-DEV-002` を検出しました。重複 Mutation/Audit はありませんが、Approved Concurrency Contract と CLI Stable Output を満たさないため Decision 前に Production Retry/Lock Behavior を変更しません。
+
+2026-08-14 の `PROC-TASK-014` Security Acceptance Review では新規 Deviation は検出されませんでした。Password-required/JavaScript/URI PDF は Test 内で deterministic に生成し、Resource Limit は Production 値を変えず Pure Boundary と実 Stream で検証しました。Permission-encrypted CI Fixture、Heading Semantic Review、Active Parent Race、Phase 4 Untrusted Context E2E は既存 Verification Gap として可視化を維持します。
+
+2026-08-14 の Phase 4 Draft で、Structured Finding/Evidence Validation 完了後も Phase 5/6 の View Output は未生成である一方、既存 `AnalysisStatus` は `VALIDATING` の次に `COMPLETED` しか持たない `EXTRACT-DEV-001` を検出しました。`COMPLETED` を使用すると API が三つの View Completion を誤表示し、`VALIDATING` を維持すると実行中と待機中を混同します。Public Status/Database Migration に影響するため、`READY_FOR_VIEW_GENERATION` の追加を推奨し、User Decision 前に Runtime/Schema を変更しません。
+
+User は同日 `EXTRACT-Q-001` Option `A` を承認しました。Phase 4 Validation 成功後は `READY_FOR_VIEW_GENERATION` とし、Phase 5 の未開始状態を `VALIDATING` / `COMPLETED` から区別します。Migration、Shared/API Status Schema、Worker Handoff は Approved Technical Plan に従って同時に更新します。
+
+2026-08-14 の `EXTRACT-TASK-003` Database Integrity Review では新規 Deviation は検出されませんでした。Migration は Existing Row の Owner/Lineage 不整合を Fail-fast し、Finding/Evidence/Link の Cross-owner、Cross-analysis、Cross-document Relation と Importance 範囲外を PostgreSQL Constraint で拒否します。
 
 ## Resolution Evidence
 
@@ -69,6 +78,7 @@ User は同日 `PROC-DEV-002` Option `A` を承認しました。Password/明示
 | `PDF-DEV-002`                          | Cleanup Attempt 3 FAILED → Real CLI Inspect/Re-run → Audit → same Execution Attempt 4 Worker Success              |
 | `PROC-DEV-002`                         | `PROC-Q-007` Approved A、Real IR 3 Files / 509 Pages Direct Parser Probe、Spec/Plan/Acceptance Boundary Update    |
 | `RERUN-DEV-002`                        | Approved B、`READ COMMITTED` + `FOR UPDATE`、Concurrent 1 queued / 1 not-rerunnable / 1 Audit Integration         |
+| `EXTRACT-DEV-001`                      | `EXTRACT-Q-001` Approved A、Phase 4 Handoff を `READY_FOR_VIEW_GENERATION` として Spec/Plan に固定                |
 
 ## Detail
 

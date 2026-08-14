@@ -5,8 +5,8 @@
 | Field        | Value                                        |
 | ------------ | -------------------------------------------- |
 | Related Spec | `specs/features/document-processing/spec.md` |
-| Plan status  | `Implementing — integration pending`         |
-| Last updated | `2026-08-13`                                 |
+| Plan status  | `Implemented — residual verification gaps`   |
+| Last updated | `2026-08-14`                                 |
 
 ## Approach
 
@@ -68,6 +68,8 @@ PDF Metadata の Encryption Flag 自体は Reject 条件にしません。Passwo
 Infrastructure E2E は API Integration Harness の isolated PostgreSQL、Redis/BullMQ、MinIO を再利用します。Test は Presigned PUT と Finalize 後に Process API を呼び、実 `AnalysisProcessingProcessor` を Queue Worker として起動し、Parse Job が作る Durable Chunk Job を同じ Queue で消費します。最終的に Page/Chunk、Attempt History、`READY_FOR_EMBEDDING`、Object Retention を Database/Storage から検証します。CI には最小の deterministic Text PDF を生成し、Local Real IR PDF 自体は追跡しません。
 
 Failure/Recovery E2E は同 Harness で mixed empty page、malformed input、501-page limit、同一 Execution の再 Delivery、Queue Job remove 後の Pending Dispatcher recovery を検証します。20 MB / 50 MiB Text Limit は巨大 Fixture を Repository に追加せず Unit 境界で検証し、Password-required PDF は再配布可能な deterministic Fixture が用意できるまで明示的 Gap とします。
+
+`PROC-TASK-014` では Repository に Binary Fixture を保存せず、Test 内で deterministic Standard Security PDF と malicious Action/URI PDF を生成します。Password-required Input の `PasswordException` → Stable Non-retryable Classification、Parser が Action/URI を実行せず Text を Data として返すこと、Page/Document Text Limit の inclusive boundary、20 MB Stream の destroy、Sanitized Failure Code だけが Repository に渡ることを Unit Test で固定します。Limit 判定は Production 値を変えず Pure Helper へ切り出し、巨大な 50 MiB Fixture と Test Memory Spike を避けます。
 
 ## Rollout and Rollback
 
