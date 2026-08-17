@@ -515,13 +515,14 @@ model JobExecution {
   updatedAt        DateTime  @updatedAt @db.Timestamptz(3)
 
   owner           User                @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  analysis        Analysis            @relation(fields: [analysisId], references: [id], onDelete: Restrict)
+  analysis        Analysis            @relation(fields: [ownerId, analysisId], references: [ownerId, id], onDelete: Restrict)
   document        Document?           @relation(fields: [ownerId, analysisId, documentId], references: [ownerId, analysisId, id], onDelete: Restrict)
   documentUpload  DocumentUpload?     @relation(fields: [ownerId, analysisId, documentUploadId], references: [ownerId, analysisId, id], onDelete: Restrict)
   attempts        JobAttempt[]
   aiUsageLogs     AiUsageLog[]
   operationAudits JobOperationAudit[]
 
+  @@unique([ownerId, analysisId, id])
   @@index([ownerId, analysisId])
   @@index([analysisId, step, status])
   @@index([documentId])
@@ -606,8 +607,8 @@ model AiUsageLog {
   updatedAt           DateTime    @updatedAt @db.Timestamptz(3)
 
   owner         User           @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  analysis      Analysis?      @relation(fields: [analysisId], references: [id], onDelete: Restrict)
-  jobExecution  JobExecution?  @relation(fields: [jobExecutionId], references: [id], onDelete: Restrict)
+  analysis      Analysis?      @relation(fields: [ownerId, analysisId], references: [ownerId, id], onDelete: Restrict)
+  jobExecution  JobExecution?  @relation(fields: [ownerId, analysisId, jobExecutionId], references: [ownerId, analysisId, id], onDelete: Restrict)
   promptVersion PromptVersion? @relation(fields: [promptVersionId], references: [id], onDelete: Restrict)
 
   @@index([ownerId, createdAt(sort: Desc)])

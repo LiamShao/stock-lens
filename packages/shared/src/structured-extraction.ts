@@ -1,5 +1,64 @@
 import { z } from 'zod';
 
+const AI_AUDIT_IDENTIFIER_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._:/-]*$/;
+
+export const aiUsageAuditInputSchema = z
+  .object({
+    analysisId: z.uuid().nullable(),
+    embeddingTokens: z.number().int().nonnegative().nullable(),
+    estimatedCostMicros: z.bigint().nonnegative().nullable(),
+    inputTokens: z.number().int().nonnegative().nullable(),
+    jobExecutionId: z.uuid().nullable(),
+    latencyMs: z.number().int().nonnegative(),
+    model: z.string().trim().min(1).max(128).regex(AI_AUDIT_IDENTIFIER_PATTERN),
+    operation: z.enum(['STRUCTURED_GENERATION', 'EMBEDDING']),
+    outputTokens: z.number().int().nonnegative().nullable(),
+    ownerId: z.uuid(),
+    promptVersionId: z.uuid().nullable(),
+    provider: z
+      .string()
+      .trim()
+      .min(1)
+      .max(64)
+      .regex(AI_AUDIT_IDENTIFIER_PATTERN),
+    providerRequestId: z
+      .string()
+      .trim()
+      .min(1)
+      .max(128)
+      .regex(AI_AUDIT_IDENTIFIER_PATTERN)
+      .nullable(),
+    requestId: z
+      .string()
+      .trim()
+      .min(1)
+      .max(128)
+      .regex(AI_AUDIT_IDENTIFIER_PATTERN)
+      .nullable(),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (value.jobExecutionId !== null && value.analysisId === null) {
+      context.addIssue({
+        code: 'custom',
+        message: 'analysisId is required when jobExecutionId is present.',
+        path: ['analysisId'],
+      });
+    }
+    if (
+      value.operation === 'STRUCTURED_GENERATION' &&
+      value.promptVersionId === null
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'promptVersionId is required for structured generation usage.',
+        path: ['promptVersionId'],
+      });
+    }
+  });
+
+export type AiUsageAuditInput = z.infer<typeof aiUsageAuditInputSchema>;
+
 export const MAX_EXTRACTION_FINDINGS = 24;
 export const MAX_EVIDENCE_CANDIDATES_PER_FINDING = 5;
 export const MAX_FINDING_TITLE_CHARACTERS = 120;

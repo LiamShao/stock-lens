@@ -1,5 +1,15 @@
 # StockLens AI 開発進捗
 
+## 2026-08-17
+
+### Phase 4 Prompt / Usage Audit Foundation
+
+- Approved `EXTRACT-TASK-004` として Git-tracked Structured Extraction Prompt、SHA-256 Asset Loader、Explicit/Idempotent Activation CLI を実装しました。
+- Prompt Activation は Name ごとの PostgreSQL Advisory Lock、Active Partial Unique Index、Immutable-content Trigger を使用し、Repeated/Concurrent Run、Version Switch、Content Mutation Reject を検証しました。
+- Strict Content-free AI Usage Contract と Repository、Owner/Analysis/Job Composite FK を追加し、Token、Latency、Cost、Operation、Prompt/Provider/Model/Request ID だけを保存します。
+- Format、Spec Check 8 Features / 119 Requirements、Prisma Validate/Generate、Lint、Typecheck、158 Unit/Component Tests、Build、Docker Integration 7 Suites / 56 Tests が成功しました。
+- 次は Approved `EXTRACT-TASK-005` の Deterministic P0 Financial Metric Parser/Calculator/Fixture です。Provider Runtime 接続前のため `EXTRACT-FR-004` / `013` と Feature Verification は正確に `Partial` を維持します。
+
 ## 2026-08-14
 
 ### 次回引き継ぎ

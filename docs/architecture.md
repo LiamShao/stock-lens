@@ -87,6 +87,8 @@ Phase 4 の Finding、Evidence、FindingEvidence は Owner/Analysis Composite FK
 - Page Text、Chunk、Page Number、検出可能な Section Metadata を保存します。
 - Financial Calculation は Deterministic Code で行い、LLM に委譲しません。
 - LLM Output は Versioned Prompt と Zod Schema で検証します。
+- Prompt は Git Asset として Review し、明示的 `prompt:activate` CLI だけが SHA-256 付き Immutable `PromptVersion` を登録します。Worker Startup は Database を変更しません。
+- Provider Call の Token、Latency、Estimated Cost、Operation、Prompt/Provider/Model/Request ID は Content-free `AiUsageLog` として Owner/Analysis/Job Lineage 付きで保存します。
 - 重要 Finding は `Document → Page → Chunk → Excerpt` の Evidence を必須とします。
 - Uploaded Text は命令ではなく Untrusted Data として明確に Delimit します。
 

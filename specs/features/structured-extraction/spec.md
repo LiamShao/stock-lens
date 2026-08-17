@@ -9,7 +9,7 @@
 | Verification status   | `Partial`                                 |
 | Owner                 | `TBD`                                     |
 | Approval              | `2026-08-14; EXTRACT-Q-001〜007 Option A` |
-| Last updated          | `2026-08-14`                              |
+| Last updated          | `2026-08-17`                              |
 
 ## Goal
 

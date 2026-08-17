@@ -60,6 +60,8 @@ User は同日 `EXTRACT-Q-001` Option `A` を承認しました。Phase 4 Valida
 
 2026-08-14 の `EXTRACT-TASK-003` Database Integrity Review では新規 Deviation は検出されませんでした。Migration は Existing Row の Owner/Lineage 不整合を Fail-fast し、Finding/Evidence/Link の Cross-owner、Cross-analysis、Cross-document Relation と Importance 範囲外を PostgreSQL Constraint で拒否します。
 
+2026-08-17 の `EXTRACT-TASK-004` Prompt/Usage Audit Review では新規 Deviation は検出されませんでした。Git Asset、Explicit CLI、Concurrent/Repeated Activation、Immutable Content、Content-free Usage、Cross-owner Usage Reject を Fresh PostgreSQL で検証しました。Provider Runtime が Prompt/Usage Repository を呼ぶ End-to-end Evidence は後続 `EXTRACT-TASK-006` 以降の既知 Gap として Verification に保持します。
+
 ## Resolution Evidence
 
 | Deviation                              | Resolution evidence                                                                                               |

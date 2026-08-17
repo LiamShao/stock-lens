@@ -1,0 +1,6 @@
+{
+  "name": "structured-extraction",
+  "version": 1,
+  "schemaVersion": "structured-finding-v1",
+  "templateFile": "system.ja.md"
+}

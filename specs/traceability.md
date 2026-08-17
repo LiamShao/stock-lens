@@ -130,7 +130,7 @@ Status は Requirement の実装・検証状況を表します。`Partial` は C
 | `EXTRACT-FR-001`  | Durable Pipeline planned              | Not started                           | `Not started` |
 | `EXTRACT-FR-002`  | Shared Output Contract                | Strict Zod Unit                       | `Partial`     |
 | `EXTRACT-FR-003`  | Bounded Context planned               | Not started                           | `Not started` |
-| `EXTRACT-FR-004`  | Prompt/Usage Audit planned            | Not started                           | `Not started` |
+| `EXTRACT-FR-004`  | Git Prompt + Explicit Activation CLI  | CLI/Concurrency/Immutability DB Test  | `Partial`     |
 | `EXTRACT-FR-005`  | Strict Finding Candidate Schema       | Bounds/Unknown-field Unit             | `Partial`     |
 | `EXTRACT-FR-006`  | Deterministic Metrics planned         | Not started                           | `Not started` |
 | `EXTRACT-FR-007`  | Evidence Validator planned            | Not started                           | `Not started` |
@@ -139,11 +139,11 @@ Status は Requirement の実装・検証状況を表します。`Partial` は C
 | `EXTRACT-FR-010`  | Bounded Repair planned                | Not started                           | `Not started` |
 | `EXTRACT-FR-011`  | Provider Retry planned                | Not started                           | `Not started` |
 | `EXTRACT-FR-012`  | READY_FOR_VIEW_GENERATION Enum/Schema | Shared Unit + PostgreSQL Migration    | `Partial`     |
-| `EXTRACT-FR-013`  | AiUsageLog planned                    | Not started                           | `Not started` |
-| `EXTRACT-SEC-001` | Composite Finding/Evidence Lineage FK | PostgreSQL valid/cross-owner matrix   | `Partial`     |
+| `EXTRACT-FR-013`  | Strict Content-free Usage Repository  | Usage/Owner-lineage PostgreSQL Test   | `Partial`     |
+| `EXTRACT-SEC-001` | Finding/Evidence/Usage Composite FK   | PostgreSQL valid/cross-owner matrix   | `Partial`     |
 | `EXTRACT-SEC-002` | Untrusted Context Integration planned | Not started                           | `Not started` |
 | `EXTRACT-SEC-003` | No-tool Provider Boundary planned     | Not started                           | `Not started` |
-| `EXTRACT-SEC-004` | Provider Redaction planned            | Not started                           | `Not started` |
+| `EXTRACT-SEC-004` | Content-free Usage Input Contract     | Strict unknown-field + DB inspection  | `Partial`     |
 | `EXTRACT-SEC-005` | Strict Schema/Length/Count Contract   | Invalid/oversized Unit                | `Partial`     |
 | `EXTRACT-SEC-006` | Deterministic Compliance Validator    | Six Categories + Source Boundary Unit | `Partial`     |
 | `EXTRACT-SEC-007` | Shared Budget Ceiling                 | Provider/context/output bounds Unit   | `Partial`     |

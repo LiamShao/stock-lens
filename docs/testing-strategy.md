@@ -32,6 +32,7 @@ StockLens AI の Test は、Build が通ることだけでなく、Security Boun
 - Demo User: Create、Idempotent No-op、Password Rotation、Session Revoke
 - Ownership: Cross-user Read/Create/Update/Delete、Composite FK、Parent/Child Soft Delete、Concurrent Create/Delete
 - PDF Upload: Start Validation、3 File Limit、Production S3 Adapter による Real MinIO Presigned PUT、Valid/Invalid Header Finalize、Bearer User A/B Start/Re-presign/Finalize/List/Delete、Real Redis/BullMQ Worker Cleanup
+- Structured Extraction Audit: Fresh Migration、Real Prompt Activation CLI、Repeated/Concurrent Activation、Immutable Prompt、Content-free AI Usage、Cross-owner Usage Reject
 
 ## 4. Security Test Requirements
 

@@ -6,6 +6,7 @@
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsx watch src/main.ts",
     "job:operations": "tsx src/job-operations.ts",
+    "prompt:activate": "tsx src/prompt-activate.ts",
     "lint": "eslint src --max-warnings=0",
     "start": "node dist/main.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",

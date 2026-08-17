@@ -105,3 +105,7 @@ Object Storage Boundary は `@stocklens/object-storage` に集約します。Pre
 Object Cleanup Queue の Payload は `jobExecutionId` UUID のみに限定し、Bucket、Object Key、Credential を Redis に複製しません。Worker は Owner-consistent Database Relation から Target を解決します。Provider の Error Detail は Log や Job History に保存せず、Stable Error Code と Sanitized Message のみを記録します。
 
 Uploaded PDF から将来抽出する Text は `@stocklens/shared` の Trust Boundary を通し、`source: uploaded-pdf`、`trust: untrusted`、`role: user`、`instructionsAllowed: false` を固定します。Text 内の Delimiter と Markup は Escape し、System/Developer Instruction には昇格させません。現在は Boundary と Prompt Injection Regression Unit Test まで実装済みで、Parse/LLM Provider への実接続と End-to-end Evaluation は Phase 4 の対象です。
+
+Prompt 登録は `ALLOW_PROMPT_ACTIVATION=true`、Operator ID、Asset Path、`name@version` の明示確認を要求する CLI に限定します。Template は Git Asset から読み、Path Traversal、Unknown Manifest Field、不正な Name/Version/Schema Version を拒否します。Database は一用途一 Active Version と利用済み内容の不変性を Constraint/Trigger で強制します。
+
+`AiUsageLog` は Token、Latency、Cost、Operation、Prompt Version、Provider/Model/Request ID の Allowlist だけを Repository で受理します。Prompt/PDF/Context/Response/Error/API Key を受ける汎用 Metadata Input は公開せず、Owner/Analysis/Job Composite FK で Cross-owner Record を拒否します。Provider Runtime の実 Log Redaction と End-to-end Prompt Injection Evaluation は後続 Task の Verification Gap です。

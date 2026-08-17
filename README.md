@@ -68,6 +68,15 @@ pnpm db:validate
 
 `test:integration` は最初に `docker/postgres` から `stocklens-postgres:16-pgvector` を自動 Build または Docker Layer Cache から再 Tag し、その後 Testcontainers で隔離 Database を起動して空 Database に全 Migration を適用します。共有 Local PostgreSQL や既存 Data は変更せず、事前の手動 Image Build も不要です。
 
+Structured Extraction Prompt は Git 管理 Asset から明示的に登録します。Worker 起動時の暗黙 Mutation はありません。Activation 時は `.env` で `ALLOW_PROMPT_ACTIVATION=true` を設定し、次のように Asset と Operator、Version を確認します。
+
+```bash
+pnpm prompt:activate -- \
+  --asset prompts/structured-extraction/v1.json \
+  --operator-id local-developer \
+  --confirm structured-extraction@1
+```
+
 Prisma Schema と Migration には、User、Analysis、Document、Evidence、Job などの Domain Model を定義しています。論理設計と Ownership Rule は [docs/database-design.md](./docs/database-design.md) を参照してください。
 
 `@stocklens/object-storage` は AWS S3 と Local MinIO を共通 Interface で扱います。S3 Operation には `@aws-sdk/client-s3`、短命 Presigned PUT には `@aws-sdk/s3-request-presigner` のみを追加し、API/Worker から Provider 固有処理を分離しています。詳細は [packages/object-storage/README.md](./packages/object-storage/README.md) を参照してください。

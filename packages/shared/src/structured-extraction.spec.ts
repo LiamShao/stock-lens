@@ -1,4 +1,5 @@
 import {
+  aiUsageAuditInputSchema,
   DEFAULT_STRUCTURED_EXTRACTION_BUDGET,
   MAX_EXTRACTION_FINDINGS,
   MAX_FINDING_BODY_CHARACTERS,
@@ -119,6 +120,36 @@ describe('structured extraction contract', () => {
       valid: true,
       violationCodes: [],
     });
+  });
+
+  it('EXTRACT-FR-013 accepts only bounded content-free usage metadata', () => {
+    const usage = {
+      analysisId: 'b72c9088-1ee7-4c66-8872-ef9751cb01a5',
+      embeddingTokens: null,
+      estimatedCostMicros: 1234n,
+      inputTokens: 120,
+      jobExecutionId: 'cff30551-5bed-49fe-970f-b5cb5a11c2ae',
+      latencyMs: 850,
+      model: 'deterministic-test-model',
+      operation: 'STRUCTURED_GENERATION' as const,
+      outputTokens: 40,
+      ownerId: '8dd40b15-196f-453d-b76f-5c48db7e076d',
+      promptVersionId: '1ce36dbd-daf1-4f1b-b658-af50c8cc0d7f',
+      provider: 'deterministic',
+      providerRequestId: 'provider-request-1',
+      requestId: 'request-1',
+    };
+
+    expect(aiUsageAuditInputSchema.parse(usage)).toEqual(usage);
+    expect(() =>
+      aiUsageAuditInputSchema.parse({
+        ...usage,
+        prompt: 'secret prompt body',
+      }),
+    ).toThrow();
+    expect(() =>
+      aiUsageAuditInputSchema.parse({ ...usage, promptVersionId: null }),
+    ).toThrow();
   });
 });
 

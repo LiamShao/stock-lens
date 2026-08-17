@@ -403,7 +403,7 @@ System-wide の Immutable Reference Data です。
 | `createdAt`     | Timestamptz | 作成日時                    |
 | `updatedAt`     | Timestamptz | Metadata 更新日時           |
 
-`name, version` と `contentSha256` を Unique とします。利用済み Version の本文は更新せず、新 Version を作成します。
+`name, version` と `contentSha256` を Unique とし、Partial Unique Index で同じ `name` の Active Version を最大一件にします。Git 管理 Manifest から Template SHA-256 を計算し、明示的 Activation CLI が Name 単位の Advisory Lock を取得して Transaction 内で Insert/Activate します。利用済み Version の Name、Version、Template、Schema Version、Hash は Database Trigger でも更新を拒否し、変更時は新 Version を作成します。API/Worker 起動は Prompt を登録・変更しません。
 
 ### 4.14 AiUsageLog
 
@@ -427,6 +427,8 @@ Cost、Latency、Model、Prompt Version を監査します。
 - `createdAt` / `updatedAt`
 
 Prompt 本文、PDF 本文、API Credential、Provider Response 全体は保存しません。
+
+Structured Generation は `promptVersionId` を必須とします。`jobExecutionId` を持つ Usage は `analysisId` も必須で、`(ownerId, analysisId)` と `(ownerId, analysisId, jobExecutionId)` の Composite FK が Cross-owner/Cross-analysis Audit を拒否します。Application Repository は Strict Schema に列挙した Content-free Field 以外を受理しません。
 
 ## 5. Delete Policy
 
@@ -486,7 +488,7 @@ PostgreSQL の標準 Parser だけで日本語検索品質が不十分な場合�
 - AnalysisFinding: Unique `(analysisId, findingKey)`
 - Evidence: Unique `(analysisId, documentId, pageNumber, excerptSha256)`
 - JobExecution: Unique `idempotencyKey`、Index `(analysisId, step, status)`
-- PromptVersion: Unique `(name, version)`
+- PromptVersion: Unique `(name, version)`、Partial Unique Active `(name)`
 - RefreshToken: Unique `tokenHash`、Index `(userId, familyId)`
 - Full Text Search: `DocumentChunk` の GIN
 - Semantic Search: `DocumentChunk.embedding` の HNSW

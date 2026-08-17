@@ -24,7 +24,8 @@
     "db:migrate:deploy": "dotenv -e .env -- prisma migrate deploy --schema prisma/schema.prisma",
     "demo:user:provision": "pnpm --filter @stocklens/api demo:user:provision",
     "job:inspect": "pnpm --filter @stocklens/worker job:operations inspect",
-    "job:rerun": "pnpm --filter @stocklens/worker job:operations rerun"
+    "job:rerun": "pnpm --filter @stocklens/worker job:operations rerun",
+    "prompt:activate": "pnpm --filter @stocklens/worker prompt:activate"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0"

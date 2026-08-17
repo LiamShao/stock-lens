@@ -6,7 +6,7 @@
 | ------------------- | ---------------------------------------------- |
 | Related Spec        | `specs/features/structured-extraction/spec.md` |
 | Verification status | `Partial — implementation in progress`         |
-| Last updated        | `2026-08-14`                                   |
+| Last updated        | `2026-08-17`                                   |
 
 ## Implemented Evidence
 
@@ -17,6 +17,9 @@
 - `AnalysisStatus.READY_FOR_VIEW_GENERATION` は Prisma Enum、Migration、Shared Zod/API Projection に追加し、`completedAt = null` の Phase 5 Handoff として表現します。
 - `AnalysisFinding`、`Evidence`、`FindingEvidence` と Document/Page/Chunk Lineage は Owner/Analysis/Document/Page を含む Composite FK で結び、Finding Importance は Database Check でも 1〜5 に限定します。
 - Migration は Existing Finding/Evidence/Link の Owner/Lineage 不整合を Fail-fast Check し、`FindingEvidence.analysisId` を Backfill 後に `NOT NULL` とします。
+- Git-tracked `structured-extraction` Prompt Asset は Name/Version/Schema Version と Template SHA-256 を固定し、Worker 起動から独立した明示的 CLI だけが登録・Activation します。
+- Prompt Activation は Name 単位の Transaction Advisory Lock、Active Partial Unique Index、Immutable-content Trigger により、Concurrent/Repeated Run を一つの Active Version へ収束させます。
+- `AiUsageRepository` は Strict Content-free Contract だけを受け、Token、Latency、Cost、Operation、Prompt Version、Provider/Model/Request ID を記録します。Owner/Analysis/Job は Composite FK で同一 Lineage に限定します。
 
 ## Automated Evidence
 
@@ -24,32 +27,35 @@
 - Targeted Shared Gate: 5 Suites / 29 Tests、Lint、Typecheck が成功しました。
 - Targeted Migration/Database Gate: Fresh PostgreSQL Migration と Owner-scoped Repository Suite 17 Tests が成功し、Valid Finding/Evidence/Link、Handoff Status、Cross-owner Finding/Evidence、Cross-document Page/Chunk、Importance Check を確認しました。
 - Full Workspace Gate: Format、Spec Check 8 Features / 119 Requirements、Prisma Validate/Generate、Lint、Typecheck、154 Unit/Component Tests、Build、Docker Integration 6 Suites / 52 Tests が成功しました。
+- `prompt-usage-audit.integration-spec.ts`: Fresh Migration、Real CLI、Repeated/Concurrent Activation、Version Switch、Immutable Trigger、Content-free Usage、Cross-owner Reject の 4 Tests が成功しました。
+- Task 004 Targeted Gate: Shared 6 Suites / 31 Tests、Worker 10 Suites / 25 Tests、Shared/Worker/API Typecheck、API Lint、PostgreSQL Integration 1 Suite / 4 Tests が成功しました。
+- Task 004 Full Gate: Format、Spec Check 8 Features / 119 Requirements、Prisma Validate/Generate、Lint、Typecheck、158 Unit/Component Tests、Build、Docker Integration 7 Suites / 56 Tests が成功しました。Jest Full-run の Terminal Summary 非表示時は Suite ごとの Exit 0 / Passed Summary と document-storage JSON (`15/15`, `wasInterrupted=false`) で確認しました。
 
 ## Remaining Gaps
 
-- Prompt、Metrics、Provider、Map/Merge、Evidence Content Validation/Persistence、Durable Queue、Evaluation は未実装です。
+- Prompt/Usage Audit Foundation は実装済みです。Metrics、Provider Runtime 接続、Map/Merge、Evidence Content Validation/Persistence、Durable Queue、Evaluation は未実装です。
 - Compliance Unit は検出 Contract を確認しましたが、Atomic Persist Reject と Repair Flow は未実装です。
 - OpenAI Adapter は Official Design Reference を Technical Plan に反映しただけで、SDK/Runtime/Live Evidence は未実装です。
 
 ## Acceptance Status
 
-| Acceptance Criterion | Status        | Evidence / Gap                                            |
-| -------------------- | ------------- | --------------------------------------------------------- |
-| `EXTRACT-AC-001`     | `Not started` | Durable Phase 4 start pending                             |
-| `EXTRACT-AC-002`     | `Partial`     | Strict Shared Schema passed、Provider/Persist pending     |
-| `EXTRACT-AC-003`     | `Not started` | Provider context integration pending                      |
-| `EXTRACT-AC-004`     | `Not started` | Evidence validation/persist pending                       |
-| `EXTRACT-AC-005`     | `Partial`     | Cross-owner/lineage DB reject passed、excerpt pending     |
-| `EXTRACT-AC-006`     | `Not started` | Deterministic metric pipeline pending                     |
-| `EXTRACT-AC-007`     | `Not started` | Missing/ambiguous metric fixture pending                  |
-| `EXTRACT-AC-008`     | `Partial`     | Compliance unit passed、persist rejection pending         |
-| `EXTRACT-AC-009`     | `Not started` | Repair success flow pending                               |
-| `EXTRACT-AC-010`     | `Not started` | Repair exhaustion flow pending                            |
-| `EXTRACT-AC-011`     | `Not started` | Provider retry/idempotency pending                        |
-| `EXTRACT-AC-012`     | `Partial`     | Composite parent constraints passed、runtime race pending |
-| `EXTRACT-AC-013`     | `Partial`     | Enum/Migration/Shared Handoff passed、runtime pending     |
-| `EXTRACT-AC-014`     | `Partial`     | Content-free result、runtime log boundary pending         |
+| Acceptance Criterion | Status        | Evidence / Gap                                              |
+| -------------------- | ------------- | ----------------------------------------------------------- |
+| `EXTRACT-AC-001`     | `Not started` | Durable Phase 4 start pending                               |
+| `EXTRACT-AC-002`     | `Partial`     | Strict Schema + Prompt/Usage Audit passed、Provider pending |
+| `EXTRACT-AC-003`     | `Not started` | Provider context integration pending                        |
+| `EXTRACT-AC-004`     | `Not started` | Evidence validation/persist pending                         |
+| `EXTRACT-AC-005`     | `Partial`     | Cross-owner/lineage DB reject passed、excerpt pending       |
+| `EXTRACT-AC-006`     | `Not started` | Deterministic metric pipeline pending                       |
+| `EXTRACT-AC-007`     | `Not started` | Missing/ambiguous metric fixture pending                    |
+| `EXTRACT-AC-008`     | `Partial`     | Compliance unit passed、persist rejection pending           |
+| `EXTRACT-AC-009`     | `Not started` | Repair success flow pending                                 |
+| `EXTRACT-AC-010`     | `Not started` | Repair exhaustion flow pending                              |
+| `EXTRACT-AC-011`     | `Not started` | Provider retry/idempotency pending                          |
+| `EXTRACT-AC-012`     | `Partial`     | Composite parent constraints passed、runtime race pending   |
+| `EXTRACT-AC-013`     | `Partial`     | Enum/Migration/Shared Handoff passed、runtime pending       |
+| `EXTRACT-AC-014`     | `Partial`     | Content-free Usage contract passed、Provider log pending    |
 
 ## Result
 
-Approved Spec/Plan/Tasks と Shared Contract の最初の Slice は完了しました。Core Pipeline と Integration Evidence は未実装のため Feature は `Partial` です。
+Approved Spec/Plan/Tasks と Shared/Database Audit Foundation は完了しました。Core Pipeline と Provider Integration Evidence は未実装のため Feature は `Partial` です。
