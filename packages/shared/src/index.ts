@@ -4,6 +4,7 @@ export * from './analysis';
 export * from './analysis-processing';
 export * from './document';
 export * from './document-upload';
+export * from './financial-metrics';
 export * from './object-cleanup';
 export * from './structured-extraction';
 export * from './untrusted-pdf-content';

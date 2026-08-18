@@ -172,6 +172,8 @@ Refresh Token Rotation と Reuse Detection を支えます。
 
 `ownerId, createdAt DESC`、`ownerId, status`、`companyId` に Index を設定します。`ownerId, id` は Owner-consistent Child Relation の Composite Candidate Key です。
 
+`financialMetrics` は `schemaVersion: 1.0.0` の Strict JSON Snapshot です。Revenue、Operating Profit、Net Income、Operating Cash Flow を常に一つずつ持ち、各 Metric は Current/Previous Observation、YoY Amount/Rate、Status、Unknown Reason を保持します。Observation は Raw Value/Unit、JPY Normalized Integer、Period、Consolidated Scope、Formula、Document/Page/Chunk/Exact Row Source を含みます。計算は Worker の deterministic `bigint` code だけで行い、単位・期間・Scope・Sign・Conflict が曖昧な値を LLM や推測で補完しません。Database への置換は Phase 4 Durable Pipeline の Parent/Input Recheck と同一 Transaction で行います。
+
 AnalysisStatus は次に限定します。
 
 ```text

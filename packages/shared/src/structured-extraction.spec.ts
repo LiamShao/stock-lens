@@ -66,6 +66,7 @@ describe('structured extraction contract', () => {
     expect(DEFAULT_STRUCTURED_EXTRACTION_BUDGET).toEqual({
       maxChunksPerBatch: 32,
       maxContextCharacters: 48_000,
+      maxEstimatedInputTokens: 48_000,
       maxOutputTokens: 4_096,
       maxProviderCalls: 3,
       maxRequestTimeoutMs: 60_000,

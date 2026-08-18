@@ -18,7 +18,9 @@
     "@stocklens/shared": "workspace:*",
     "bullmq": "^5.80.2",
     "dotenv": "^17.4.2",
-    "pdfjs-dist": "^6.2.108"
+    "openai": "^7.5.0",
+    "pdfjs-dist": "^6.2.108",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@stocklens/config": "workspace:*",

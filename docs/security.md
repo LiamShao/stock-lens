@@ -88,13 +88,14 @@ FAILED Job の再実行は Public API へ公開せず、Explicit Enable、Worklo
 - Local MinIO だけが `S3_ENDPOINT`、`S3_FORCE_PATH_STYLE=true`、Static `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` を使用します。AWS Runtime は Endpoint と Static Credential を省略し、IAM Role の Default Credential Provider Chain を使用します。
 - `S3_BUCKET` は事前作成済み Private Bucket、`S3_PRESIGN_EXPIRES_IN_SECONDS` は 1〜300 秒、`REDIS_URL` は `redis:` または TLS の `rediss:` に限定します。
 - Manual Re-run CLI は `ALLOW_JOB_RERUN=true` と 32 Characters 以上の `JOB_OPERATOR_SECRET` を必須とし、Production では Local Default を拒否します。
+- `OPENAI_API_KEY` と `OPENAI_MODEL` は OpenAI Provider 構築時だけ必須とし、API Key は Worker Environment / Secrets Manager だけに注入します。Model は Hard-code せず、`OPENAI_EMBEDDING_MODEL` は Phase 6 まで Optional です。
 
 ## 8. 残存 Security 項目
 
 - Browser CORS、Production Private Bucket Policy、IAM Policy
 - Redis-backed Distributed Rate Limit
 - Secret Rotation Runbook
-- Parse/LLM Provider への Untrusted PDF Context Boundary 接続と End-to-end Prompt Injection Evaluation
+- Owner-scoped Durable Extraction Runtime の Untrusted Context 接続と Golden/Live Prompt Injection Evaluation
 
 Demo User は明示的な CLI でのみ Provisioning し、API 起動時には作成しません。CLI は通常 User の上書き、Soft Delete 済み User の暗黙的な復元、Password の出力を禁止します。Production では `ALLOW_DEMO_USER_PROVISIONING=true` と Local Default 以外の Password を必須とし、Password 変更時は既存 Active Refresh Token を同一 Transaction で失効します。
 
@@ -104,8 +105,10 @@ Object Storage Boundary は `@stocklens/object-storage` に集約します。Pre
 
 Object Cleanup Queue の Payload は `jobExecutionId` UUID のみに限定し、Bucket、Object Key、Credential を Redis に複製しません。Worker は Owner-consistent Database Relation から Target を解決します。Provider の Error Detail は Log や Job History に保存せず、Stable Error Code と Sanitized Message のみを記録します。
 
-Uploaded PDF から将来抽出する Text は `@stocklens/shared` の Trust Boundary を通し、`source: uploaded-pdf`、`trust: untrusted`、`role: user`、`instructionsAllowed: false` を固定します。Text 内の Delimiter と Markup は Escape し、System/Developer Instruction には昇格させません。現在は Boundary と Prompt Injection Regression Unit Test まで実装済みで、Parse/LLM Provider への実接続と End-to-end Evaluation は Phase 4 の対象です。
+Uploaded PDF Text は `@stocklens/shared` の Trust Boundary を通し、`source: uploaded-pdf`、`trust: untrusted`、`role: user`、`instructionsAllowed: false` を固定します。Text 内の Delimiter と Markup は Escape し、System/Developer Instruction には昇格させません。Phase 4 Pure Orchestrator はこの Block を Provider `userContext` だけへ接続し、Versioned System Prompt と分離します。Map Candidate も Merge 時に Untrusted Block として Escape します。Owner-scoped Active Chunk Repository/Durable Queue への実接続と Golden/Live Evaluation は後続 Task の対象です。
 
 Prompt 登録は `ALLOW_PROMPT_ACTIVATION=true`、Operator ID、Asset Path、`name@version` の明示確認を要求する CLI に限定します。Template は Git Asset から読み、Path Traversal、Unknown Manifest Field、不正な Name/Version/Schema Version を拒否します。Database は一用途一 Active Version と利用済み内容の不変性を Constraint/Trigger で強制します。
 
-`AiUsageLog` は Token、Latency、Cost、Operation、Prompt Version、Provider/Model/Request ID の Allowlist だけを Repository で受理します。Prompt/PDF/Context/Response/Error/API Key を受ける汎用 Metadata Input は公開せず、Owner/Analysis/Job Composite FK で Cross-owner Record を拒否します。Provider Runtime の実 Log Redaction と End-to-end Prompt Injection Evaluation は後続 Task の Verification Gap です。
+`AiUsageLog` は Token、Latency、Cost、Operation、Prompt Version、Provider/Model/Request ID の Allowlist だけを Repository で受理します。Prompt/PDF/Context/Response/Error/API Key を受ける汎用 Metadata Input は公開せず、Owner/Analysis/Job Composite FK で Cross-owner Record を拒否します。Pure Orchestrator の Prompt Injection Boundary は検証済みで、Durable Runtime の実 Log Redaction と Golden/Live Evaluation は後続 Task の Verification Gap です。
+
+OpenAI Adapter は `store: false`、空の `tools`、`tool_choice: none`、`parallel_tool_calls: false` を固定し、Provider の Refusal Text、Raw Error、Raw Response、API Key を内部 Error に転送しません。公開するのは Stable Error Code、Retryable Flag、Sanitized Message と Content-free Usage Metadata だけです。

@@ -33,6 +33,7 @@ StockLens AI の Test は、Build が通ることだけでなく、Security Boun
 - Ownership: Cross-user Read/Create/Update/Delete、Composite FK、Parent/Child Soft Delete、Concurrent Create/Delete
 - PDF Upload: Start Validation、3 File Limit、Production S3 Adapter による Real MinIO Presigned PUT、Valid/Invalid Header Finalize、Bearer User A/B Start/Re-presign/Finalize/List/Delete、Real Redis/BullMQ Worker Cleanup
 - Structured Extraction Audit: Fresh Migration、Real Prompt Activation CLI、Repeated/Concurrent Activation、Immutable Prompt、Content-free AI Usage、Cross-owner Usage Reject
+- Provider Boundary: Deterministic Strict Fixture、OpenAI Responses Zod Format、No-tool/No-store、Output/Timeout Budget、Refusal/Incomplete/Malformed、HTTP/Connection Retry Classification、Secret-free Error
 
 ## 4. Security Test Requirements
 
@@ -45,7 +46,7 @@ StockLens AI の Test は、Build が通ることだけでなく、Security Boun
 - Cookie Attribute、CORS、CSRF 前提、Rate Limit、Deleted User を検証する。
 - Logger の実出力を Capture し、Password、Authorization、Cookie、Token が Redact されることを検証する。
 - Upload は Extension、MIME、`%PDF-` Header、File Count、Size、Cross-user Object Access を検証する。
-- Uploaded PDF 内の Prompt Injection Delimiter を Escape し、`role: user` / `trust: untrusted` の Context に固定する Unit Test を持つ。Provider 接続後に End-to-end Evaluation を追加する。
+- Uploaded PDF 内の Prompt Injection Delimiter を Escape し、`role: user` / `trust: untrusted` の Context に固定する Unit Test を持つ。Pure Map/Merge Orchestrator では System/User Separation、全 Chunk Coverage、No Silent Truncation、Map Candidate Re-escape、Call/Character/Estimated Token Limit を検証済みです。Durable Runtime 接続後に Golden/Live Evaluation を追加します。
 
 ## 5. Async Job Tests
 
@@ -70,6 +71,8 @@ Phase 4 以降は少なくとも 5 Company、15 Public IR PDF の Golden Dataset
 - RAG Answer Citation Rate
 
 Financial Metric の期待値は Deterministic Fixture から計算し、LLM の自由記述を正解値にしません。Provider、Model、Prompt Version、Schema Version を Evaluation Result に記録します。
+
+Phase 4 P0 Metric Fixture は Revenue、Operating Profit、Net Income、Operating Cash Flow、Annual/Quarterly Period、円/千円/百万円/億円、連結/個別、Loss/Negative、Header Order、YoY、Zero Previous、Missing/Ambiguous/Conflict を Unit Test で固定します。
 
 ## 7. Quality Gates
 

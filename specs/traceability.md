@@ -125,29 +125,29 @@ Status は Requirement の実装・検証状況を表します。`Partial` は C
 
 ## Structured Extraction
 
-| Requirement       | Implementation                        | Verification                          | Status        |
-| ----------------- | ------------------------------------- | ------------------------------------- | ------------- |
-| `EXTRACT-FR-001`  | Durable Pipeline planned              | Not started                           | `Not started` |
-| `EXTRACT-FR-002`  | Shared Output Contract                | Strict Zod Unit                       | `Partial`     |
-| `EXTRACT-FR-003`  | Bounded Context planned               | Not started                           | `Not started` |
-| `EXTRACT-FR-004`  | Git Prompt + Explicit Activation CLI  | CLI/Concurrency/Immutability DB Test  | `Partial`     |
-| `EXTRACT-FR-005`  | Strict Finding Candidate Schema       | Bounds/Unknown-field Unit             | `Partial`     |
-| `EXTRACT-FR-006`  | Deterministic Metrics planned         | Not started                           | `Not started` |
-| `EXTRACT-FR-007`  | Evidence Validator planned            | Not started                           | `Not started` |
-| `EXTRACT-FR-008`  | Supported/Evidence Rule planned       | Not started                           | `Not started` |
-| `EXTRACT-FR-009`  | Atomic Publish planned                | Not started                           | `Not started` |
-| `EXTRACT-FR-010`  | Bounded Repair planned                | Not started                           | `Not started` |
-| `EXTRACT-FR-011`  | Provider Retry planned                | Not started                           | `Not started` |
-| `EXTRACT-FR-012`  | READY_FOR_VIEW_GENERATION Enum/Schema | Shared Unit + PostgreSQL Migration    | `Partial`     |
-| `EXTRACT-FR-013`  | Strict Content-free Usage Repository  | Usage/Owner-lineage PostgreSQL Test   | `Partial`     |
-| `EXTRACT-SEC-001` | Finding/Evidence/Usage Composite FK   | PostgreSQL valid/cross-owner matrix   | `Partial`     |
-| `EXTRACT-SEC-002` | Untrusted Context Integration planned | Not started                           | `Not started` |
-| `EXTRACT-SEC-003` | No-tool Provider Boundary planned     | Not started                           | `Not started` |
-| `EXTRACT-SEC-004` | Content-free Usage Input Contract     | Strict unknown-field + DB inspection  | `Partial`     |
-| `EXTRACT-SEC-005` | Strict Schema/Length/Count Contract   | Invalid/oversized Unit                | `Partial`     |
-| `EXTRACT-SEC-006` | Deterministic Compliance Validator    | Six Categories + Source Boundary Unit | `Partial`     |
-| `EXTRACT-SEC-007` | Shared Budget Ceiling                 | Provider/context/output bounds Unit   | `Partial`     |
-| `EXTRACT-SEC-008` | Composite Parent Integrity            | PostgreSQL cross-lineage reject       | `Partial`     |
+| Requirement       | Implementation                               | Verification                           | Status        |
+| ----------------- | -------------------------------------------- | -------------------------------------- | ------------- |
+| `EXTRACT-FR-001`  | Durable Pipeline planned                     | Not started                            | `Not started` |
+| `EXTRACT-FR-002`  | LlmProvider + Deterministic/OpenAI Adapter   | Strict Fixture + Responses Zod Unit    | `Partial`     |
+| `EXTRACT-FR-003`  | Strict Source DTO + Bounded Map/Merge        | Order/full coverage/budget Unit        | `Partial`     |
+| `EXTRACT-FR-004`  | Git Prompt + Adapter Usage Metadata          | CLI DB + Content-free Provider Unit    | `Partial`     |
+| `EXTRACT-FR-005`  | Strict Finding Schema + Deterministic Dedupe | Bounds/conflicting-key Unit            | `Partial`     |
+| `EXTRACT-FR-006`  | Versioned Metric Schema + BigInt Parser/YoY  | Four P0/Missing/Ambiguous Fixtures     | `Passed`      |
+| `EXTRACT-FR-007`  | Evidence Validator planned                   | Not started                            | `Not started` |
+| `EXTRACT-FR-008`  | Supported/Evidence Rule planned              | Not started                            | `Not started` |
+| `EXTRACT-FR-009`  | Atomic Publish planned                       | Not started                            | `Not started` |
+| `EXTRACT-FR-010`  | Stable Validation/Incomplete Errors          | Refusal/Length/Malformed Unit          | `Partial`     |
+| `EXTRACT-FR-011`  | Retryable Provider Error Classification      | 408/429/5xx/Connection Unit            | `Partial`     |
+| `EXTRACT-FR-012`  | READY_FOR_VIEW_GENERATION Enum/Schema        | Shared Unit + PostgreSQL Migration     | `Partial`     |
+| `EXTRACT-FR-013`  | Strict Content-free Usage Repository         | Usage/Owner-lineage PostgreSQL Test    | `Partial`     |
+| `EXTRACT-SEC-001` | Finding/Evidence/Usage Composite FK          | PostgreSQL valid/cross-owner matrix    | `Partial`     |
+| `EXTRACT-SEC-002` | Escaped PDF User Context in Orchestrator     | Injection/system separation Unit       | `Partial`     |
+| `EXTRACT-SEC-003` | No-tool Adapter + Injection Boundary         | Request Shape + malicious context Unit | `Partial`     |
+| `EXTRACT-SEC-004` | Sanitized Errors + Content-free Usage        | Provider Unit + DB inspection          | `Partial`     |
+| `EXTRACT-SEC-005` | Strict Schema/Length/Count Contract          | Provider + Invalid/oversized Unit      | `Partial`     |
+| `EXTRACT-SEC-006` | Deterministic Compliance Validator           | Six Categories + Source Boundary Unit  | `Partial`     |
+| `EXTRACT-SEC-007` | Map/Merge/Provider Budget Ceiling            | Call/chunk/char/token/output/time Unit | `Partial`     |
+| `EXTRACT-SEC-008` | Composite Parent Integrity                   | PostgreSQL cross-lineage reject        | `Partial`     |
 
 ## Job Re-run
 

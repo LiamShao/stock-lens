@@ -77,6 +77,10 @@ pnpm prompt:activate -- \
   --confirm structured-extraction@1
 ```
 
+Structured Extraction の OpenAI Adapter は Worker だけで使用します。`OPENAI_API_KEY` と Structured Outputs 対応の `OPENAI_MODEL` を Environment / Secrets Manager から明示的に設定してください。Model は Repository に Hard-code せず、Request は Response Storage と全 Tool を無効化します。Live Provider Test は CI の必須条件ではなく、別の明示的 Opt-in Evaluation として扱います。
+
+Long Document の抽出は全 Chunk を stable order の bounded Map/Merge で処理します。Default は最大 2 Map + 1 Merge とし、Context/Estimated Token/Call Budget を超える場合は先頭だけを採用せず Stable Failure とします。PDF Text と Intermediate Candidate は Escaped Untrusted User Context に限定します。
+
 Prisma Schema と Migration には、User、Analysis、Document、Evidence、Job などの Domain Model を定義しています。論理設計と Ownership Rule は [docs/database-design.md](./docs/database-design.md) を参照してください。
 
 `@stocklens/object-storage` は AWS S3 と Local MinIO を共通 Interface で扱います。S3 Operation には `@aws-sdk/client-s3`、短命 Presigned PUT には `@aws-sdk/s3-request-presigner` のみを追加し、API/Worker から Provider 固有処理を分離しています。詳細は [packages/object-storage/README.md](./packages/object-storage/README.md) を参照してください。

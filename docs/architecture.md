@@ -86,7 +86,10 @@ Phase 4 の Finding、Evidence、FindingEvidence は Owner/Analysis Composite FK
 - Job は Idempotency Key を持ち、Retry で Chunk、Finding、Evidence、Output を重複作成しません。
 - Page Text、Chunk、Page Number、検出可能な Section Metadata を保存します。
 - Financial Calculation は Deterministic Code で行い、LLM に委譲しません。
+- Phase 4 P0 Metric Library は Revenue、Operating Profit、Net Income、Operating Cash Flow の Label/Unit/Period/Scope/Sign を deterministic に解決し、JPY Normalization と YoY を `bigint` で計算します。曖昧または競合する値は `unknown` とし、Source Document/Page/Chunk/Row と Formula を Snapshot に残します。
 - LLM Output は Versioned Prompt と Zod Schema で検証します。
+- Worker AI Boundary は `LlmProvider` Interface で Deterministic/OpenAI 実装を交換します。OpenAI Adapter は Responses Structured Output を使用し、Model を Environment で固定、Response Storage と Tool/Parallel Tool Call を無効化します。Refusal、Incomplete、Malformed、Auth/Permission、Rate Limit、Timeout、5xx は Stable Sanitized Code に分類します。
+- Structured Extraction Orchestrator は Document/Page/Chunk stable order で全 Source を greedy batch 化し、Chunk/Character/Conservative Estimated Token/Provider Call Budget 内で Map/Merge します。Default は最大 2 Map + 1 Merge とし、全 Source を処理できない場合は Silent Truncation せず Stable Failure にします。
 - Prompt は Git Asset として Review し、明示的 `prompt:activate` CLI だけが SHA-256 付き Immutable `PromptVersion` を登録します。Worker Startup は Database を変更しません。
 - Provider Call の Token、Latency、Estimated Cost、Operation、Prompt/Provider/Model/Request ID は Content-free `AiUsageLog` として Owner/Analysis/Job Lineage 付きで保存します。
 - 重要 Finding は `Document → Page → Chunk → Excerpt` の Evidence を必須とします。
@@ -122,7 +125,7 @@ Target は AWS-oriented Architecture です。Web/API/Worker を独立 Deployabl
 ## 8. 現在の既知 Gap
 
 - Analysis と Document HTTP API の Cross-user Authorization は Bearer User A/B で検証済みです。
-- Object Storage Adapter、PDF Upload/Finalize/Delete API、Concurrent Reservation/Finalize、24-hour Orphan Scan、Cleanup Queue/Worker と Real PostgreSQL/Redis/MinIO Acceptance は実装・検証済みです。Parsing、LLM/RAG、Evidence UI は未実装です。
+- Object Storage Adapter、PDF Upload/Finalize/Delete API、Concurrent Reservation/Finalize、24-hour Orphan Scan、Cleanup Queue/Worker、PDF Parse/Chunk、Deterministic Metric/Provider Library は実装・検証済みです。Phase 4 Durable LLM Pipeline、RAG、Evidence UI は未実装です。
 - Production Private Bucket Policy、Browser PUT CORS、API/Worker IAM Policy と Presigned Download/PDF Viewer Flow は未実装・未検証です。
 - FAILED Cleanup を既存 Job ID で再実行する内部 Repository/Publisher Contract はありますが、Operator 向け Endpoint/CLI と Runbook は未実装です。User 承認済み Risk Acceptance により Phase 3 の統一 Job Re-run Feature へ延期します。
 - Rate Limit Store は Process Local であり、Multi-instance 前に Redis-backed Store が必要です。

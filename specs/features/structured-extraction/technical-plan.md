@@ -55,6 +55,15 @@ Provider-neutral Interface と Deterministic Test Provider を Worker の AI Bou
 - Rate Limit/Timeout/5xx は最大 3 Durable Job Attempt、Schema/Evidence/Compliance Failure は同 Attempt 内で Initial 1 + Repair 2 Call までとし、exhaustion 後は Queue Retry しません。
 - API Key は Worker Environment のみで読み、Log、Usage、Job Detail、Prompt Asset、Queue に含めません。
 
+### Task 007 Map/Merge Boundary
+
+- Worker は Active Chunk Repository が返す順序付き Source DTO だけを受け、Document ID/Name/Type、1-based Page、Section、Chunk ID、Text を strict parse します。Owner/Active 判定そのものは Task 009 の Repository 接続時に行います。
+- Source DTO は Document Order、Page Number、Chunk Order の stable tuple で並べ直し、Chunk Count と Context Character/Estimated Token の双方を満たす greedy batch に分割します。1 Chunk でも上限を超える場合や、全 Batch を Map/Merge する Call Budget がない場合は Provider 呼び出し前に stable non-retryable failure とし、先頭 N Chunk への silent truncation は行いません。
+- 1 Batch は 1 Map Call、複数 Batch は追加 1 Merge Call を消費します。Task 007 では最大 2 Map + 1 Merge を許容し、Merge Candidate 自体にも Character/Estimated Token 上限を適用します。
+- PDF Text は `buildUntrustedPdfContext` が生成した単一の `role=user` Block のみに配置し、System Prompt へ補間しません。Map Result も Provider 由来の untrusted candidate block として Merge の User Context に置きます。
+- Map/Merge の最終値は Shared strict schema で再 Parse し、`findingKey` を deterministic に一意化します。同一 Key の内容が競合する場合は黙って上書きせず stable failure とします。
+- Task 007 は Pure Orchestrator と Security Evaluation までを対象とし、DB からの Owner-scoped Active Chunk 解決、Prompt/Usage 永続化、Durable Retry、Evidence Validation/Atomic Publish は Task 008〜009 で接続します。
+
 ## Metric Pipeline
 
 - 対象は Revenue、Operating Profit、Net Income、Operating Cash Flow の四つです。

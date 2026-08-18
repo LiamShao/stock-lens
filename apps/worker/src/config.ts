@@ -7,6 +7,14 @@ export interface WorkerConfig {
   redisUrl: string;
 }
 
+export interface OpenAiProviderConfig {
+  apiKey: string;
+  embeddingModel: string | null;
+  model: string;
+}
+
+const PROVIDER_IDENTIFIER_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,127}$/;
+
 export function getWorkerConfig(
   environment: NodeJS.ProcessEnv = process.env,
 ): WorkerConfig {
@@ -48,5 +56,34 @@ export function getRedisConnectionOptions(redisUrl: string): ConnectionOptions {
     ...(url.username === ''
       ? {}
       : { username: decodeURIComponent(url.username) }),
+  };
+}
+
+export function getOpenAiProviderConfig(
+  environment: NodeJS.ProcessEnv = process.env,
+): OpenAiProviderConfig {
+  const apiKey = environment.OPENAI_API_KEY?.trim() ?? '';
+  const model = environment.OPENAI_MODEL?.trim() ?? '';
+  const embeddingModel = environment.OPENAI_EMBEDDING_MODEL?.trim() ?? '';
+  if (apiKey.length < 20) {
+    throw new Error(
+      'OPENAI_API_KEY must be configured for the OpenAI provider.',
+    );
+  }
+  if (!PROVIDER_IDENTIFIER_PATTERN.test(model)) {
+    throw new Error('OPENAI_MODEL must be a valid provider model identifier.');
+  }
+  if (
+    embeddingModel !== '' &&
+    !PROVIDER_IDENTIFIER_PATTERN.test(embeddingModel)
+  ) {
+    throw new Error(
+      'OPENAI_EMBEDDING_MODEL must be a valid provider model identifier.',
+    );
+  }
+  return {
+    apiKey,
+    embeddingModel: embeddingModel === '' ? null : embeddingModel,
+    model,
   };
 }

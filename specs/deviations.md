@@ -62,6 +62,12 @@ User は同日 `EXTRACT-Q-001` Option `A` を承認しました。Phase 4 Valida
 
 2026-08-17 の `EXTRACT-TASK-004` Prompt/Usage Audit Review では新規 Deviation は検出されませんでした。Git Asset、Explicit CLI、Concurrent/Repeated Activation、Immutable Content、Content-free Usage、Cross-owner Usage Reject を Fresh PostgreSQL で検証しました。Provider Runtime が Prompt/Usage Repository を呼ぶ End-to-end Evidence は後続 `EXTRACT-TASK-006` 以降の既知 Gap として Verification に保持します。
 
+2026-08-18 の `EXTRACT-TASK-005` Deterministic Metric Review では新規 Deviation は検出されませんでした。四つの Approved P0 Metric と Missing/Ambiguous Boundary は Library/Fixture で検証済みです。`Analysis.financialMetrics` への Atomic Persist は Approved Task 分割どおり `EXTRACT-TASK-009` の既知 Gap として Verification に保持します。
+
+2026-08-18 の `EXTRACT-TASK-006` Provider Review では新規 Deviation は検出されませんでした。Official OpenAI SDK `responses.parse` / Zod Structured Output、No-tool/No-store Request、Stable Error Classification は Unit Test で検証済みです。Pipeline Runtime 接続と Live Evidence は Approved `EXTRACT-TASK-007`〜`011` の既知 Gap として Verification に保持します。
+
+2026-08-18 の `EXTRACT-TASK-007` Bounded Map/Merge Security Review では新規 Deviation は検出されませんでした。全 Chunk Coverage、Stable Ordering、Call/Context/Estimated Token Limit、PDF/Intermediate Candidate の Untrusted User Boundary、Prompt Injection Delimiter Escape を Pure Orchestrator Test で検証しました。Owner-scoped Active Chunk DB Resolution と Durable Runtime/Usage Audit は Approved `EXTRACT-TASK-009` の既知 Gap として Verification に保持します。
+
 ## Resolution Evidence
 
 | Deviation                              | Resolution evidence                                                                                               |

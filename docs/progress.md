@@ -1,5 +1,34 @@
 # StockLens AI 開発進捗
 
+## 2026-08-18
+
+### Phase 4 Bounded Map/Merge Security Boundary
+
+- Approved `EXTRACT-TASK-007` として Strict Source DTO と Pure `StructuredExtractionOrchestrator` を実装し、Document/Page/Chunk の stable order を保って全 Chunk を bounded Map/Merge します。
+- Default 3 Provider Calls は最大 2 Map + 1 Merge に固定し、Call/Chunk/Character/Conservative Estimated Token/Output/Timeout Limit を超える入力は Silent Truncation せず Stable Failure にします。
+- PDF Text は Metadata 付きの Escaped Single Untrusted User Block、Map Candidate は Escaped Untrusted Merge Block に限定し、System Prompt への混入、Delimiter Override、競合 Finding Key の Silent Overwrite を拒否します。
+- Orchestrator Security 8 Tests を追加し、全 Workspace 195 Unit/Component Tests、Docker Integration 7 Suites / 56 Tests、Format、Spec、Prisma、Lint、Typecheck、Build が成功しました。新規 Deviation はありません。
+- 次は Approved `EXTRACT-TASK-008` の Evidence/Compliance Validator と Atomic Finding/Evidence Publish です。Owner-scoped Active Chunk DB Resolution と Durable Provider/Usage 接続は `EXTRACT-TASK-009` のため Feature は `Partial` を維持します。
+
+### Phase 4 Provider Adapter Foundation
+
+- Approved `EXTRACT-TASK-006` として `LlmProvider` Interface、Deterministic Provider、Official OpenAI SDK Responses Structured Output Adapter を実装しました。
+- OpenAI Request は Environment 必須 Model、Zod `zodTextFormat`、Output/Timeout Budget、`store: false`、No Tools に固定し、API Key は Worker Config だけが保持します。
+- Refusal、Incomplete/Length、Malformed Output、Authentication、Permission、Rate Limit、Timeout、5xx/Connection を Retryable/Non-retryable Stable Error Code に分類し、Raw Provider Error/Response/Context を Error Object に保持しません。
+- Provider 17 Tests と Config 3 Tests を追加し、Responses Request Shape、Strict Fixture、Content-free Usage、Error Sanitization、Optional Embedding Boundary を検証しました。
+- Production Dependency として Official `openai@7.5.0`、Runtime Schema/Official Helper の Direct Dependency として既存 Version と同じ `zod@4.4.3` を Worker に追加しました。
+- Format、Spec Check 8 Features / 119 Requirements、Prisma Validate/Generate、Lint、Typecheck、187 Unit/Component Tests、Build、Docker Integration 7 Suites / 56 Tests が成功しました。
+- 次は Approved `EXTRACT-TASK-007` の Bounded Map/Merge、Untrusted Context Integration、Prompt Injection Evaluation です。Pipeline Runtime/Live Provider Verification 前のため Feature は `Partial` を維持します。
+
+### Phase 4 Deterministic Financial Metrics
+
+- Approved `EXTRACT-TASK-005` として Revenue、Operating Profit、Net Income、Operating Cash Flow の Versioned Strict Snapshot Contract と Deterministic Parser/Calculator を実装しました。
+- Japanese Annual/Quarterly Period、円/千円/百万円/億円、連結/個別、Profit/Loss Sign を明示的に解決し、JPY Normalization と YoY Amount/Rate は `bigint` だけで計算します。
+- Document/Page/Chunk/Exact Row、Raw/Normalized Value、Unit、Period、Scope、Formula を監査可能に保持し、Missing/Ambiguous/Conflict/Zero Previous は推測せず `UNKNOWN` / `PARTIAL` にします。
+- Metric Contract 2 Tests、Parser/Golden Fixture 7 Tests を追加し、`EXTRACT-AC-006` / `EXTRACT-AC-007` と `EXTRACT-FR-006` を `Passed` に更新しました。新規 Deviation はありません。
+- Format、Spec Check 8 Features / 119 Requirements、Prisma Validate/Generate、Lint、Typecheck、167 Unit/Component Tests、Build、Docker Integration 7 Suites / 56 Tests が成功しました。
+- 次は Approved `EXTRACT-TASK-006` の Provider Interface、Deterministic Provider、OpenAI Responses Structured Output Adapter です。Metric Snapshot の Durable/Atomic Persist は `EXTRACT-TASK-009` で接続します。
+
 ## 2026-08-17
 
 ### Phase 4 Prompt / Usage Audit Foundation

@@ -121,6 +121,7 @@ export type StructuredExtractionOutput = z.infer<
 export const structuredExtractionBudgetSchema = z
   .object({
     maxContextCharacters: z.number().int().min(1_000).max(100_000),
+    maxEstimatedInputTokens: z.number().int().min(1_000).max(100_000),
     maxOutputTokens: z.number().int().min(128).max(8_192),
     maxProviderCalls: z.number().int().min(1).max(3),
     maxRequestTimeoutMs: z.number().int().min(1_000).max(120_000),
@@ -136,6 +137,7 @@ export const DEFAULT_STRUCTURED_EXTRACTION_BUDGET =
   structuredExtractionBudgetSchema.parse({
     maxChunksPerBatch: 32,
     maxContextCharacters: 48_000,
+    maxEstimatedInputTokens: 48_000,
     maxOutputTokens: 4_096,
     maxProviderCalls: 3,
     maxRequestTimeoutMs: 60_000,
