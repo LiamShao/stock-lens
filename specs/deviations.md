@@ -35,6 +35,7 @@
 | `RERUN-DEV-002`    | Concurrency       |   Medium | Resolved 2026-08-13 | `JobExecution` Row Lock で Concurrent CLI を直列化              |
 | `TEST-DEV-002`     | Test/Concurrency  |   Medium | Accepted 2026-08-13 | Production 3 Attempt を維持し Test-side Retry のみ追加          |
 | `EXTRACT-DEV-001`  | Status model      |     High | Resolved 2026-08-14 | `READY_FOR_VIEW_GENERATION` を Phase 4 Handoff に追加           |
+| `EXTRACT-DEV-002`  | Operations        |   Medium | Resolved 2026-08-19 | Phase 4 Metrics/Extract を既存 Manual Re-run Allowlist に追加   |
 
 2026-08-10 の `PDF-TASK-012`〜`PDF-TASK-014` Review では新規 Deviation は検出されませんでした。Real MinIO Storage、Document Bearer A/B HTTP、Redis/BullMQ Worker Cleanup の Acceptance Evidence を追加し、`OWN-DEV-004` を解消しました。
 
@@ -67,6 +68,10 @@ User は同日 `EXTRACT-Q-001` Option `A` を承認しました。Phase 4 Valida
 2026-08-18 の `EXTRACT-TASK-006` Provider Review では新規 Deviation は検出されませんでした。Official OpenAI SDK `responses.parse` / Zod Structured Output、No-tool/No-store Request、Stable Error Classification は Unit Test で検証済みです。Pipeline Runtime 接続と Live Evidence は Approved `EXTRACT-TASK-007`〜`011` の既知 Gap として Verification に保持します。
 
 2026-08-18 の `EXTRACT-TASK-007` Bounded Map/Merge Security Review では新規 Deviation は検出されませんでした。全 Chunk Coverage、Stable Ordering、Call/Context/Estimated Token Limit、PDF/Intermediate Candidate の Untrusted User Boundary、Prompt Injection Delimiter Escape を Pure Orchestrator Test で検証しました。Owner-scoped Active Chunk DB Resolution と Durable Runtime/Usage Audit は Approved `EXTRACT-TASK-009` の既知 Gap として Verification に保持します。
+
+2026-08-19 の `EXTRACT-TASK-008` Evidence/Compliance/Atomic Publish Review では新規 Deviation は検出されませんでした。Exact Chunk/Page Excerpt、Server-side Lineage、Supported/Insufficient Rule、Forbidden Advice Reject、Owner/Input/Prompt Commit Recheck、Atomic Replace/Rollback を Unit と実 PostgreSQL で検証しました。Durable Repair/Queue 接続と Concurrent Runtime Race は Approved `EXTRACT-TASK-009`〜`010` の既知 Gap として Verification に保持します。
+
+2026-08-19 の `EXTRACT-TASK-009` Durable Runtime Review で、Global Manual Re-run Requirement と Phase 4 Retry/Re-run Idempotency に対し、Approved Job Re-run Allowlist は `OBJECT_CLEANUP/PARSE/CHUNK` のみに固定されている `EXTRACT-DEV-002` を検出しました。Security/Cost Policy を黙って拡張せず、Automatic Retry と Duplicate Delivery Recovery を実装し、Manual `CALCULATE_FINANCIAL_METRICS/EXTRACT` Re-run は `EXTRACT-Q-008` Decision まで無効のまま維持します。
 
 ## Resolution Evidence
 
@@ -286,6 +291,17 @@ User は同日 `EXTRACT-Q-001` Option `A` を承認しました。Phase 4 Valida
 - Accepted risk: Production Request は高競合時に 3 Attempt を使い切り、Stable Limit Result ではなく Sanitized Internal Failure になる可能性があります。Data Corruption や 3 File Limit 違反は許容しません。
 - Verification: Option `C` 適用後の Full Integration 5 Suites / 38 Tests は成功しました。これは Production Retry Exhaustion Risk を解消した Evidence ではなく、明示的 Risk Acceptance 下の Test Gate Stabilization です。
 
+### EXTRACT-DEV-002 — Phase 4 failed jobs are outside the manual re-run allowlist
+
+- Evidence: Structured Extraction は failed `CALCULATE_FINANCIAL_METRICS` / `EXTRACT` Execution を作成しますが、Approved `RERUN-Q-004` は CLI Allowlist を `OBJECT_CLEANUP/PARSE/CHUNK` に固定しています。
+- Conflict: Global Async Requirement は Failed Job の Manual Re-run を求め、`EXTRACT-FR-009` は Re-run Idempotency を要求します。一方、Job Re-run Spec は Future Step の追加を Feature ごとの明示決定に委ねています。
+- Impact: Automatic 3 Attempts を使い切った Phase 4 Execution は Durable Failure/Audit を保持しますが、Supported Operator CLI から再実行できません。
+- Options: `A` `CALCULATE_FINANCIAL_METRICS` と `EXTRACT` を既存 CLI Allowlist に追加、`B` Provider Cost を伴う `EXTRACT` だけ追加、`C` 現行 Allowlist を維持して Phase 7 Operations へ延期。
+- Recommendation: `A`。既存 CLI-only、Production Guard、Workload IAM、Audit、5回上限を再利用し、新しい Network Surface を追加しません。
+- Decision: User は 2026-08-19 に `EXTRACT-Q-008` Option `A` を承認しました。
+- Resolution: `CALCULATE_FINANCIAL_METRICS` と `EXTRACT` を既存 CLI Allowlist と Analysis Queue Dispatch に追加しました。同一 Execution、Workload IAM/Secret Guard、Audit、5 回上限を再利用し、`VALIDATE` は Fail-closed のまま維持します。
+- Verification: PostgreSQL Integration で両 Step の `FAILED → QUEUED` + Audit と `VALIDATE` Reject、Unit で Stable BullMQ Job Name/Queue Routing を確認します。
+
 ### DOC-DEV-001 — Required cross-cutting documents are incomplete
 
 - Evidence: `docs/architecture.md`、`testing-strategy.md`、`ai-pipeline.md`、`evidence-model.md`、`evaluation.md`、`deployment.md` と Required ADR の多くが未作成です。
@@ -314,3 +330,4 @@ User は同日 `EXTRACT-Q-001` Option `A` を承認しました。Phase 4 Valida
 | 2026-07-24 | `ANALYSIS-DEV-001`                     | `DRAFT` Status approved          | Pre-upload Analysis を `DRAFT`、最初の Document Finalize 後を `UPLOADED` とする |
 | 2026-08-12 | `PDF-DEV-002`                          | Option `C` approved              | Operator Manual Re-run を統一 Job Re-run Feature まで延期                       |
 | 2026-08-13 | `RERUN-DEV-002`                        | Option `B` approved              | `READ COMMITTED` + `JobExecution` Row Lock で Concurrent CLI を直列化           |
+| 2026-08-19 | `EXTRACT-DEV-002`                      | Option `A` approved              | Metrics/Extract を既存 CLI-only Manual Re-run Allowlist に追加                  |

@@ -87,6 +87,7 @@ describe('structured extraction contract', () => {
 
   it.each([
     ['建议买入', 'BUY_RECOMMENDATION'],
+    ['強烈推薦します', 'BUY_RECOMMENDATION'],
     ['売却を推奨します', 'SELL_RECOMMENDATION'],
     ['目標株価は2,000円です', 'TARGET_PRICE'],
     ['株価は来月上昇する', 'PRICE_OR_RETURN_PREDICTION'],

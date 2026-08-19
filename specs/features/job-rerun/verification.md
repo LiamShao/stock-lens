@@ -6,13 +6,13 @@
 | ------------------- | ---------------------------------- |
 | Related Spec        | `specs/features/job-rerun/spec.md` |
 | Verification status | `Partial`                          |
-| Last updated        | `2026-08-13`                       |
+| Last updated        | `2026-08-19`                       |
 
 ## Implemented Evidence
 
 - CLI-only `job:inspect` / `job:rerun` Surface を追加しました。
 - Production/Local とも Explicit Enable と 32 Characters 以上の Operator Secret を要求し、Production Local Default を拒否します。
-- `OBJECT_CLEANUP`、`PARSE`、`CHUNK` の FAILED Execution だけを許可し、最大 5 Manual Re-runs とします。
+- `OBJECT_CLEANUP`、`PARSE`、`CHUNK`、`CALCULATE_FINANCIAL_METRICS`、`EXTRACT` の FAILED Execution だけを許可し、最大 5 Manual Re-runs とします。`VALIDATE` は対象外です。
 - `FAILED → QUEUED` と `JobOperationAudit` Insert は `READ COMMITTED` Transaction 内の `JobExecution` Row Lock で直列化します。
 - CLI/Log Output は Stable JSON Code/Message と Sanitized Job Summary に限定します。
 - Redis Failure 時は Durable `QUEUED` State を維持し、Worker Pending Dispatcher から回復します。
@@ -25,6 +25,7 @@
 - Processing Infrastructure: Parse Attempt 3 Failure → Durable QUEUED → Missing Redis Job → Pending Dispatcher → same Execution Attempt 4 Success と、CHUNK Failure → same CHUNK Processor Attempt 2 を検証しました。
 - Repository Integration: Parse FAILED → QUEUED/Audit、QUEUED/RUNNING/SUCCEEDED/Disallowed Step/deleted Target Fail-closed、5 Manual Re-run Limit は成功しました。
 - Concurrent Duplicate Test は Option `B` Row Lock により 1 `queued` / 1 Stable `not-rerunnable` / 1 Audit に収束し、`RERUN-DEV-002` を解消しました。
+- `EXTRACT-Q-008` Option `A` の Repository Integration は Metrics/Extract の同一 Execution QUEUED + Audit と、VALIDATE Fail-closed を検証しました。CLI Dispatch Mapping Unit は両 Step の Stable BullMQ Job Name を検証しました。
 
 ## Remaining Gaps
 
@@ -35,7 +36,7 @@
 | Acceptance Criterion | Status    | Evidence / Gap                                             |
 | -------------------- | --------- | ---------------------------------------------------------- |
 | `RERUN-AC-001`       | `Passed`  | Cleanup Attempt 3 FAILED → CLI → same ID Attempt 4 success |
-| `RERUN-AC-002`       | `Passed`  | Parse Attempt 4 success + CHUNK Attempt 2 processor E2E    |
+| `RERUN-AC-002`       | `Passed`  | Parse/Chunk E2E + Metrics/Extract DB/dispatch mapping      |
 | `RERUN-AC-003`       | `Passed`  | Row Lock: 1 queued / 1 not-rerunnable / 1 Audit            |
 | `RERUN-AC-004`       | `Passed`  | Status/allowlist/deleted Target DB Matrix、no Audit        |
 | `RERUN-AC-005`       | `Passed`  | QUEUED without Redis Job → Dispatcher → same ID success    |
@@ -44,4 +45,4 @@
 
 ## Result
 
-Supported CLI、Durable Audit、Cleanup/Parse/Chunk Routing、Redis Recovery、Concurrency/Limit/Fail-closed は Integration で確認し、`PDF-DEV-002` と `RERUN-DEV-002` を解消しました。Workload IAM/Secrets Manager の Deployment Evidence は Phase 7 Scope のため Feature 全体は `Partial` です。
+Supported CLI、Durable Audit、Cleanup/Parse/Chunk/Metrics/Extract Routing、Redis Recovery、Concurrency/Limit/Fail-closed は Integration で確認し、`PDF-DEV-002`、`RERUN-DEV-002`、`EXTRACT-DEV-002` を解消しました。Workload IAM/Secrets Manager の Deployment Evidence は Phase 7 Scope のため Feature 全体は `Partial` です。

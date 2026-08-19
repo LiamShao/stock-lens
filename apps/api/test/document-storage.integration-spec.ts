@@ -242,7 +242,7 @@ describe('document storage integration (PDF-TASK-012/014, PROC-TASK-011)', () =>
       failureMessage: null,
       status: 'READY_FOR_EMBEDDING',
     });
-    expect(completed.executions).toHaveLength(2);
+    expect(completed.executions).toHaveLength(3);
     expect(completed.executions).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -256,10 +256,17 @@ describe('document storage integration (PDF-TASK-012/014, PROC-TASK-011)', () =>
           status: 'SUCCEEDED',
           step: 'CHUNK',
         }),
+        expect.objectContaining({
+          currentAttempt: 0,
+          status: 'QUEUED',
+          step: 'CALCULATE_FINANCIAL_METRICS',
+        }),
       ]),
     );
     expect(
-      completed.executions.every(({ attempts }) => attempts.length === 1),
+      completed.executions
+        .filter(({ step }) => step === 'PARSE' || step === 'CHUNK')
+        .every(({ attempts }) => attempts.length === 1),
     ).toBe(true);
 
     const pages = await prisma.documentPage.findMany({
@@ -447,7 +454,7 @@ describe('document storage integration (PDF-TASK-012/014, PROC-TASK-011)', () =>
       prisma.jobExecution.count({
         where: { analysisId: finalized.analysisId },
       }),
-    ).resolves.toBe(2);
+    ).resolves.toBe(3);
   });
 
   it('RERUN-AC-002 RERUN-AC-005 recovers failed parse through the durable dispatcher', async () => {

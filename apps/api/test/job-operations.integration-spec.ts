@@ -133,6 +133,43 @@ describe('job operation integration (RERUN-TASK-007)', () => {
     ).resolves.toBe(0);
   });
 
+  it('EXTRACT-Q-008 Option A allows both Phase 4 steps but not VALIDATE', async () => {
+    const metrics = await createFailedAnalysisExecution(
+      'CALCULATE_FINANCIAL_METRICS',
+      'FAILED_EXTRACTION',
+    );
+    const extract = await createFailedAnalysisExecution(
+      'EXTRACT',
+      'FAILED_EXTRACTION',
+    );
+    const validate = await createFailedAnalysisExecution(
+      'VALIDATE',
+      'FAILED_VALIDATION',
+    );
+
+    for (const execution of [metrics, extract]) {
+      await expect(
+        repository.rerun(execution.id, 'phase4-operator', randomUUID()),
+      ).resolves.toMatchObject({
+        kind: 'queued',
+        summary: { executionId: execution.id, manualReruns: 1 },
+      });
+    }
+    await expect(
+      repository.rerun(validate.id, 'phase4-operator', randomUUID()),
+    ).resolves.toEqual({ kind: 'not-rerunnable' });
+    await expect(
+      prisma.jobOperationAudit.count({
+        where: { jobExecutionId: { in: [metrics.id, extract.id] } },
+      }),
+    ).resolves.toBe(2);
+    await expect(
+      prisma.jobOperationAudit.count({
+        where: { jobExecutionId: validate.id },
+      }),
+    ).resolves.toBe(0);
+  });
+
   it('RERUN-SEC-004 enforces the five re-run limit without mutation', async () => {
     const execution = await createFailedParseExecution();
     await prisma.jobOperationAudit.createMany({
@@ -160,6 +197,13 @@ describe('job operation integration (RERUN-TASK-007)', () => {
   });
 
   async function createFailedParseExecution() {
+    return createFailedAnalysisExecution('PARSE', 'FAILED_PARSING');
+  }
+
+  async function createFailedAnalysisExecution(
+    step: 'PARSE' | 'CALCULATE_FINANCIAL_METRICS' | 'EXTRACT' | 'VALIDATE',
+    status: 'FAILED_PARSING' | 'FAILED_EXTRACTION' | 'FAILED_VALIDATION',
+  ) {
     const owner = await prisma.user.create({
       data: {
         email: `${randomUUID()}@job-operation.integration.test`,
@@ -169,7 +213,7 @@ describe('job operation integration (RERUN-TASK-007)', () => {
     const analysis = await prisma.analysis.create({
       data: {
         ownerId: owner.id,
-        status: 'FAILED_PARSING',
+        status,
         title: 'Job operation integration',
       },
     });
@@ -180,10 +224,10 @@ describe('job operation integration (RERUN-TASK-007)', () => {
         errorCode: 'PROCESSING_DEPENDENCY_FAILED',
         errorMessage: 'PDF parsing failed.',
         finishedAt: new Date(),
-        idempotencyKey: `parse-integration-${randomUUID()}`,
+        idempotencyKey: `${step.toLowerCase()}-integration-${randomUUID()}`,
         ownerId: owner.id,
         status: 'FAILED',
-        step: 'PARSE',
+        step,
       },
     });
   }

@@ -6,7 +6,7 @@
 | ------------ | ----------------------------------------------- |
 | Related Spec | `specs/features/job-rerun/spec.md`              |
 | Plan status  | `Implemented — deployment verification pending` |
-| Last updated | `2026-08-13`                                    |
+| Last updated | `2026-08-19`                                    |
 
 ## Approach
 
@@ -33,7 +33,7 @@ Worker Package に Inspect/Re-run CLI を追加します。Production は Enable
 
 ## Security and Failure Handling
 
-- Allowlist は `OBJECT_CLEANUP`, `PARSE`, `CHUNK` です。
+- Allowlist は `OBJECT_CLEANUP`, `PARSE`, `CHUNK`, `CALCULATE_FINANCIAL_METRICS`, `EXTRACT` です。`VALIDATE` は原子 Publish 時に成功記録される内部 Step のため対象外です。
 - 最大 5 回の Manual Re-run を超えた場合は Stable Error とし、Mutation しません。
 - Concurrent Re-run は `JobExecution` Row Lock で直列化し、Lock 待機後に最新 Status を再検証します。
 - CLI は Connection/Raw Error を Sanitized Generic Error に変換します。
@@ -43,7 +43,7 @@ Worker Package に Inspect/Re-run CLI を追加します。Production は Enable
 
 | Requirement                    | Level                           | Evidence                                       |
 | ------------------------------ | ------------------------------- | ---------------------------------------------- |
-| `RERUN-AC-001`, `RERUN-AC-002` | PostgreSQL/Redis/BullMQ/MinIO   | Cleanup/Parse/Chunk Re-run                     |
+| `RERUN-AC-001`, `RERUN-AC-002` | PostgreSQL/Redis/BullMQ/MinIO   | Cleanup/Parse/Chunk/Metrics/Extract Re-run     |
 | `RERUN-AC-003`〜`RERUN-AC-005` | Concurrency/Failure Integration | Atomic Claim、No duplicate、Redis Recovery     |
 | `RERUN-AC-006`, `RERUN-AC-007` | Config/CLI Unit                 | Production Fail-closed、Sanitized Output/Audit |
 

@@ -30,3 +30,11 @@
 ## Resolution
 
 User は 2026-08-14 に `EXTRACT-Q-001`〜`EXTRACT-Q-007` の Option `A` をすべて承認しました。Spec は `Approved` とし、Technical Plan/Tasks/Implementation はこの Baseline に従います。
+
+## Follow-up Decision — Manual Phase 4 Re-run
+
+| ID              | Decision                   | Options                                                                                                                                               | Recommendation                                                                                  | Status                  |
+| --------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------- |
+| `EXTRACT-Q-008` | Phase 4 Manual Re-run 対象 | `A` `CALCULATE_FINANCIAL_METRICS` と `EXTRACT` を既存 CLI Allowlist に追加；`B` `EXTRACT` のみ追加；`C` 現行三 Step Allowlist を維持し Phase 7 へ延期 | `A`。既存 CLI-only/IAM/Audit/5回上限を再利用し、Automatic Retry Exhaustion 後も安全に復旧できる | `Approved A 2026-08-19` |
+
+User は 2026-08-19 に Option `A` を承認しました。既存 CLI-only、Workload IAM/Secret Guard、`JobOperationAudit`、同一 Execution、5 回上限を維持したまま `CALCULATE_FINANCIAL_METRICS` と `EXTRACT` を Allowlist に追加します。内部成功監査 Step である `VALIDATE` は対象外です。

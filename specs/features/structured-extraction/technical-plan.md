@@ -6,7 +6,7 @@
 | ------------ | ---------------------------------------------- |
 | Related Spec | `specs/features/structured-extraction/spec.md` |
 | Plan status  | `Implementing`                                 |
-| Last updated | `2026-08-14`                                   |
+| Last updated | `2026-08-19`                                   |
 
 ## Approach
 
@@ -63,6 +63,14 @@ Provider-neutral Interface と Deterministic Test Provider を Worker の AI Bou
 - PDF Text は `buildUntrustedPdfContext` が生成した単一の `role=user` Block のみに配置し、System Prompt へ補間しません。Map Result も Provider 由来の untrusted candidate block として Merge の User Context に置きます。
 - Map/Merge の最終値は Shared strict schema で再 Parse し、`findingKey` を deterministic に一意化します。同一 Key の内容が競合する場合は黙って上書きせず stable failure とします。
 - Task 007 は Pure Orchestrator と Security Evaluation までを対象とし、DB からの Owner-scoped Active Chunk 解決、Prompt/Usage 永続化、Durable Retry、Evidence Validation/Atomic Publish は Task 008〜009 で接続します。
+
+### Task 009 Durable Runtime Boundary
+
+- `CHUNK` 完了 Transaction は stable Chunk ID/SHA-256 Set から Input Hash を作り、`CALCULATE_FINANCIAL_METRICS` Execution を一度だけ `QUEUED` にします。Redis publish 失敗は既存 Dispatcher が Durable Row から回復します。
+- Metrics Job は Active Owner/Parent/Chunk Set を再解決し deterministic parser を実行した後、Input/Prompt/Runtime Hash を束縛した `EXTRACT` Execution を作成します。Metric Snapshot は中間公開せず、Validation 成功 Transaction でだけ保存します。
+- Strict Parsed Provider Candidate を `JobExecution.errorDetails` 等へ保存しません。`EXTRACT` BullMQ Attempt 内で Provider → Evidence/Compliance Validation → Atomic Publish を完結し、成功 Transaction 内で `VALIDATE` Execution/Attempt を `SUCCEEDED` として記録します。Crash/Retry は同じ EXTRACT Execution で全処理を再実行し、Partial Set を公開しません。
+- Validation Repair は Provider 総 Call Count を Attempt 単位で数え、Initial を含め最大 3 Calls、Repair 最大 2 回です。Transient Provider Error だけを BullMQ 最大 3 Attempts へ返し、Validation Exhaustion は `FAILED_VALIDATION` + Unrecoverable とします。
+- `AiUsageLog` は成功した Provider Call ごとに Content-free Metadata を記録し、Runtime Provider/Model が Execution に束縛した Identity と異なる場合は Fail closed とします。
 
 ## Metric Pipeline
 

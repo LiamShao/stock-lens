@@ -1,12 +1,9 @@
 import { randomUUID } from 'node:crypto';
 
-import { JobStep, PrismaClient } from '@prisma/client';
+import { PrismaClient, type JobStep } from '@prisma/client';
 import { Queue } from 'bullmq';
 import {
-  ANALYSIS_CHUNK_JOB_NAME,
-  ANALYSIS_PARSE_JOB_NAME,
   ANALYSIS_PROCESSING_QUEUE_NAME,
-  OBJECT_CLEANUP_JOB_NAME,
   OBJECT_CLEANUP_QUEUE_NAME,
 } from '@stocklens/shared';
 
@@ -14,6 +11,10 @@ import { getRedisConnectionOptions } from './config';
 import { loadLocalEnvironment } from './environment';
 import { getJobOperatorConfig } from './job-operation.config';
 import { JobOperationRepository } from './job-operation.repository';
+import {
+  isAnalysisJobStep,
+  jobNameForManualRerun,
+} from './job-operation-dispatch';
 
 loadLocalEnvironment();
 
@@ -70,7 +71,7 @@ async function dispatch(step: JobStep, executionId: string): Promise<void> {
   const connection = getRedisConnectionOptions(
     process.env.REDIS_URL ?? 'redis://localhost:6379',
   );
-  const analysis = step === JobStep.PARSE || step === JobStep.CHUNK;
+  const analysis = isAnalysisJobStep(step);
   const queue = new Queue(
     analysis ? ANALYSIS_PROCESSING_QUEUE_NAME : OBJECT_CLEANUP_QUEUE_NAME,
     { connection },
@@ -78,12 +79,7 @@ async function dispatch(step: JobStep, executionId: string): Promise<void> {
   try {
     const existing = await queue.getJob(executionId);
     if (existing) await existing.remove();
-    const name =
-      step === JobStep.PARSE
-        ? ANALYSIS_PARSE_JOB_NAME
-        : step === JobStep.CHUNK
-          ? ANALYSIS_CHUNK_JOB_NAME
-          : OBJECT_CLEANUP_JOB_NAME;
+    const name = jobNameForManualRerun(step);
     await queue.add(
       name,
       { jobExecutionId: executionId },

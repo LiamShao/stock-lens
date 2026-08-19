@@ -7,11 +7,17 @@ import {
 import {
   OBJECT_CLEANUP_QUEUE_NAME,
   ANALYSIS_PROCESSING_QUEUE_NAME,
+  ANALYSIS_CALCULATE_METRICS_JOB_NAME,
+  ANALYSIS_EXTRACT_JOB_NAME,
   type AnalysisJobData,
   type ObjectCleanupJobData,
 } from '@stocklens/shared';
 
-import { getRedisConnectionOptions, getWorkerConfig } from './config';
+import {
+  getOpenAiProviderConfig,
+  getRedisConnectionOptions,
+  getWorkerConfig,
+} from './config';
 import { loadLocalEnvironment } from './environment';
 import { ExpiredDocumentUploadScanner } from './expired-document-upload.scanner';
 import { AnalysisProcessingJobRepository } from './analysis-processing.repository';
@@ -20,9 +26,15 @@ import { ObjectCleanupProcessor } from './object-cleanup.processor';
 import { ObjectCleanupJobRepository } from './object-cleanup.repository';
 import { PendingObjectCleanupDispatcher } from './pending-object-cleanup.dispatcher';
 import { PendingAnalysisDispatcher } from './pending-analysis.dispatcher';
+import { OpenAiLlmProvider } from './ai/openai-llm-provider';
+import { AiUsageRepository } from './ai-usage.repository';
+import { ExtractionPublishRepository } from './extraction-publish.repository';
+import { StructuredExtractionJobRepository } from './structured-extraction.repository';
+import { StructuredExtractionProcessor } from './structured-extraction.processor';
 
 loadLocalEnvironment();
 const config = getWorkerConfig();
+const openAiConfig = getOpenAiProviderConfig();
 const connection = getRedisConnectionOptions(config.redisUrl);
 const objectStorageConfig = getObjectStorageConfig();
 const prisma = new PrismaClient();
@@ -49,6 +61,14 @@ const analysisProcessor = new AnalysisProcessingProcessor(
   new AnalysisProcessingJobRepository(prisma),
   objectStorage,
   objectStorageConfig.bucket,
+  analysisQueue,
+);
+const structuredExtractionProcessor = new StructuredExtractionProcessor(
+  new StructuredExtractionJobRepository(prisma),
+  new ExtractionPublishRepository(prisma),
+  new AiUsageRepository(prisma),
+  new OpenAiLlmProvider({ config: openAiConfig }),
+  { model: openAiConfig.model, provider: 'openai' },
   analysisQueue,
 );
 const pendingAnalysisDispatcher = new PendingAnalysisDispatcher(
@@ -106,7 +126,12 @@ pendingCleanupDispatchInterval.unref();
 
 const worker = new Worker<AnalysisJobData>(
   ANALYSIS_PROCESSING_QUEUE_NAME,
-  (job) => analysisProcessor.process(job),
+  (job) =>
+    [ANALYSIS_CALCULATE_METRICS_JOB_NAME, ANALYSIS_EXTRACT_JOB_NAME].includes(
+      job.name,
+    )
+      ? structuredExtractionProcessor.process(job)
+      : analysisProcessor.process(job),
   {
     concurrency: config.concurrency,
     connection,

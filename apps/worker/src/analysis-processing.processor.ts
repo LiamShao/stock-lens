@@ -5,6 +5,7 @@ import type { ObjectStorage } from '@stocklens/object-storage';
 import { MAX_PDF_SIZE_BYTES } from '@stocklens/object-storage';
 import {
   ANALYSIS_CHUNK_JOB_NAME,
+  ANALYSIS_CALCULATE_METRICS_JOB_NAME,
   ANALYSIS_JOB_BACKOFF_DELAY_MS,
   ANALYSIS_JOB_MAX_ATTEMPTS,
   ANALYSIS_PARSE_JOB_NAME,
@@ -102,12 +103,21 @@ export class AnalysisProcessingProcessor {
           documentIndexes.set(page.documentId, chunkIndex + 1);
           return { ...chunk, chunkIndex, documentId: page.documentId };
         });
-        await this.repository.finishChunk(
+        const metricExecutionId = await this.repository.finishChunk(
           effectiveAttempt,
           claim.ownerId,
           claim.analysisId,
           chunks,
         );
+        try {
+          await this.queue.add(
+            ANALYSIS_CALCULATE_METRICS_JOB_NAME,
+            { jobExecutionId: metricExecutionId },
+            analysisJobOptions(metricExecutionId),
+          );
+        } catch {
+          // The durable QUEUED metrics execution is recovered by the scanner.
+        }
       }
     } catch (error) {
       const code =
@@ -120,6 +130,19 @@ export class AnalysisProcessingProcessor {
       throw new Error('Analysis processing failed.');
     }
   }
+}
+
+function analysisJobOptions(jobExecutionId: string) {
+  return {
+    attempts: ANALYSIS_JOB_MAX_ATTEMPTS,
+    backoff: {
+      delay: ANALYSIS_JOB_BACKOFF_DELAY_MS,
+      type: 'exponential' as const,
+    },
+    jobId: jobExecutionId,
+    removeOnComplete: true,
+    removeOnFail: false,
+  };
 }
 
 export async function readPdfStreamBounded(

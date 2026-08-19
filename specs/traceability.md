@@ -125,45 +125,45 @@ Status は Requirement の実装・検証状況を表します。`Partial` は C
 
 ## Structured Extraction
 
-| Requirement       | Implementation                               | Verification                           | Status        |
-| ----------------- | -------------------------------------------- | -------------------------------------- | ------------- |
-| `EXTRACT-FR-001`  | Durable Pipeline planned                     | Not started                            | `Not started` |
-| `EXTRACT-FR-002`  | LlmProvider + Deterministic/OpenAI Adapter   | Strict Fixture + Responses Zod Unit    | `Partial`     |
-| `EXTRACT-FR-003`  | Strict Source DTO + Bounded Map/Merge        | Order/full coverage/budget Unit        | `Partial`     |
-| `EXTRACT-FR-004`  | Git Prompt + Adapter Usage Metadata          | CLI DB + Content-free Provider Unit    | `Partial`     |
-| `EXTRACT-FR-005`  | Strict Finding Schema + Deterministic Dedupe | Bounds/conflicting-key Unit            | `Partial`     |
-| `EXTRACT-FR-006`  | Versioned Metric Schema + BigInt Parser/YoY  | Four P0/Missing/Ambiguous Fixtures     | `Passed`      |
-| `EXTRACT-FR-007`  | Evidence Validator planned                   | Not started                            | `Not started` |
-| `EXTRACT-FR-008`  | Supported/Evidence Rule planned              | Not started                            | `Not started` |
-| `EXTRACT-FR-009`  | Atomic Publish planned                       | Not started                            | `Not started` |
-| `EXTRACT-FR-010`  | Stable Validation/Incomplete Errors          | Refusal/Length/Malformed Unit          | `Partial`     |
-| `EXTRACT-FR-011`  | Retryable Provider Error Classification      | 408/429/5xx/Connection Unit            | `Partial`     |
-| `EXTRACT-FR-012`  | READY_FOR_VIEW_GENERATION Enum/Schema        | Shared Unit + PostgreSQL Migration     | `Partial`     |
-| `EXTRACT-FR-013`  | Strict Content-free Usage Repository         | Usage/Owner-lineage PostgreSQL Test    | `Partial`     |
-| `EXTRACT-SEC-001` | Finding/Evidence/Usage Composite FK          | PostgreSQL valid/cross-owner matrix    | `Partial`     |
-| `EXTRACT-SEC-002` | Escaped PDF User Context in Orchestrator     | Injection/system separation Unit       | `Partial`     |
-| `EXTRACT-SEC-003` | No-tool Adapter + Injection Boundary         | Request Shape + malicious context Unit | `Partial`     |
-| `EXTRACT-SEC-004` | Sanitized Errors + Content-free Usage        | Provider Unit + DB inspection          | `Partial`     |
-| `EXTRACT-SEC-005` | Strict Schema/Length/Count Contract          | Provider + Invalid/oversized Unit      | `Partial`     |
-| `EXTRACT-SEC-006` | Deterministic Compliance Validator           | Six Categories + Source Boundary Unit  | `Partial`     |
-| `EXTRACT-SEC-007` | Map/Merge/Provider Budget Ceiling            | Call/chunk/char/token/output/time Unit | `Partial`     |
-| `EXTRACT-SEC-008` | Composite Parent Integrity                   | PostgreSQL cross-lineage reject        | `Partial`     |
+| Requirement       | Implementation                               | Verification                           | Status    |
+| ----------------- | -------------------------------------------- | -------------------------------------- | --------- |
+| `EXTRACT-FR-001`  | Metrics/Extract/Validate Durable Runtime     | Real PostgreSQL/Redis/BullMQ chain     | `Passed`  |
+| `EXTRACT-FR-002`  | LlmProvider + Deterministic/OpenAI Adapter   | Strict Fixture + Responses Zod Unit    | `Partial` |
+| `EXTRACT-FR-003`  | Strict Source DTO + Bounded Map/Merge        | Order/full coverage/budget Unit        | `Partial` |
+| `EXTRACT-FR-004`  | Bound Prompt + Audited Provider Runtime      | CLI DB + runtime usage PostgreSQL      | `Passed`  |
+| `EXTRACT-FR-005`  | Strict Finding Schema + Deterministic Dedupe | Bounds/conflicting-key Unit            | `Partial` |
+| `EXTRACT-FR-006`  | Versioned Metric Schema + BigInt Parser/YoY  | Four P0/Missing/Ambiguous Fixtures     | `Passed`  |
+| `EXTRACT-FR-007`  | Exact Chunk/Page Evidence Validator          | Unit + PostgreSQL lineage publish      | `Passed`  |
+| `EXTRACT-FR-008`  | Supported/Insufficient Evidence Rule         | Evidence 1+/0 downgrade Unit + DB      | `Passed`  |
+| `EXTRACT-FR-009`  | Atomic Runtime Set/Execution Replace         | Repeat convergence + rollback/chain DB | `Passed`  |
+| `EXTRACT-FR-010`  | Bounded Repair + Stable Failure Runtime      | Repair/exhaustion Redis/BullMQ DB E2E  | `Passed`  |
+| `EXTRACT-FR-011`  | Retryable Provider + Durable Dispatcher      | Rate-limit 2nd Attempt BullMQ E2E      | `Passed`  |
+| `EXTRACT-FR-012`  | Atomic VALIDATE/Handoff Runtime              | PostgreSQL chain + duplicate no-op     | `Passed`  |
+| `EXTRACT-FR-013`  | Strict Content-free Usage Repository         | Usage/Owner-lineage/runtime PostgreSQL | `Passed`  |
+| `EXTRACT-SEC-001` | Owner-scoped Publish + Composite FK          | Cross-owner read/publish/FK PostgreSQL | `Passed`  |
+| `EXTRACT-SEC-002` | Escaped PDF User Context in Orchestrator     | Injection/system separation Unit       | `Passed`  |
+| `EXTRACT-SEC-003` | No-tool Adapter + Injection Boundary         | Request Shape + malicious context Unit | `Passed`  |
+| `EXTRACT-SEC-004` | Sanitized Errors + Content-free Usage        | Provider Unit + runtime DB inspection  | `Passed`  |
+| `EXTRACT-SEC-005` | Strict Schema/Length/Count Contract          | Provider + Invalid/oversized Unit      | `Passed`  |
+| `EXTRACT-SEC-006` | Deterministic Compliance Validator           | Six Categories + pre-persist rejection | `Passed`  |
+| `EXTRACT-SEC-007` | Map/Merge/Provider Budget Ceiling            | Unit + three-call runtime ceiling      | `Passed`  |
+| `EXTRACT-SEC-008` | Parent/Input/Prompt Commit Recheck           | PostgreSQL concurrent source race      | `Passed`  |
 
 ## Job Re-run
 
-| Requirement     | Implementation                       | Verification                           | Status    |
-| --------------- | ------------------------------------ | -------------------------------------- | --------- |
-| `RERUN-FR-001`  | Inspect CLI/Repository               | Real CLI Cleanup Integration           | `Passed`  |
-| `RERUN-FR-002`  | FAILED → QUEUED Transaction          | Cleanup CLI + Parse DB Integration     | `Passed`  |
-| `RERUN-FR-003`  | Same Execution/Audit Attempt         | Cleanup CLI → Attempt 4 Worker success | `Passed`  |
-| `RERUN-FR-004`  | Status/Target Fail-closed            | Status/allowlist/deleted DB Matrix     | `Passed`  |
-| `RERUN-FR-005`  | Durable QUEUED + Dispatcher          | Missing Redis Job recovery E2E         | `Passed`  |
-| `RERUN-FR-006`  | JobOperationAudit                    | CLI/DB Atomic Audit Integration        | `Passed`  |
-| `RERUN-FR-007`  | Stable JSON CLI + Runbook            | Real JSON CLI + Runbook Review         | `Passed`  |
-| `RERUN-SEC-001` | Enable/Secret Production Guard       | Config Unit                            | `Partial` |
-| `RERUN-SEC-002` | Three-step Allowlist/ID-only Payload | Disallowed Step DB + real queue E2E    | `Passed`  |
-| `RERUN-SEC-003` | Sanitized CLI/Audit Projection       | Real CLI/Audit Redaction Regression    | `Passed`  |
-| `RERUN-SEC-004` | Row Lock Transition/5 Limit          | Concurrent PostgreSQL + limit DB       | `Passed`  |
-| `RERUN-SEC-005` | Parent/Target Revalidation           | Deleted Target + ownership DB FK       | `Passed`  |
+| Requirement     | Implementation                      | Verification                            | Status    |
+| --------------- | ----------------------------------- | --------------------------------------- | --------- |
+| `RERUN-FR-001`  | Inspect CLI/Repository              | Real CLI Cleanup Integration            | `Passed`  |
+| `RERUN-FR-002`  | FAILED → QUEUED Transaction         | Cleanup CLI + Parse DB Integration      | `Passed`  |
+| `RERUN-FR-003`  | Same Execution/Audit Attempt        | Cleanup CLI → Attempt 4 Worker success  | `Passed`  |
+| `RERUN-FR-004`  | Status/Target Fail-closed           | Status/allowlist/deleted DB Matrix      | `Passed`  |
+| `RERUN-FR-005`  | Durable QUEUED + Dispatcher         | Missing Redis Job recovery E2E          | `Passed`  |
+| `RERUN-FR-006`  | JobOperationAudit                   | CLI/DB Atomic Audit Integration         | `Passed`  |
+| `RERUN-FR-007`  | Stable JSON CLI + Runbook           | Real JSON CLI + Runbook Review          | `Passed`  |
+| `RERUN-SEC-001` | Enable/Secret Production Guard      | Config Unit                             | `Partial` |
+| `RERUN-SEC-002` | Five-step Allowlist/ID-only Payload | Phase 4 allowlist DB + dispatch mapping | `Passed`  |
+| `RERUN-SEC-003` | Sanitized CLI/Audit Projection      | Real CLI/Audit Redaction Regression     | `Passed`  |
+| `RERUN-SEC-004` | Row Lock Transition/5 Limit         | Concurrent PostgreSQL + limit DB        | `Passed`  |
+| `RERUN-SEC-005` | Parent/Target Revalidation          | Deleted Target + ownership DB FK        | `Passed`  |
 
-`PDF-DEV-002` は real Cleanup CLI → Audit → Worker Attempt 4 Success により解消しました。`RERUN-SEC-001` の Workload IAM/Secrets Manager 実体は Phase 7 Deployment Evidence 待ちです。
+`PDF-DEV-002` は real Cleanup CLI → Audit → Worker Attempt 4 Success、`EXTRACT-DEV-002` は Option A の Phase 4 Allowlist/Dispatch/Audit Verification により解消しました。`RERUN-SEC-001` の Workload IAM/Secrets Manager 実体は Phase 7 Deployment Evidence 待ちです。

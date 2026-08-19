@@ -143,6 +143,9 @@ export const DEFAULT_STRUCTURED_EXTRACTION_BUDGET =
     maxRequestTimeoutMs: 60_000,
   });
 
+export const MAX_EXTRACTION_REPAIR_ATTEMPTS = 2;
+export const MAX_EXTRACTION_PROVIDER_CALLS_PER_JOB_ATTEMPT = 3;
+
 export const extractionComplianceViolationCodeSchema = z.enum([
   'BUY_RECOMMENDATION',
   'SELL_RECOMMENDATION',
@@ -167,7 +170,8 @@ const FORBIDDEN_OUTPUT_PATTERNS: ReadonlyArray<{
 }> = [
   {
     code: 'BUY_RECOMMENDATION',
-    pattern: /建议买入|買い推奨|購入を推奨|buy recommendation/iu,
+    pattern:
+      /建议买入|强烈推荐|強烈推薦|買い推奨|購入を推奨|buy recommendation/iu,
   },
   {
     code: 'SELL_RECOMMENDATION',

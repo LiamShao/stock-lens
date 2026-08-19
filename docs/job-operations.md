@@ -2,7 +2,7 @@
 
 ## 目的
 
-Automatic Retry を使い切った `OBJECT_CLEANUP`、`PARSE`、`CHUNK` の `FAILED` Execution を、同じ Execution ID と Idempotency Key で安全に再投入します。End User 向け API ではなく、Workload IAM で保護された Operator CLI だけを使用します。
+Automatic Retry を使い切った `OBJECT_CLEANUP`、`PARSE`、`CHUNK`、`CALCULATE_FINANCIAL_METRICS`、`EXTRACT` の `FAILED` Execution を、同じ Execution ID と Idempotency Key で安全に再投入します。End User 向け API ではなく、Workload IAM で保護された Operator CLI だけを使用します。`VALIDATE` は Extraction の原子 Publish 時に作成される成功監査 Step のため対象外です。
 
 ## 前提
 

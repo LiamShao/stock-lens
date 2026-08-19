@@ -4,6 +4,8 @@ const ALLOWED_STEPS = [
   JobStep.OBJECT_CLEANUP,
   JobStep.PARSE,
   JobStep.CHUNK,
+  JobStep.CALCULATE_FINANCIAL_METRICS,
+  JobStep.EXTRACT,
 ] as const;
 const MAX_MANUAL_RERUNS = 5;
 

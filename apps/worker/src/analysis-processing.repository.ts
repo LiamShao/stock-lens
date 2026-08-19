@@ -7,7 +7,10 @@ import {
   Prisma,
   type PrismaClient,
 } from '@prisma/client';
-import { createChunkIdempotencyKey } from '@stocklens/shared';
+import {
+  createChunkIdempotencyKey,
+  createFinancialMetricsIdempotencyKey,
+} from '@stocklens/shared';
 
 import type { ExtractedPage } from './pdf-text-extractor';
 import type { GeneratedChunk } from './page-chunker';
@@ -248,8 +251,8 @@ export class AnalysisProcessingJobRepository {
     analysisId: string,
     chunks: Array<GeneratedChunk & { chunkIndex: number; documentId: string }>,
     now = new Date(),
-  ): Promise<void> {
-    await this.prisma.$transaction(
+  ): Promise<string> {
+    return this.prisma.$transaction(
       async (tx) => {
         const active = await tx.analysis.findFirst({
           select: { id: true },
@@ -276,6 +279,37 @@ export class AnalysisProcessingJobRepository {
               section: chunk.section,
             })),
           });
+        const persistedChunks = await tx.documentChunk.findMany({
+          orderBy: { id: 'asc' },
+          select: { contentSha256: true, id: true },
+          where: { document: { analysisId, deletedAt: null }, ownerId },
+        });
+        const inputHash = createHash('sha256')
+          .update(
+            persistedChunks
+              .map((chunk) => `${chunk.id}:${chunk.contentSha256}`)
+              .join('\n'),
+          )
+          .digest('hex');
+        const metricExecution = await tx.jobExecution.upsert({
+          create: {
+            analysisId,
+            idempotencyKey: createFinancialMetricsIdempotencyKey(
+              analysisId,
+              inputHash,
+            ),
+            ownerId,
+            status: JobStatus.QUEUED,
+            step: JobStep.CALCULATE_FINANCIAL_METRICS,
+          },
+          update: {},
+          where: {
+            idempotencyKey: createFinancialMetricsIdempotencyKey(
+              analysisId,
+              inputHash,
+            ),
+          },
+        });
         await tx.jobAttempt.update({
           data: { finishedAt: now, status: JobStatus.SUCCEEDED },
           where: {
@@ -297,6 +331,7 @@ export class AnalysisProcessingJobRepository {
           },
           where: { id: analysisId },
         });
+        return metricExecution.id;
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
