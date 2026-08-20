@@ -1,5 +1,17 @@
 # StockLens AI 開発進捗
 
+## 2026-08-20
+
+### Phase 4 OpenAI Live Evaluation Harness
+
+- Approved `EXTRACT-TASK-011` として、Production `OpenAiLlmProvider`、Git-tracked Prompt、malicious instruction を含む synthetic source を使用する opt-in Live Evaluation CLI を追加しました。
+- `ALLOW_OPENAI_LIVE_EVALUATION=true`、API Key、Model が明示された場合だけ Responses API を 1 回呼び、Schema、Japanese Output、Evidence Coverage、Exact Source Lineage、Compliance、Prompt Injection Defense を評価します。
+- Result は Provider/Model/Prompt/Schema Version、Token、Latency、Provider Request ID、Check Boolean だけの content-free JSON とし、Prompt、Source、Generated Text を含めません。
+- Worker Lint、Typecheck、19 Suites / 81 Tests が成功し、未 opt-in CLI が Provider Call 前に Stable Sanitized Error で終了することを確認しました。
+- Credential/Cost を伴う Live Call は実行していないため、Approved `EXTRACT-Q-007` に従い Provider Integration は `Partial` を維持します。次は `EXTRACT-TASK-012` の Documentation/Traceability Audit と Full Quality Gate です。
+- `EXTRACT-TASK-012` として AI Pipeline、Evidence Model、Evaluation 文書を追加し、README、Architecture、Security、Testing Strategy、Verification、Traceability、Deviation を現行 Runtime に同期しました。
+- 最終 Gate は Format、Spec Check 8 Features / 119 Requirements、Prisma Validate/Generate、Workspace Lint/Typecheck、219 Unit/Component Tests、7-package Build、Integration 10 Suites / 66 Tests が成功しました。Phase 4 Implementation は完了し、Live/Golden Evidence Gap により Verification は `Partial` です。
+
 ## 2026-08-18
 
 ### Phase 4 Bounded Map/Merge Security Boundary

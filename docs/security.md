@@ -95,7 +95,7 @@ FAILED Job の再実行は Public API へ公開せず、Explicit Enable、Worklo
 - Browser CORS、Production Private Bucket Policy、IAM Policy
 - Redis-backed Distributed Rate Limit
 - Secret Rotation Runbook
-- Owner-scoped Durable Extraction Runtime の Untrusted Context 接続と Golden/Live Prompt Injection Evaluation
+- Golden Dataset と OpenAI Live Passed Artifact
 
 Demo User は明示的な CLI でのみ Provisioning し、API 起動時には作成しません。CLI は通常 User の上書き、Soft Delete 済み User の暗黙的な復元、Password の出力を禁止します。Production では `ALLOW_DEMO_USER_PROVISIONING=true` と Local Default 以外の Password を必須とし、Password 変更時は既存 Active Refresh Token を同一 Transaction で失効します。
 
@@ -105,10 +105,10 @@ Object Storage Boundary は `@stocklens/object-storage` に集約します。Pre
 
 Object Cleanup Queue の Payload は `jobExecutionId` UUID のみに限定し、Bucket、Object Key、Credential を Redis に複製しません。Worker は Owner-consistent Database Relation から Target を解決します。Provider の Error Detail は Log や Job History に保存せず、Stable Error Code と Sanitized Message のみを記録します。
 
-Uploaded PDF Text は `@stocklens/shared` の Trust Boundary を通し、`source: uploaded-pdf`、`trust: untrusted`、`role: user`、`instructionsAllowed: false` を固定します。Text 内の Delimiter と Markup は Escape し、System/Developer Instruction には昇格させません。Phase 4 Pure Orchestrator はこの Block を Provider `userContext` だけへ接続し、Versioned System Prompt と分離します。Map Candidate も Merge 時に Untrusted Block として Escape します。Owner-scoped Active Chunk Repository/Durable Queue への実接続と Golden/Live Evaluation は後続 Task の対象です。
+Uploaded PDF Text は `@stocklens/shared` の Trust Boundary を通し、`source: uploaded-pdf`、`trust: untrusted`、`role: user`、`instructionsAllowed: false` を固定します。Text 内の Delimiter と Markup は Escape し、System/Developer Instruction には昇格させません。Phase 4 Orchestrator はこの Block を Provider `userContext` だけへ接続し、Versioned System Prompt と分離します。Map Candidate も Merge 時に Untrusted Block として Escape します。Owner-scoped Active Chunk Repository/Durable Queue への実接続は検証済みで、Golden Dataset と Live Passed Artifact は未完了です。
 
 Prompt 登録は `ALLOW_PROMPT_ACTIVATION=true`、Operator ID、Asset Path、`name@version` の明示確認を要求する CLI に限定します。Template は Git Asset から読み、Path Traversal、Unknown Manifest Field、不正な Name/Version/Schema Version を拒否します。Database は一用途一 Active Version と利用済み内容の不変性を Constraint/Trigger で強制します。
 
-`AiUsageLog` は Token、Latency、Cost、Operation、Prompt Version、Provider/Model/Request ID の Allowlist だけを Repository で受理します。Prompt/PDF/Context/Response/Error/API Key を受ける汎用 Metadata Input は公開せず、Owner/Analysis/Job Composite FK で Cross-owner Record を拒否します。Pure Orchestrator の Prompt Injection Boundary は検証済みで、Durable Runtime の実 Log Redaction と Golden/Live Evaluation は後続 Task の Verification Gap です。
+`AiUsageLog` は Token、Latency、Cost、Operation、Prompt Version、Provider/Model/Request ID の Allowlist だけを Repository で受理します。Prompt/PDF/Context/Response/Error/API Key を受ける汎用 Metadata Input は公開せず、Owner/Analysis/Job Composite FK で Cross-owner Record を拒否します。Prompt Injection Boundary と Durable Runtime の Content-free Audit は検証済みで、Golden Dataset と Live Passed Artifact は Verification Gap です。
 
 OpenAI Adapter は `store: false`、空の `tools`、`tool_choice: none`、`parallel_tool_calls: false` を固定し、Provider の Refusal Text、Raw Error、Raw Response、API Key を内部 Error に転送しません。公開するのは Stable Error Code、Retryable Flag、Sanitized Message と Content-free Usage Metadata だけです。

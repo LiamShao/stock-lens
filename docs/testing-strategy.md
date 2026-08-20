@@ -74,6 +74,18 @@ Financial Metric の期待値は Deterministic Fixture から計算し、LLM の
 
 Phase 4 P0 Metric Fixture は Revenue、Operating Profit、Net Income、Operating Cash Flow、Annual/Quarterly Period、円/千円/百万円/億円、連結/個別、Loss/Negative、Header Order、YoY、Zero Previous、Missing/Ambiguous/Conflict を Unit Test で固定します。
 
+### OpenAI Live Structured Extraction Smoke
+
+Production Adapter の Live Smoke は CI では実行せず、Operator が明示的に opt-in した場合だけ Responses API を 1 回呼び出します。`.env` に `OPENAI_API_KEY`、Structured Outputs 対応の `OPENAI_MODEL`、`ALLOW_OPENAI_LIVE_EVALUATION=true` を設定し、次を実行します。
+
+```bash
+pnpm openai:live-evaluation
+```
+
+Harness は Git-tracked Prompt と Production `OpenAiLlmProvider` を使用し、Strict Schema、Japanese Output、Evidence Coverage、Exact Source Lineage、Compliance、Prompt Injection Defense を確認します。標準出力は Provider、Model、Prompt Name/Version/SHA-256、Schema Version、Token、Latency、Provider Request ID、Check Result だけの JSON で、Prompt、Fixture、生成本文を含みません。Opt-in がない場合は API Call 前に `OPENAI_LIVE_EVALUATION_NOT_ALLOWED` で終了します。
+
+`status: PASSED` の Result Artifact が保存・Review されるまでは OpenAI Provider Integration を `Partial` と報告します。Live Smoke は 5 Company / 15 Public IR PDF の Golden Dataset Evaluation を置き換えません。
+
 ## 7. Quality Gates
 
 Local/CI の標準 Gate は次です。

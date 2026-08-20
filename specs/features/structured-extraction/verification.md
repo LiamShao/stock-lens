@@ -2,11 +2,11 @@
 
 ## Metadata
 
-| Field               | Value                                          |
-| ------------------- | ---------------------------------------------- |
-| Related Spec        | `specs/features/structured-extraction/spec.md` |
-| Verification status | `Partial — implementation in progress`         |
-| Last updated        | `2026-08-19`                                   |
+| Field               | Value                                                 |
+| ------------------- | ----------------------------------------------------- |
+| Related Spec        | `specs/features/structured-extraction/spec.md`        |
+| Verification status | `Partial — implementation complete; live/golden gaps` |
+| Last updated        | `2026-08-20`                                          |
 
 ## Implemented Evidence
 
@@ -34,6 +34,7 @@
 - `StructuredExtractionProcessor` は Owner-scoped Active Source、Bound Prompt、Deterministic Metrics、Bounded Map/Merge、Content-free Usage、Evidence/Compliance Validation、Atomic Publish を Runtime 接続します。成功 Publish Transaction は EXTRACT Attempt/Execution、VALIDATE Attempt/Execution、Finding/Evidence/Link/Metric/Handoff を一緒に確定します。
 - Validation Failure は同じ EXTRACT Attempt 内で最大 2 Repair、全 Provider Call は最大 3 です。Exhaustion は `FAILED_VALIDATION` の Non-retryable、Rate Limit/Timeout/Unavailable は最大 3 BullMQ Attempts の Retryable として分類します。
 - Pending Dispatcher は `PARSE`、`CHUNK`、`CALCULATE_FINANCIAL_METRICS`、`EXTRACT` の Durable `QUEUED` Row を stable BullMQ Job ID で回復します。
+- OpenAI Live Evaluation CLI は `ALLOW_OPENAI_LIVE_EVALUATION=true`、API Key、Model の三つを明示した場合だけ Production Adapter と Git-tracked Prompt を使って Responses API を 1 回呼びます。Result は Schema/Japanese/Evidence Coverage/Exact Source Lineage/Compliance/Prompt Injection Check と Content-free Usage/Version Metadata だけの JSON です。
 
 ## Automated Evidence
 
@@ -62,10 +63,14 @@
 - `structured-extraction-worker.integration-spec.ts`: Fresh PostgreSQL + Real Redis/BullMQ で Metrics → Extract → Validate/Handoff、同一 Attempt の Compliance Repair、2nd BullMQ Attempt の Rate-limit Recovery、3 Provider Call Validation Exhaustion、Provider Call 中の Source Change Fail-closed、Content-free Usage/Sanitized Failure を 4 Tests で検証しました。
 - `job-operations.integration-spec.ts` / `job-operation-dispatch.spec.ts`: `EXTRACT-Q-008` Option `A` に従い Metrics/Extract の同一 Execution `FAILED → QUEUED` + Audit、Stable Analysis Queue Job Name、VALIDATE Reject を PostgreSQL 5 Tests / Unit 5 Tests の一部として検証し、`EXTRACT-DEV-002` を解消しました。
 - Task 010 Full Gate: Format、Spec Check 8 Features / 119 Requirements、Workspace Lint/Typecheck、217 Unit/Component Tests、7-package Build、Phase 4 PostgreSQL/Redis/BullMQ 5 Suites / 18 Tests が成功しました。
+- `openai-live-evaluation.spec.ts`: Live-shaped Strict Result の Passed Report、Unsafe/Unsupported Result の Failed Checks、Prompt/Fixture/Generated Text を Report に含めないことを 2 Tests で検証しました。
+- Task 011 Targeted Gate: Worker Lint、Typecheck、19 Suites / 81 Tests が成功しました。Opt-in なしの Real CLI は Provider Call 前に Sanitized `OPENAI_LIVE_EVALUATION_NOT_ALLOWED` で Fail closed しました。
+- Task 012 Full Gate: Format、Spec Check 8 Features / 119 Requirements、Prisma Validate/Generate、Workspace Lint/Typecheck、219 Unit/Component Tests、7-package Build、PostgreSQL/Redis/BullMQ/MinIO Integration 10 Suites / 66 Tests が成功しました。
+- Documentation Audit: Root README、Architecture、Security、Testing Strategy を現行 Runtime に更新し、`docs/ai-pipeline.md`、`docs/evidence-model.md`、`docs/evaluation.md` を追加しました。Phase 7 Deployment/ADR と Phase 5/6 Scope は未実装として明示しています。
 
 ## Remaining Gaps
 
-- OpenAI Adapter は Production Runtime に接続済みですが、Opt-in Live Evidence は未実装です。Approved `EXTRACT-Q-007` により Provider Integration は正確に `Partial` を維持します。
+- OpenAI Adapter と Opt-in Live Harness は実装済みですが、Credential/Cost を伴う Live Call は実行しておらず Passed Artifact はありません。Approved `EXTRACT-Q-007` により Provider Integration は正確に `Partial` を維持します。
 - Production Workload IAM/Secrets Manager の実体は Phase 7 Deployment Scope です。Phase 4 Manual Re-run は既存 CLI Guard/Audit/5 回上限の範囲で検証済みです。
 
 ## Acceptance Status
@@ -89,4 +94,4 @@
 
 ## Result
 
-Approved Task 001〜010 の Durable Runtime、Bounded Repair/Retry、Atomic Handoff、Full Infrastructure/Race/Security Matrix と Option A Manual Re-run まで完了しました。Opt-in OpenAI Live Evidence と最終 Documentation/Full Gate が残るため Feature は `Partial` です。
+Approved Task 001〜012 の Durable Runtime、Bounded Repair/Retry、Atomic Handoff、Full Infrastructure/Race/Security Matrix、Manual Re-run、Opt-in Live Harness、Documentation/Full Gate が完了しました。Implementation は `Implemented` ですが、Live Passed Artifact と Golden Dataset Evidence がないため Verification は `Partial` です。

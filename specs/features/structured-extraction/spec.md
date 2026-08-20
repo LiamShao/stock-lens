@@ -2,14 +2,14 @@
 
 ## Metadata
 
-| Field                 | Value                                     |
-| --------------------- | ----------------------------------------- |
-| Spec status           | `Approved`                                |
-| Implementation status | `Implementing`                            |
-| Verification status   | `Partial`                                 |
-| Owner                 | `TBD`                                     |
-| Approval              | `2026-08-14; EXTRACT-Q-001〜007 Option A` |
-| Last updated          | `2026-08-19`                              |
+| Field                 | Value                                         |
+| --------------------- | --------------------------------------------- |
+| Spec status           | `Approved`                                    |
+| Implementation status | `Implemented`                                 |
+| Verification status   | `Partial`                                     |
+| Owner                 | `TBD`                                         |
+| Approval              | `2026-08-14 Q-001〜007 A; 2026-08-19 Q-008 A` |
+| Last updated          | `2026-08-20`                                  |
 
 ## Goal
 

@@ -79,6 +79,12 @@ pnpm prompt:activate -- \
 
 Structured Extraction の OpenAI Adapter は Worker だけで使用します。`OPENAI_API_KEY` と Structured Outputs 対応の `OPENAI_MODEL` を Environment / Secrets Manager から明示的に設定してください。Model は Repository に Hard-code せず、Request は Response Storage と全 Tool を無効化します。Live Provider Test は CI の必須条件ではなく、別の明示的 Opt-in Evaluation として扱います。
 
+Live Smoke は `ALLOW_OPENAI_LIVE_EVALUATION=true` を追加で設定し、次を実行します。Responses API を 1 回呼び出すため Cost が発生します。Result は Content-free JSON だけを出力し、Passed Artifact がない状態は `Partial` と扱います。
+
+```bash
+pnpm openai:live-evaluation
+```
+
 Long Document の抽出は全 Chunk を stable order の bounded Map/Merge で処理します。Default は最大 2 Map + 1 Merge とし、Context/Estimated Token/Call Budget を超える場合は先頭だけを採用せず Stable Failure とします。PDF Text と Intermediate Candidate は Escaped Untrusted User Context に限定します。
 
 Prisma Schema と Migration には、User、Analysis、Document、Evidence、Job などの Domain Model を定義しています。論理設計と Ownership Rule は [docs/database-design.md](./docs/database-design.md) を参照してください。
@@ -103,7 +109,7 @@ PDF Upload は `DRAFT` Analysis に対して Session を作成し、Browser か�
 
 Feature Development は Spec-Driven Development で進めます。SDD Workflow、Feature Spec、Requirement Traceability、Deviation は [specs/README.md](./specs/README.md) を参照してください。Authentication、Demo User、Analysis Management、Ownership は承認・検証済みです。
 
-Cross-cutting Design は [docs/architecture.md](./docs/architecture.md)、Test Layer と CI Gate は [docs/testing-strategy.md](./docs/testing-strategy.md) を参照してください。
+Cross-cutting Design は [docs/architecture.md](./docs/architecture.md)、AI Runtime は [docs/ai-pipeline.md](./docs/ai-pipeline.md)、Citation Lineage は [docs/evidence-model.md](./docs/evidence-model.md)、評価方針は [docs/evaluation.md](./docs/evaluation.md)、Test Layer と CI Gate は [docs/testing-strategy.md](./docs/testing-strategy.md) を参照してください。
 
 Schema を変更して Development Migration を作成する場合は、Local PostgreSQL を起動してから次を実行します。
 

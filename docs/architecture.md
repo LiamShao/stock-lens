@@ -25,7 +25,7 @@ Next.js Web ─────► NestJS + Fastify API ─────► PostgreSQ
 
 - `apps/web`: UI、TanStack Query、Form Validation、Evidence Drawer、PDF Page Navigation を担当します。現時点では Skeleton です。
 - `apps/api`: HTTP、Authentication、Analysis Management、Authorization Boundary、Validation、OpenAPI、Job Enqueue を担当します。Controller は Prisma を直接呼びません。
-- `apps/worker`: 現在は Upload Orphan Expiry Scan、Durable Cleanup Redispatch、Object Delete、Retry/Attempt Tracking を実装済みです。PDF Parse、Chunking、Embedding、Structured Extraction、Evidence Validation、View Generation は未実装です。
+- `apps/worker`: Upload Cleanup、PDF Parse/Chunk、Deterministic Financial Metrics、Bounded Structured Extraction、Evidence/Compliance Validation、Durable Retry/Repair、Atomic Phase 5 Handoff を実装済みです。Embedding、View Generation、RAG は未実装です。
 - PostgreSQL: Transactional Data、Owner Scope、JSONB Output、Full Text Search、pgvector を一つの整合性境界で管理します。
 - Redis/BullMQ: Retry 可能で冪等な非同期 Step を実行します。
 - Object Storage: PDF を Private Bucket に保存し、API が最大 5 分の Presigned PUT を発行します。Bucket と Object Key は API Response に公開しません。
@@ -125,8 +125,8 @@ Target は AWS-oriented Architecture です。Web/API/Worker を独立 Deployabl
 ## 8. 現在の既知 Gap
 
 - Analysis と Document HTTP API の Cross-user Authorization は Bearer User A/B で検証済みです。
-- Object Storage Adapter、PDF Upload/Finalize/Delete API、Concurrent Reservation/Finalize、24-hour Orphan Scan、Cleanup Queue/Worker、PDF Parse/Chunk、Deterministic Metric/Provider Library は実装・検証済みです。Phase 4 Durable LLM Pipeline、RAG、Evidence UI は未実装です。
+- Object Storage Adapter、PDF Upload/Finalize/Delete API、Concurrent Reservation/Finalize、24-hour Orphan Scan、Cleanup Queue/Worker、PDF Parse/Chunk、Phase 4 Durable LLM Pipeline と Atomic Evidence Publish は実装・検証済みです。OpenAI Live Passed Artifact、RAG、Evidence UI は未実装です。
 - Production Private Bucket Policy、Browser PUT CORS、API/Worker IAM Policy と Presigned Download/PDF Viewer Flow は未実装・未検証です。
-- FAILED Cleanup を既存 Job ID で再実行する内部 Repository/Publisher Contract はありますが、Operator 向け Endpoint/CLI と Runbook は未実装です。User 承認済み Risk Acceptance により Phase 3 の統一 Job Re-run Feature へ延期します。
+- FAILED Cleanup/Parse/Chunk/Metrics/Extract は Guard 付き Operator CLI から既存 Execution を再実行できます。Production Workload IAM/Secrets Manager Evidence は Phase 7 に残ります。
 - Rate Limit Store は Process Local であり、Multi-instance 前に Redis-backed Store が必要です。
-- Required ADR、AI Pipeline、Evidence、Evaluation、Deployment の詳細文書は段階的に追加します。
+- AI Pipeline、Evidence、Evaluation の詳細文書は作成済みです。Required ADR と Deployment 文書は関連 Phase で追加します。

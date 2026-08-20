@@ -73,6 +73,10 @@ User は同日 `EXTRACT-Q-001` Option `A` を承認しました。Phase 4 Valida
 
 2026-08-19 の `EXTRACT-TASK-009` Durable Runtime Review で、Global Manual Re-run Requirement と Phase 4 Retry/Re-run Idempotency に対し、Approved Job Re-run Allowlist は `OBJECT_CLEANUP/PARSE/CHUNK` のみに固定されている `EXTRACT-DEV-002` を検出しました。Security/Cost Policy を黙って拡張せず、Automatic Retry と Duplicate Delivery Recovery を実装し、Manual `CALCULATE_FINANCIAL_METRICS/EXTRACT` Re-run は `EXTRACT-Q-008` Decision まで無効のまま維持します。
 
+2026-08-20 の `EXTRACT-TASK-011` Live Evaluation Review では新規 Deviation は検出されませんでした。Harness は明示 opt-in、Production Adapter、Versioned Prompt、1 Call 上限、Content-free JSON Result に限定し、Credential がない状態で Live 成功を主張せず `EXTRACT-FR-002` を `Partial` に維持します。
+
+2026-08-20 の `EXTRACT-TASK-012` Documentation/Traceability/Full Gate Review では新規 Deviation は検出されませんでした。Phase 4 実装は完了しましたが、Live Passed Artifact、Golden Dataset、Phase 7 Deployment/ADR Evidence は既知 Gap として残し、Verification を `Partial` に維持します。
+
 ## Resolution Evidence
 
 | Deviation                              | Resolution evidence                                                                                               |

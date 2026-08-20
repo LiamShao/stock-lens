@@ -5,8 +5,8 @@
 | Field        | Value                                          |
 | ------------ | ---------------------------------------------- |
 | Related Spec | `specs/features/structured-extraction/spec.md` |
-| Plan status  | `Implementing`                                 |
-| Last updated | `2026-08-19`                                   |
+| Plan status  | `Implemented — residual verification gaps`     |
+| Last updated | `2026-08-20`                                   |
 
 ## Approach
 

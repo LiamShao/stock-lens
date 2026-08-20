@@ -125,29 +125,29 @@ Status は Requirement の実装・検証状況を表します。`Partial` は C
 
 ## Structured Extraction
 
-| Requirement       | Implementation                               | Verification                           | Status    |
-| ----------------- | -------------------------------------------- | -------------------------------------- | --------- |
-| `EXTRACT-FR-001`  | Metrics/Extract/Validate Durable Runtime     | Real PostgreSQL/Redis/BullMQ chain     | `Passed`  |
-| `EXTRACT-FR-002`  | LlmProvider + Deterministic/OpenAI Adapter   | Strict Fixture + Responses Zod Unit    | `Partial` |
-| `EXTRACT-FR-003`  | Strict Source DTO + Bounded Map/Merge        | Order/full coverage/budget Unit        | `Partial` |
-| `EXTRACT-FR-004`  | Bound Prompt + Audited Provider Runtime      | CLI DB + runtime usage PostgreSQL      | `Passed`  |
-| `EXTRACT-FR-005`  | Strict Finding Schema + Deterministic Dedupe | Bounds/conflicting-key Unit            | `Partial` |
-| `EXTRACT-FR-006`  | Versioned Metric Schema + BigInt Parser/YoY  | Four P0/Missing/Ambiguous Fixtures     | `Passed`  |
-| `EXTRACT-FR-007`  | Exact Chunk/Page Evidence Validator          | Unit + PostgreSQL lineage publish      | `Passed`  |
-| `EXTRACT-FR-008`  | Supported/Insufficient Evidence Rule         | Evidence 1+/0 downgrade Unit + DB      | `Passed`  |
-| `EXTRACT-FR-009`  | Atomic Runtime Set/Execution Replace         | Repeat convergence + rollback/chain DB | `Passed`  |
-| `EXTRACT-FR-010`  | Bounded Repair + Stable Failure Runtime      | Repair/exhaustion Redis/BullMQ DB E2E  | `Passed`  |
-| `EXTRACT-FR-011`  | Retryable Provider + Durable Dispatcher      | Rate-limit 2nd Attempt BullMQ E2E      | `Passed`  |
-| `EXTRACT-FR-012`  | Atomic VALIDATE/Handoff Runtime              | PostgreSQL chain + duplicate no-op     | `Passed`  |
-| `EXTRACT-FR-013`  | Strict Content-free Usage Repository         | Usage/Owner-lineage/runtime PostgreSQL | `Passed`  |
-| `EXTRACT-SEC-001` | Owner-scoped Publish + Composite FK          | Cross-owner read/publish/FK PostgreSQL | `Passed`  |
-| `EXTRACT-SEC-002` | Escaped PDF User Context in Orchestrator     | Injection/system separation Unit       | `Passed`  |
-| `EXTRACT-SEC-003` | No-tool Adapter + Injection Boundary         | Request Shape + malicious context Unit | `Passed`  |
-| `EXTRACT-SEC-004` | Sanitized Errors + Content-free Usage        | Provider Unit + runtime DB inspection  | `Passed`  |
-| `EXTRACT-SEC-005` | Strict Schema/Length/Count Contract          | Provider + Invalid/oversized Unit      | `Passed`  |
-| `EXTRACT-SEC-006` | Deterministic Compliance Validator           | Six Categories + pre-persist rejection | `Passed`  |
-| `EXTRACT-SEC-007` | Map/Merge/Provider Budget Ceiling            | Unit + three-call runtime ceiling      | `Passed`  |
-| `EXTRACT-SEC-008` | Parent/Input/Prompt Commit Recheck           | PostgreSQL concurrent source race      | `Passed`  |
+| Requirement       | Implementation                               | Verification                            | Status    |
+| ----------------- | -------------------------------------------- | --------------------------------------- | --------- |
+| `EXTRACT-FR-001`  | Metrics/Extract/Validate Durable Runtime     | Real PostgreSQL/Redis/BullMQ chain      | `Passed`  |
+| `EXTRACT-FR-002`  | LlmProvider + Deterministic/OpenAI Adapter   | Unit + opt-in live harness; no artifact | `Partial` |
+| `EXTRACT-FR-003`  | Strict Source DTO + Bounded Map/Merge        | Order/full coverage/budget Unit         | `Partial` |
+| `EXTRACT-FR-004`  | Bound Prompt + Audited Provider Runtime      | CLI DB + runtime usage PostgreSQL       | `Passed`  |
+| `EXTRACT-FR-005`  | Strict Finding Schema + Deterministic Dedupe | Bounds/conflicting-key Unit             | `Partial` |
+| `EXTRACT-FR-006`  | Versioned Metric Schema + BigInt Parser/YoY  | Four P0/Missing/Ambiguous Fixtures      | `Passed`  |
+| `EXTRACT-FR-007`  | Exact Chunk/Page Evidence Validator          | Unit + PostgreSQL lineage publish       | `Passed`  |
+| `EXTRACT-FR-008`  | Supported/Insufficient Evidence Rule         | Evidence 1+/0 downgrade Unit + DB       | `Passed`  |
+| `EXTRACT-FR-009`  | Atomic Runtime Set/Execution Replace         | Repeat convergence + rollback/chain DB  | `Passed`  |
+| `EXTRACT-FR-010`  | Bounded Repair + Stable Failure Runtime      | Repair/exhaustion Redis/BullMQ DB E2E   | `Passed`  |
+| `EXTRACT-FR-011`  | Retryable Provider + Durable Dispatcher      | Rate-limit 2nd Attempt BullMQ E2E       | `Passed`  |
+| `EXTRACT-FR-012`  | Atomic VALIDATE/Handoff Runtime              | PostgreSQL chain + duplicate no-op      | `Passed`  |
+| `EXTRACT-FR-013`  | Strict Content-free Usage Repository         | Usage/Owner-lineage/runtime PostgreSQL  | `Passed`  |
+| `EXTRACT-SEC-001` | Owner-scoped Publish + Composite FK          | Cross-owner read/publish/FK PostgreSQL  | `Passed`  |
+| `EXTRACT-SEC-002` | Escaped PDF User Context in Orchestrator     | Injection/system separation Unit        | `Passed`  |
+| `EXTRACT-SEC-003` | No-tool Adapter + Injection Boundary         | Request Shape + malicious context Unit  | `Passed`  |
+| `EXTRACT-SEC-004` | Sanitized Errors + Content-free Usage        | Provider Unit + runtime DB inspection   | `Passed`  |
+| `EXTRACT-SEC-005` | Strict Schema/Length/Count Contract          | Provider + Invalid/oversized Unit       | `Passed`  |
+| `EXTRACT-SEC-006` | Deterministic Compliance Validator           | Six Categories + pre-persist rejection  | `Passed`  |
+| `EXTRACT-SEC-007` | Map/Merge/Provider Budget Ceiling            | Unit + three-call runtime ceiling       | `Passed`  |
+| `EXTRACT-SEC-008` | Parent/Input/Prompt Commit Recheck           | PostgreSQL concurrent source race       | `Passed`  |
 
 ## Job Re-run
 

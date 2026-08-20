@@ -25,6 +25,7 @@
     "demo:user:provision": "pnpm --filter @stocklens/api demo:user:provision",
     "job:inspect": "pnpm --filter @stocklens/worker job:operations inspect",
     "job:rerun": "pnpm --filter @stocklens/worker job:operations rerun",
+    "openai:live-evaluation": "pnpm --filter @stocklens/worker openai:live-evaluation",
     "prompt:activate": "pnpm --filter @stocklens/worker prompt:activate"
   },
   "dependencies": {
