@@ -1,5 +1,18 @@
 # StockLens AI 開発進捗
 
+## 2026-08-24
+
+### Phase 5 Analysis Views Draft
+
+- Phase 4 の次の最小 SDD Step として `analysis-views` Draft Spec と Decision Request を作成しました。Approval 前のため Runtime、Public API、Database、Object Storage、Web Behavior は変更していません。
+- Just Tell Me、Analyst View、Buffett-Munger Lens、Atomic View Publish、Direct Evidence Citation、Owner-scoped Read API、Evidence Drawer、PDF Page Navigation、Browser Session Boundary を Requirement/Acceptance Criteria 化しました。
+- Web が Phase 1 Landing Page のみで Auth/History/Detail が未実装の `VIEW-DEV-001`、Phase 5/6 の View 分割に対して Partial Completion Status がない `VIEW-DEV-002` を検出し、隠さず Open Deviation として記録しました。
+- 次は `VIEW-Q-001`〜`VIEW-Q-007` の User Decision です。承認後に Technical Plan と Requirement-linked Tasks を作成し、実装を開始します。
+- User は `VIEW-Q-001`〜`VIEW-Q-007` の Option `A` をすべて承認しました。三 View One-call/Atomic Publish、Direct Evidence ID、Completed-only Aggregate API、最小 Web Foundation、PDF.js Viewer、Deterministic CI + Opt-in Live を Baseline とします。
+- `VIEW-TASK-002` として、三 View の固定 Required Section、Strict Japanese Block、Direct/Unique Evidence ID、Missing Information、Count/Character/Call/Timeout Budget を Shared Zod Contract に固定しました。
+- 既存 Investment Advice Scanner を安全に再利用し、Buffett/Munger Impersonation と Buffett/Munger/Berkshire False Endorsement の deterministic validator を追加しました。新規 Dependency はありません。
+- Format、Spec Check 9 Features / 146 Requirements、Lint、Typecheck、233 Unit/Component Tests、7-package Build が成功しました。次は Approved `VIEW-TASK-003` の Versioned Prompt、Bounded Untrusted Context、One-call Orchestrator、Usage Audit です。
+
 ## 2026-08-20
 
 ### Phase 4 OpenAI Live Evaluation Harness

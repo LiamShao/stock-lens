@@ -197,6 +197,14 @@ const FORBIDDEN_OUTPUT_PATTERNS: ReadonlyArray<{
   },
 ];
 
+export function findInvestmentAdviceComplianceViolations(
+  authoredText: string,
+): ExtractionComplianceViolationCode[] {
+  return FORBIDDEN_OUTPUT_PATTERNS.filter(({ pattern }) =>
+    pattern.test(authoredText),
+  ).map(({ code }) => code);
+}
+
 /**
  * Checks model-authored finding prose only. Evidence excerpts are original
  * source data and may legitimately contain otherwise forbidden language.
@@ -208,9 +216,7 @@ export function validateStructuredExtractionCompliance(
   const authoredText = parsed.findings
     .flatMap((finding) => [finding.titleJa, finding.bodyJa])
     .join('\n');
-  const violationCodes = FORBIDDEN_OUTPUT_PATTERNS.filter(({ pattern }) =>
-    pattern.test(authoredText),
-  ).map(({ code }) => code);
+  const violationCodes = findInvestmentAdviceComplianceViolations(authoredText);
   return {
     valid: violationCodes.length === 0,
     violationCodes,

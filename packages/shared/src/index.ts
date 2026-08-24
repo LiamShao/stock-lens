@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export * from './analysis';
 export * from './analysis-processing';
+export * from './analysis-views';
 export * from './document';
 export * from './document-upload';
 export * from './financial-metrics';

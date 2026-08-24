@@ -36,6 +36,8 @@
 | `TEST-DEV-002`     | Test/Concurrency  |   Medium | Accepted 2026-08-13 | Production 3 Attempt を維持し Test-side Retry のみ追加          |
 | `EXTRACT-DEV-001`  | Status model      |     High | Resolved 2026-08-14 | `READY_FOR_VIEW_GENERATION` を Phase 4 Handoff に追加           |
 | `EXTRACT-DEV-002`  | Operations        |   Medium | Resolved 2026-08-19 | Phase 4 Metrics/Extract を既存 Manual Re-run Allowlist に追加   |
+| `VIEW-DEV-001`     | Frontend scope    |   Medium | Resolved 2026-08-24 | Phase 5 に最小 Web Auth/History/Detail Foundation を含める      |
+| `VIEW-DEV-002`     | Status model      |     High | Resolved 2026-08-24 | 三 View の Atomic Publish 後だけ `COMPLETED` とする             |
 
 2026-08-10 の `PDF-TASK-012`〜`PDF-TASK-014` Review では新規 Deviation は検出されませんでした。Real MinIO Storage、Document Bearer A/B HTTP、Redis/BullMQ Worker Cleanup の Acceptance Evidence を追加し、`OWN-DEV-004` を解消しました。
 
@@ -77,6 +79,14 @@ User は同日 `EXTRACT-Q-001` Option `A` を承認しました。Phase 4 Valida
 
 2026-08-20 の `EXTRACT-TASK-012` Documentation/Traceability/Full Gate Review では新規 Deviation は検出されませんでした。Phase 4 実装は完了しましたが、Live Passed Artifact、Golden Dataset、Phase 7 Deployment/ADR Evidence は既知 Gap として残し、Verification を `Partial` に維持します。
 
+2026-08-24 の Phase 5 Draft Review で、Backend Auth/Analysis History は実装済みである一方、`apps/web` は Phase 1 Landing Page のみで、Login Session、History、Analysis Detail が存在しない `VIEW-DEV-001` を検出しました。Evidence Drawer/PDF Navigation の End-to-end Verification に必要なため、Phase 5 Scope に最小 Foundation を含めるか、独立 Feature を先行するかを `VIEW-Q-005` で決定します。
+
+同 Review で、Development Phases は Phase 5 に Just Tell Me/Analyst、Phase 6 に Buffett-Munger Lens を配置する一方、三 View はすべて P0 Core View であり、既存 Status は `READY_FOR_VIEW_GENERATION` と `COMPLETED` の間に Partial Completion を表す値を持たない `VIEW-DEV-002` を検出しました。二 View 完了を `COMPLETED` と誤表示せず、不要な公開 Status も増やさない案として三 View を Phase 5 で原子的に生成する Option A を `VIEW-Q-001` で推奨します。User Decision 前に Status/Runtime は変更しません。
+
+User は同日 `VIEW-Q-001`〜`VIEW-Q-007` Option `A` を承認しました。Phase 5 は三 View の Atomic Publish 後だけ既存 `COMPLETED` へ進め、最小 Web Login/Refresh/Logout、History、Analysis Detail Shell を同 Feature に含めます。これにより `VIEW-DEV-001` / `VIEW-DEV-002` の Material Decision は解消しました。Runtime Evidence は Approved Tasks で追加します。
+
+2026-08-24 の `VIEW-TASK-002` Shared Contract Review では新規 Deviation は検出されませんでした。Three-view Required Section、Direct Citation Shape、Missing Information、Budget、Advice/Impersonation/Endorsement Compliance は Unit Evidence を持ちますが、Provider Runtime、Database Lineage、Atomic Publish、Web Plain-text Rendering は後続 Approved Task の Gap として可視化を維持します。
+
 ## Resolution Evidence
 
 | Deviation                              | Resolution evidence                                                                                               |
@@ -96,6 +106,7 @@ User は同日 `EXTRACT-Q-001` Option `A` を承認しました。Phase 4 Valida
 | `PROC-DEV-002`                         | `PROC-Q-007` Approved A、Real IR 3 Files / 509 Pages Direct Parser Probe、Spec/Plan/Acceptance Boundary Update    |
 | `RERUN-DEV-002`                        | Approved B、`READ COMMITTED` + `FOR UPDATE`、Concurrent 1 queued / 1 not-rerunnable / 1 Audit Integration         |
 | `EXTRACT-DEV-001`                      | `EXTRACT-Q-001` Approved A、Phase 4 Handoff を `READY_FOR_VIEW_GENERATION` として Spec/Plan に固定                |
+| `VIEW-DEV-001`, `VIEW-DEV-002`         | `VIEW-Q-001` / `VIEW-Q-005` Approved A、三 View Completion と最小 Web Foundation を Scope に固定                  |
 
 ## Detail
 
