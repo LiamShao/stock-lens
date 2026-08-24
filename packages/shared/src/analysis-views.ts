@@ -163,10 +163,7 @@ export const analysisViewsGenerationOutputSchema = z
   })
   .strict()
   .superRefine((output, context) => {
-    const totalCharacters = authoredStrings(output).reduce(
-      (total, value) => total + Array.from(value).length,
-      0,
-    );
+    const totalCharacters = countAnalysisViewAuthoredCharacters(output);
     if (totalCharacters > MAX_ANALYSIS_VIEW_TOTAL_AUTHORED_CHARACTERS) {
       context.addIssue({
         code: 'custom',
@@ -251,6 +248,15 @@ export function validateAnalysisViewsCompliance(
     valid: violationCodes.length === 0,
     violationCodes,
   };
+}
+
+export function countAnalysisViewAuthoredCharacters(
+  output: AnalysisViewsGenerationOutput,
+): number {
+  return authoredStrings(output).reduce(
+    (total, value) => total + Array.from(value).length,
+    0,
+  );
 }
 
 function authoredStrings(output: AnalysisViewsGenerationOutput): string[] {

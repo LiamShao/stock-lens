@@ -87,6 +87,8 @@ User は同日 `VIEW-Q-001`〜`VIEW-Q-007` Option `A` を承認しました。Ph
 
 2026-08-24 の `VIEW-TASK-002` Shared Contract Review では新規 Deviation は検出されませんでした。Three-view Required Section、Direct Citation Shape、Missing Information、Budget、Advice/Impersonation/Endorsement Compliance は Unit Evidence を持ちますが、Provider Runtime、Database Lineage、Atomic Publish、Web Plain-text Rendering は後続 Approved Task の Gap として可視化を維持します。
 
+同日の `VIEW-TASK-003` Prompt/Orchestrator Review では新規 Deviation は検出されませんでした。Versioned Prompt、Strict Source DTO、stable full-source order、One-call Provider Request、Context/Output Budget、single untrusted block、content-free Usage Result は Unit Evidence を持ちますが、Owner-scoped Database Resolution、Usage Persist、Repair/Retry、Atomic Publish は後続 Approved Task の Gap として維持します。
+
 ## Resolution Evidence
 
 | Deviation                              | Resolution evidence                                                                                               |

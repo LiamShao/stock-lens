@@ -1,0 +1,6 @@
+{
+  "name": "analysis-views",
+  "version": 1,
+  "schemaVersion": "analysis-views-v1",
+  "templateFile": "system.ja.md"
+}

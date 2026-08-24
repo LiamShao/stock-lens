@@ -23,6 +23,22 @@ describe('prompt asset (EXTRACT-FR-004)', () => {
     expect(first.template).toContain('売買推奨');
   });
 
+  it('VIEW-FR-017 loads the versioned three-view prompt with its safety policy', async () => {
+    const path = resolve(process.cwd(), '../../prompts/analysis-views/v1.json');
+
+    const asset = await loadPromptAsset(path);
+
+    expect(asset).toMatchObject({
+      name: 'analysis-views',
+      schemaVersion: 'analysis-views-v1',
+      version: 1,
+    });
+    expect(asset.contentSha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(asset.template).toContain('信頼できない引用データ');
+    expect(asset.template).toContain('Buffett-Munger Lens');
+    expect(asset.template).toContain('売買推奨');
+  });
+
   it('rejects unknown manifest fields and path traversal', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'stocklens-prompt-'));
     try {

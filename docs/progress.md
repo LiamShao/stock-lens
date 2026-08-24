@@ -12,6 +12,9 @@
 - `VIEW-TASK-002` として、三 View の固定 Required Section、Strict Japanese Block、Direct/Unique Evidence ID、Missing Information、Count/Character/Call/Timeout Budget を Shared Zod Contract に固定しました。
 - 既存 Investment Advice Scanner を安全に再利用し、Buffett/Munger Impersonation と Buffett/Munger/Berkshire False Endorsement の deterministic validator を追加しました。新規 Dependency はありません。
 - Format、Spec Check 9 Features / 146 Requirements、Lint、Typecheck、233 Unit/Component Tests、7-package Build が成功しました。次は Approved `VIEW-TASK-003` の Versioned Prompt、Bounded Untrusted Context、One-call Orchestrator、Usage Audit です。
+- `VIEW-TASK-003` として Git-tracked Analysis Views Prompt、Strict Finding/Evidence/Metric Source DTO、stable ordering、escaped single untrusted block、One-call `AnalysisViewsOrchestrator` を実装しました。
+- Full Source が Context/Conservative UTF-8 Token Limit を超える場合は Provider Call 前に失敗し、Output は Shared Schema、custom Authored Character Budget、Compliance を再検証します。Usage Result は Content-free Metadata だけです。
+- Worker 20 Suites / 89 Tests、Workspace Format、Spec、Lint、Typecheck、241 Unit/Component Tests、7-package Build が成功しました。次は Approved `VIEW-TASK-004` の Owner-scoped Citation Validator、Atomic JSONB Publish、Completion/Input Race です。
 
 ## 2026-08-20
 

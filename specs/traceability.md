@@ -151,35 +151,35 @@ Status は Requirement の実装・検証状況を表します。`Partial` は C
 
 ## Analysis Views
 
-| Requirement    | Implementation                   | Verification                        | Status        |
-| -------------- | -------------------------------- | ----------------------------------- | ------------- |
-| `VIEW-FR-001`  | Approved `VIEW-TASK-005`         | Durable Queue Integration pending   | `Not started` |
-| `VIEW-FR-002`  | Approved `VIEW-TASK-003` / `004` | Owner/Input Resolution pending      | `Not started` |
-| `VIEW-FR-003`  | Required Just Tell Me Schema     | Fixed-section Strict Contract Unit  | `Partial`     |
-| `VIEW-FR-004`  | Required Analyst View Schema     | Fixed-section Strict Contract Unit  | `Partial`     |
-| `VIEW-FR-005`  | Required Buffett-Munger Schema   | Fixed-section Strict Contract Unit  | `Partial`     |
-| `VIEW-FR-006`  | Strict Three-view Root/Sections  | Unknown/order/Japanese/bounds Unit  | `Passed`      |
-| `VIEW-FR-007`  | Direct Evidence ID Block Rule    | Required/unique citation Unit       | `Partial`     |
-| `VIEW-FR-008`  | Missing Information Block Rule   | Evidence-free missing Unit          | `Partial`     |
-| `VIEW-FR-009`  | Approved `VIEW-TASK-004` / `005` | Atomic Publish Integration pending  | `Not started` |
-| `VIEW-FR-010`  | Approved `VIEW-TASK-005`         | Repair/Retry Integration pending    | `Not started` |
-| `VIEW-FR-011`  | Approved `VIEW-TASK-004`         | Completion Transaction pending      | `Not started` |
-| `VIEW-FR-012`  | Approved `VIEW-TASK-006`         | Aggregate API Integration pending   | `Not started` |
-| `VIEW-FR-013`  | Approved `VIEW-TASK-009`         | View UI/Accessibility pending       | `Not started` |
-| `VIEW-FR-014`  | Approved `VIEW-TASK-009`         | Evidence Drawer pending             | `Not started` |
-| `VIEW-FR-015`  | Approved `VIEW-TASK-007` / `010` | Read Presign/PDF.js pending         | `Not started` |
-| `VIEW-FR-016`  | Approved `VIEW-TASK-008`         | Browser Session Tests pending       | `Not started` |
-| `VIEW-FR-017`  | Approved `VIEW-TASK-003`         | Usage Audit Integration pending     | `Not started` |
-| `VIEW-SEC-001` | Approved `VIEW-TASK-004`〜`007`  | Owner A/B Matrix pending            | `Not started` |
-| `VIEW-SEC-002` | Approved `VIEW-TASK-003`         | Untrusted Context Tests pending     | `Not started` |
-| `VIEW-SEC-003` | Strict Zod/Plain-text Contract   | Schema Unit; UI render pending      | `Partial`     |
-| `VIEW-SEC-004` | Shared Advice Compliance Scanner | Six category View Unit              | `Passed`      |
-| `VIEW-SEC-005` | View Framework Validator         | Impersonation/endorsement Unit      | `Passed`      |
-| `VIEW-SEC-006` | Approved `VIEW-TASK-003` / `007` | Redaction Matrix pending            | `Not started` |
-| `VIEW-SEC-007` | Approved `VIEW-TASK-007` / `010` | Expiry/Private PDF Tests pending    | `Not started` |
-| `VIEW-SEC-008` | Approved `VIEW-TASK-008`         | Memory Token/Refresh Tests pending  | `Not started` |
-| `VIEW-SEC-009` | Shared Generation Budget         | Exact ceiling Unit; runtime pending | `Partial`     |
-| `VIEW-SEC-010` | Approved `VIEW-TASK-004`         | Commit Race Integration pending     | `Not started` |
+| Requirement    | Implementation                   | Verification                         | Status        |
+| -------------- | -------------------------------- | ------------------------------------ | ------------- |
+| `VIEW-FR-001`  | Approved `VIEW-TASK-005`         | Durable Queue Integration pending    | `Not started` |
+| `VIEW-FR-002`  | Strict View Source DTO/Context   | Unknown/full-source Unit; DB pending | `Partial`     |
+| `VIEW-FR-003`  | Required Just Tell Me Schema     | Fixed-section Strict Contract Unit   | `Partial`     |
+| `VIEW-FR-004`  | Required Analyst View Schema     | Fixed-section Strict Contract Unit   | `Partial`     |
+| `VIEW-FR-005`  | Required Buffett-Munger Schema   | Fixed-section Strict Contract Unit   | `Partial`     |
+| `VIEW-FR-006`  | Strict Three-view Root/Sections  | Unknown/order/Japanese/bounds Unit   | `Passed`      |
+| `VIEW-FR-007`  | Direct Evidence ID Block Rule    | Required/unique citation Unit        | `Partial`     |
+| `VIEW-FR-008`  | Missing Rule + Versioned Prompt  | Schema/prompt Unit; runtime pending  | `Partial`     |
+| `VIEW-FR-009`  | Approved `VIEW-TASK-004` / `005` | Atomic Publish Integration pending   | `Not started` |
+| `VIEW-FR-010`  | Approved `VIEW-TASK-005`         | Repair/Retry Integration pending     | `Not started` |
+| `VIEW-FR-011`  | Approved `VIEW-TASK-004`         | Completion Transaction pending       | `Not started` |
+| `VIEW-FR-012`  | Approved `VIEW-TASK-006`         | Aggregate API Integration pending    | `Not started` |
+| `VIEW-FR-013`  | Approved `VIEW-TASK-009`         | View UI/Accessibility pending        | `Not started` |
+| `VIEW-FR-014`  | Approved `VIEW-TASK-009`         | Evidence Drawer pending              | `Not started` |
+| `VIEW-FR-015`  | Approved `VIEW-TASK-007` / `010` | Read Presign/PDF.js pending          | `Not started` |
+| `VIEW-FR-016`  | Approved `VIEW-TASK-008`         | Browser Session Tests pending        | `Not started` |
+| `VIEW-FR-017`  | Immutable Prompt + Usage Result  | Asset/content-free Unit; DB pending  | `Partial`     |
+| `VIEW-SEC-001` | Approved `VIEW-TASK-004`〜`007`  | Owner A/B Matrix pending             | `Not started` |
+| `VIEW-SEC-002` | Escaped Single Untrusted Block   | Injection/system separation Unit     | `Passed`      |
+| `VIEW-SEC-003` | Strict Zod/Plain-text Contract   | Schema Unit; UI render pending       | `Partial`     |
+| `VIEW-SEC-004` | Shared Advice Compliance Scanner | Six category View Unit               | `Passed`      |
+| `VIEW-SEC-005` | View Framework Validator         | Impersonation/endorsement Unit       | `Passed`      |
+| `VIEW-SEC-006` | Content-free Provider Usage      | Result Unit; runtime logs pending    | `Partial`     |
+| `VIEW-SEC-007` | Approved `VIEW-TASK-007` / `010` | Expiry/Private PDF Tests pending     | `Not started` |
+| `VIEW-SEC-008` | Approved `VIEW-TASK-008`         | Memory Token/Refresh Tests pending   | `Not started` |
+| `VIEW-SEC-009` | One-call Context/Output Budget   | Pre/post-call ceiling Unit           | `Partial`     |
+| `VIEW-SEC-010` | Approved `VIEW-TASK-004`         | Commit Race Integration pending      | `Not started` |
 
 ## Job Re-run
 
