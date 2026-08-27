@@ -12,7 +12,7 @@
 - [x] `VIEW-TASK-001` (`VIEW-Q-001`〜`VIEW-Q-007`) Approval、Spec、Technical Plan、Tasks、Deviation Resolution
 - [x] `VIEW-TASK-002` (`VIEW-FR-003`〜`VIEW-FR-008`, `VIEW-SEC-003`〜`VIEW-SEC-005`, `VIEW-SEC-009`) Shared Strict Three-view Output、Budget、Citation、Compliance Contract
 - [x] `VIEW-TASK-003` (`VIEW-FR-002`, `VIEW-FR-006`〜`VIEW-FR-008`, `VIEW-FR-017`, `VIEW-SEC-002`, `VIEW-SEC-006`) Versioned Prompt、Bounded Untrusted Context、One-call Orchestrator、Usage Audit
-- [ ] `VIEW-TASK-004` (`VIEW-FR-007`〜`VIEW-FR-011`, `VIEW-SEC-001`, `VIEW-SEC-010`) Owner-scoped Citation Validator、Atomic JSONB Publish、Completion/Input Race
+- [x] `VIEW-TASK-004` (`VIEW-FR-007`〜`VIEW-FR-011`, `VIEW-SEC-001`, `VIEW-SEC-010`) Owner-scoped Citation Validator、Atomic JSONB Publish、Completion/Input Race
 - [ ] `VIEW-TASK-005` (`VIEW-FR-001`, `VIEW-FR-009`〜`VIEW-FR-011`, `VIEW-SEC-009`) Durable `GENERATE_VIEWS` Queue、Repair/Retry、Pending Recovery、Manual Re-run
 - [ ] `VIEW-TASK-006` (`VIEW-FR-012`, `VIEW-SEC-001`, `VIEW-SEC-003`) Completed-only Aggregate Read API、Shared Projection、OpenAPI、Owner A/B Integration
 - [ ] `VIEW-TASK-007` (`VIEW-FR-015`, `VIEW-SEC-001`, `VIEW-SEC-006`, `VIEW-SEC-007`) Read-only Presign Adapter/API、Expiry、Missing/Provider Failure、Redaction Integration

@@ -77,7 +77,7 @@ const analysisViewFindingSourceSchema = z
     }
   });
 
-const analysisViewsSourceSchema = z
+export const analysisViewsSourceSchema = z
   .object({
     analysisId: z.uuid(),
     analysisTitle: analysisTitleSchema,

@@ -15,6 +15,9 @@
 - `VIEW-TASK-003` として Git-tracked Analysis Views Prompt、Strict Finding/Evidence/Metric Source DTO、stable ordering、escaped single untrusted block、One-call `AnalysisViewsOrchestrator` を実装しました。
 - Full Source が Context/Conservative UTF-8 Token Limit を超える場合は Provider Call 前に失敗し、Output は Shared Schema、custom Authored Character Budget、Compliance を再検証します。Usage Result は Content-free Metadata だけです。
 - Worker 20 Suites / 89 Tests、Workspace Format、Spec、Lint、Typecheck、241 Unit/Component Tests、7-package Build が成功しました。次は Approved `VIEW-TASK-004` の Owner-scoped Citation Validator、Atomic JSONB Publish、Completion/Input Race です。
+- `VIEW-TASK-004` として Active Owner/Analysis/FindingEvidence/Document/Page/Chunk/Excerpt/Financial Metrics を再解決する View Source Repository と Exact Input Hash、Direct Citation Validator を実装しました。
+- Unknown/Unlinked/Cross-owner Evidence、Compliance Violation、Input/Prompt/Delete Race を Persist 前に拒否し、成功時だけ三 View JSONB、`COMPLETED`、`completedAt` を Serializable Transaction で原子的に保存します。新規 Dependency/Database Migration/API 変更はありません。
+- Citation Unit 1 Test と Real PostgreSQL Integration 4 Tests を追加しました。Full Gate は Format、Spec Check 9 Features / 146 Requirements、Prisma Validate/Generate、7 Lint Tasks、10 Typecheck Tasks、242 Unit/Component Tests、7 Build Tasks、Integration 11 Suites / 70 Tests が成功しました。次は Approved `VIEW-TASK-005` の Durable `GENERATE_VIEWS` Queue、Repair/Retry、Pending Recovery、Manual Re-run です。
 
 ## 2026-08-20
 

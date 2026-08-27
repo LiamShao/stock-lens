@@ -25,7 +25,7 @@ Next.js Web ─────► NestJS + Fastify API ─────► PostgreSQ
 
 - `apps/web`: UI、TanStack Query、Form Validation、Evidence Drawer、PDF Page Navigation を担当します。現時点では Skeleton です。
 - `apps/api`: HTTP、Authentication、Analysis Management、Authorization Boundary、Validation、OpenAPI、Job Enqueue を担当します。Controller は Prisma を直接呼びません。
-- `apps/worker`: Upload Cleanup、PDF Parse/Chunk、Deterministic Financial Metrics、Bounded Structured Extraction、Evidence/Compliance Validation、Durable Retry/Repair、Atomic Phase 5 Handoff を実装済みです。Embedding、View Generation、RAG は未実装です。
+- `apps/worker`: Upload Cleanup、PDF Parse/Chunk、Deterministic Financial Metrics、Bounded Structured Extraction、Evidence/Compliance Validation、Durable Retry/Repair、Atomic Phase 5 Handoff、View Contract/One-call Orchestrator/Owner-scoped Atomic Publish Foundation を実装済みです。Durable View Queue、Embedding、RAG は未実装です。
 - PostgreSQL: Transactional Data、Owner Scope、JSONB Output、Full Text Search、pgvector を一つの整合性境界で管理します。
 - Redis/BullMQ: Retry 可能で冪等な非同期 Step を実行します。
 - Object Storage: PDF を Private Bucket に保存し、API が最大 5 分の Presigned PUT を発行します。Bucket と Object Key は API Response に公開しません。
@@ -83,6 +83,8 @@ Phase 3 では User の明示的 Process Request 後に `PARSING → CHUNKING �
 
 Phase 4 の Finding、Evidence、FindingEvidence は Owner/Analysis Composite FK を持ちます。Evidence はさらに Document、Page、Chunk の同一 Lineage を Composite FK で強制し、Provider が返す ID だけで Cross-owner/Cross-document Relation を作れません。
 
+Phase 5 View Publish は `READY_FOR_VIEW_GENERATION` の Active Parent、Finding-linked Evidence、Original Document/Page/Chunk/Excerpt、Financial Metrics、Prompt/Input Identity を Transaction 内で再確認します。三 View JSONB、`COMPLETED`、`completedAt` は Validation 成功時だけ同一 Transaction で保存します。Durable `GENERATE_VIEWS` Queue への接続は次 Task です。
+
 - Job は Idempotency Key を持ち、Retry で Chunk、Finding、Evidence、Output を重複作成しません。
 - Page Text、Chunk、Page Number、検出可能な Section Metadata を保存します。
 - Financial Calculation は Deterministic Code で行い、LLM に委譲しません。
@@ -125,7 +127,7 @@ Target は AWS-oriented Architecture です。Web/API/Worker を独立 Deployabl
 ## 8. 現在の既知 Gap
 
 - Analysis と Document HTTP API の Cross-user Authorization は Bearer User A/B で検証済みです。
-- Object Storage Adapter、PDF Upload/Finalize/Delete API、Concurrent Reservation/Finalize、24-hour Orphan Scan、Cleanup Queue/Worker、PDF Parse/Chunk、Phase 4 Durable LLM Pipeline と Atomic Evidence Publish は実装・検証済みです。OpenAI Live Passed Artifact、RAG、Evidence UI は未実装です。
+- Object Storage Adapter、PDF Upload/Finalize/Delete API、Concurrent Reservation/Finalize、24-hour Orphan Scan、Cleanup Queue/Worker、PDF Parse/Chunk、Phase 4 Durable LLM Pipeline/Atomic Evidence Publish、Phase 5 View Atomic Publish Foundation は実装・検証済みです。Durable View Queue、OpenAI Live Passed Artifact、RAG、Evidence UI は未実装です。
 - Production Private Bucket Policy、Browser PUT CORS、API/Worker IAM Policy と Presigned Download/PDF Viewer Flow は未実装・未検証です。
 - FAILED Cleanup/Parse/Chunk/Metrics/Extract は Guard 付き Operator CLI から既存 Execution を再実行できます。Production Workload IAM/Secrets Manager Evidence は Phase 7 に残ります。
 - Rate Limit Store は Process Local であり、Multi-instance 前に Redis-backed Store が必要です。

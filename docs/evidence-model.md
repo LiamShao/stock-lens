@@ -51,6 +51,8 @@ Evidence 1 件以上を検証できた Finding だけを `SUPPORTED` にしま�
 
 Finding/Evidence/Link は Validation 成功時に Analysis 単位で Atomic Replace します。Owner/Input/Prompt が LLM Call 中に変わった場合は Commit を拒否し、旧派生 Set を公開しません。
 
+Analysis View Block は Evidence を複製せず Direct Evidence ID を参照します。Publish Repository は Provider Input に含めた Active FindingEvidence だけを Allowlist とし、Owner/Analysis、Document/Page/Chunk、Original Excerpt を Database から再解決します。Unknown、Unlinked、Cross-owner Evidence ID が一件でもあれば三 View 全体を Publish しません。
+
 ## 5. Frontend Boundary
 
 Phase 5 では Finding Click から Evidence Drawer を開き、Document Name、Page Number、Original Excerpt を表示します。技術的に可能な場合は短命 Presigned Download URL と PDF Viewer の Page Navigation を接続します。
@@ -59,4 +61,4 @@ Frontend は Provider Candidate を直接表示せず、Database に Commit 済�
 
 ## 6. Verification
 
-現時点では Exact Chunk/Page Match、Offset/SHA-256、Evidence 0 件 Downgrade、Unknown Chunk、Unsupported Excerpt、Page 不一致、Cross-owner/Cross-document Database Constraint、Atomic Replace/Rollback を Unit と PostgreSQL Integration で検証済みです。詳細は `specs/features/structured-extraction/verification.md` を参照してください。
+現時点では Exact Chunk/Page Match、Offset/SHA-256、Evidence 0 件 Downgrade、Unknown Chunk、Unsupported Excerpt、Page 不一致、Cross-owner/Cross-document Database Constraint、Atomic Replace/Rollback に加え、View Citation の Unknown/Unlinked/Cross-owner Reject と Atomic Three-view Publish を Unit と PostgreSQL Integration で検証済みです。詳細は `specs/features/structured-extraction/verification.md` と `specs/features/analysis-views/verification.md` を参照してください。

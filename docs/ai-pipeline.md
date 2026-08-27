@@ -60,11 +60,17 @@ Validation 成功時だけ、Financial Metric Snapshot、Finding、Evidence、Fi
 
 `AiUsageLog` は Provider、Model、Operation、Prompt Version、Token、Latency、Estimated Cost、Provider Request ID の allowlist だけを保存します。Prompt、PDF/Chunk Text、Raw Request/Response/Error、Credential は保存・Log 出力しません。
 
-## 7. 未完了範囲
+## 7. Analysis Views Publish Foundation
+
+Phase 5 は Finding、Finding-linked Evidence、Deterministic Financial Metrics を Strict Owner-scoped Source として再解決し、Just Tell Me、Analyst View、Buffett-Munger Lens の三 View を一回の bounded Structured Generation Candidate として扱います。Evidence は View JSONB に複製せず、Direct Evidence ID だけを保存します。
+
+Publish 前に Active Parent、Exact Source Input Hash、Active Prompt ID/SHA-256/Schema Version、FindingEvidence と Original Document/Page/Chunk/Excerpt を Serializable Transaction 内で再確認します。Schema、Citation、Compliance がすべて成功した場合だけ、三 View JSONB、`COMPLETED`、`completedAt` を原子的に保存します。Unknown、Unlinked、Cross-owner Citation と Input/Prompt/Delete Race は Partial Output を残さず拒否します。
+
+## 8. 未完了範囲
 
 - OpenAI opt-in Live Harness は実装済みですが、Live Passed Artifact は未取得です。
 - 5 Company / 15 Public IR PDF の Golden Dataset Evaluation は未実装です。
-- Phase 5 View Generation と Evidence UI、Phase 6 Embedding/RAG は未実装です。
+- Phase 5 View Contract、One-call Orchestrator、Owner-scoped Citation/Atomic Publish Foundation は実装済みです。Durable `GENERATE_VIEWS` Queue、Repair/Retry/Usage Persist、Read API、Evidence UI は未実装です。
 - Production Secrets Manager/IAM Evidence は Phase 7 Deployment Scope です。
 
 Feature-level Source of Truth は `specs/features/structured-extraction/`、検証結果は `verification.md` と `specs/traceability.md` を参照してください。

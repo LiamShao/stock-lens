@@ -89,6 +89,8 @@ User は同日 `VIEW-Q-001`〜`VIEW-Q-007` Option `A` を承認しました。Ph
 
 同日の `VIEW-TASK-003` Prompt/Orchestrator Review では新規 Deviation は検出されませんでした。Versioned Prompt、Strict Source DTO、stable full-source order、One-call Provider Request、Context/Output Budget、single untrusted block、content-free Usage Result は Unit Evidence を持ちますが、Owner-scoped Database Resolution、Usage Persist、Repair/Retry、Atomic Publish は後続 Approved Task の Gap として維持します。
 
+2026-08-27 の `VIEW-TASK-004` Owner-scoped Citation/Atomic Publish Review では新規 Deviation は検出されませんでした。Active FindingEvidence と Original Document/Page/Chunk/Excerpt の再解決、Unknown/Unlinked/Cross-owner Citation Reject、三 JSONB + Completion Atomic Publish、Input/Prompt/Delete Race は Unit/Real PostgreSQL Evidence を持ちます。Durable Queue、Repair/Retry、Usage Persist、Manual Re-run は Approved `VIEW-TASK-005` の既知 Gap として維持します。
+
 ## Resolution Evidence
 
 | Deviation                              | Resolution evidence                                                                                               |

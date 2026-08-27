@@ -2,11 +2,11 @@
 
 ## Metadata
 
-| Field               | Value                                   |
-| ------------------- | --------------------------------------- |
-| Related Spec        | `specs/features/analysis-views/spec.md` |
-| Verification status | `Partial — shared contract implemented` |
-| Last updated        | `2026-08-24`                            |
+| Field               | Value                                      |
+| ------------------- | ------------------------------------------ |
+| Related Spec        | `specs/features/analysis-views/spec.md`    |
+| Verification status | `Partial — publish foundation implemented` |
+| Last updated        | `2026-08-27`                               |
 
 ## Implemented Evidence
 
@@ -22,7 +22,10 @@
 - Finding/Evidence は stable key/ID 順に並べ、escaped single `<untrusted_analysis_source>` User Block に限定します。Source 内の closing tag、role/tool/URL/secret request は System Prompt へ混入しません。
 - 三 View は `analysis_views_v1` Schema に対する一回の Structured Generation で取得します。Full Source が Context/Conservative UTF-8 Token 上限を超える場合は Provider Call 前に失敗し、Silent Truncation しません。
 - Provider Output は Shared Strict Schema、custom Total Authored Character Budget、deterministic Compliance を再検証し、失敗 Candidate を Result として返しません。
-- Result は validated Output、Unique Source Finding/Evidence Count、Provider/Model/Token/Latency/Request ID Usage のみを返し、Prompt/Context/Source を Usage に含めません。Database Usage Persist は Task 004/005 で接続します。
+- Result は validated Output、Unique Source Finding/Evidence Count、Provider/Model/Token/Latency/Request ID Usage のみを返し、Prompt/Context/Source を Usage に含めません。Database Usage Persist は Task 005 で接続します。
+- `AnalysisViewsPublishRepository` は `READY_FOR_VIEW_GENERATION` の Active Owner/Analysis、Finding、Finding-linked Evidence、Document/Page/Chunk/Excerpt、Financial Metric Snapshot を Database から再解決し、Stable Input Hash を作成します。Deleted、Cross-owner、Unlinked、Broken Lineage は Provider Input/Citation Allowlist に入りません。
+- Commit 前に Active Parent、Exact Input Hash、Active `analysis-views` Prompt ID/SHA-256/Schema Version を Serializable Transaction 内で再確認します。Unknown/Cross-owner/Unlinked Evidence ID と Compliance Violation は三 View の Publish 前に拒否します。
+- 成功時だけ既存三 JSONB、`COMPLETED`、`completedAt`、Failure Clear を一つの Transaction/Update で保存します。Input/Prompt/Delete Race、Duplicate Publish、Validation Failure は Partial/Stale Output を公開しません。
 - 新規 Runtime Dependency、Database、API の変更はありません。
 
 ## Automated Evidence
@@ -34,29 +37,32 @@
 - `prompt-asset.spec.ts`: Analysis Views Manifest/Template Hash、Schema Version、Untrusted/Three-view/Compliance Policy を 1 Test で検証しました。
 - Task 003 Targeted Gate: Worker 20 Suites / 89 Tests、Lint、Typecheck、Shared Build が成功しました。
 - Task 003 Workspace Gate: Format、Spec Check 9 Features / 146 Requirements、7 Lint Tasks、10 Typecheck Tasks、241 Unit/Component Tests、7 Build Tasks が成功しました。
+- `analysis-views-citation-validator.spec.ts`: Exact Provider Input に含まれる Finding-linked Evidence ID だけを許可することを Unit で検証しました。
+- `analysis-views-publish.integration-spec.ts`: Real PostgreSQL で Owner-scoped Source/Original Lineage、三 JSONB + Completion Atomic Publish、Unknown/Unlinked/Cross-owner Citation Reject、Compliance Pre-persist Reject、Input/Prompt/Delete Race、Duplicate Publish Fail-closed を 4 Tests で検証しました。
+- Task 004 Full Gate: Format、Spec Check 9 Features / 146 Requirements、Prisma Validate/Generate、7 Lint Tasks、10 Typecheck Tasks、242 Unit/Component Tests、7 Build Tasks、Integration 11 Suites / 70 Tests が成功しました。
 - Deterministic Provider、PostgreSQL、Redis/BullMQ、Private Object Storage、Browser E2E は後続 Task で接続します。
 - OpenAI Live Call は実行していません。Approved `VIEW-Q-007` に従い Provider Integration は `Partial` です。
 
 ## Acceptance Status
 
-| Acceptance Criterion | Status        | Evidence / Gap                                      |
-| -------------------- | ------------- | --------------------------------------------------- |
-| `VIEW-AC-001`        | `Not started` | Durable `GENERATE_VIEWS` chain pending              |
-| `VIEW-AC-002`        | `Partial`     | Deterministic one-call output; atomic DB pending    |
-| `VIEW-AC-003`        | `Partial`     | Missing contract passed; generation pending         |
-| `VIEW-AC-004`        | `Partial`     | Direct citation shape passed; DB lineage pending    |
-| `VIEW-AC-005`        | `Not started` | Unknown/cross-owner/unlinked rejection pending      |
-| `VIEW-AC-006`        | `Partial`     | Pure orchestrator rejection; persist pending        |
-| `VIEW-AC-007`        | `Not started` | Same-attempt bounded repair pending                 |
-| `VIEW-AC-008`        | `Not started` | Exhaustion/sanitized failure integration pending    |
-| `VIEW-AC-009`        | `Not started` | Duplicate/re-run/delete/input race pending          |
-| `VIEW-AC-010`        | `Not started` | Completed Aggregate Owner A/B API pending           |
-| `VIEW-AC-011`        | `Not started` | Responsive/keyboard three-view UI pending           |
-| `VIEW-AC-012`        | `Not started` | Evidence Drawer content/navigation pending          |
-| `VIEW-AC-013`        | `Not started` | Five-minute read presign + real PDF.js page pending |
-| `VIEW-AC-014`        | `Not started` | Memory token + refresh rotation UI pending          |
-| `VIEW-AC-015`        | `Partial`     | Content-free usage result; runtime logs pending     |
-| `VIEW-AC-016`        | `Partial`     | Escaped untrusted context; UI render pending        |
+| Acceptance Criterion | Status        | Evidence / Gap                                                       |
+| -------------------- | ------------- | -------------------------------------------------------------------- |
+| `VIEW-AC-001`        | `Not started` | Durable `GENERATE_VIEWS` chain pending                               |
+| `VIEW-AC-002`        | `Partial`     | Atomic DB passed; durable provider chain pending                     |
+| `VIEW-AC-003`        | `Partial`     | Missing contract passed; generation pending                          |
+| `VIEW-AC-004`        | `Passed`      | Owner/Finding/Document/Page/Chunk/Excerpt PostgreSQL                 |
+| `VIEW-AC-005`        | `Passed`      | Unknown/cross-owner/unlinked pre-persist rejection                   |
+| `VIEW-AC-006`        | `Passed`      | Orchestrator + repository pre-persist rejection                      |
+| `VIEW-AC-007`        | `Not started` | Same-attempt bounded repair pending                                  |
+| `VIEW-AC-008`        | `Not started` | Exhaustion/sanitized failure integration pending                     |
+| `VIEW-AC-009`        | `Partial`     | Delete/input/prompt/duplicate publish passed; durable re-run pending |
+| `VIEW-AC-010`        | `Not started` | Completed Aggregate Owner A/B API pending                            |
+| `VIEW-AC-011`        | `Not started` | Responsive/keyboard three-view UI pending                            |
+| `VIEW-AC-012`        | `Not started` | Evidence Drawer content/navigation pending                           |
+| `VIEW-AC-013`        | `Not started` | Five-minute read presign + real PDF.js page pending                  |
+| `VIEW-AC-014`        | `Not started` | Memory token + refresh rotation UI pending                           |
+| `VIEW-AC-015`        | `Partial`     | Content-free usage result; runtime logs pending                      |
+| `VIEW-AC-016`        | `Partial`     | Escaped untrusted context; UI render pending                         |
 
 ## Quality Gates
 
@@ -67,7 +73,7 @@
 | `pnpm lint`             | Passed |
 | `pnpm typecheck`        | Passed |
 | `pnpm test`             | Passed |
-| `pnpm test:integration` | TBD    |
+| `pnpm test:integration` | Passed |
 | `pnpm build`            | Passed |
 
 ## Deviations and Residual Risks
@@ -76,7 +82,8 @@
 - Runtime、Live Provider、Golden Dataset、Real PDF.js Navigation Evidence は未着手です。
 - Task 002 Review では新規 Deviation を検出しませんでした。
 - Task 003 Review では新規 Deviation を検出しませんでした。
+- Task 004 Review では新規 Deviation を検出しませんでした。Durable Queue/Repair/Retry/Usage/Manual Re-run は Approved Task 005 の既知 Gap です。
 
 ## Conclusion
 
-Approved `VIEW-TASK-002`〜`003` の Shared Contract、Versioned Prompt、Bounded One-call Orchestrator は実装・検証済みです。Owner-scoped Database Resolution、Atomic Publish、Durable Queue、API、Storage、Web、Live/Golden Evidence は未実装のため Feature は `Implementing` / `Partial` です。
+Approved `VIEW-TASK-002`〜`004` の Shared Contract、Versioned Prompt、Bounded One-call Orchestrator、Owner-scoped Citation Resolution、Atomic Publish は実装・検証済みです。Durable Queue、API、Storage、Web、Live/Golden Evidence は未実装のため Feature は `Implementing` / `Partial` です。
