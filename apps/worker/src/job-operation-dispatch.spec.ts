@@ -14,6 +14,7 @@ describe('manual re-run dispatch (EXTRACT-Q-008)', () => {
       'calculate-analysis-financial-metrics',
     ],
     [JobStep.EXTRACT, 'extract-analysis'],
+    [JobStep.GENERATE_VIEWS, 'generate-analysis-views'],
   ])(
     'routes %s to the analysis queue with the stable job name',
     (step, name) => {

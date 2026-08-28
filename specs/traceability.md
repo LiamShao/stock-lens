@@ -153,32 +153,32 @@ Status は Requirement の実装・検証状況を表します。`Partial` は C
 
 | Requirement    | Implementation                     | Verification                          | Status        |
 | -------------- | ---------------------------------- | ------------------------------------- | ------------- |
-| `VIEW-FR-001`  | Approved `VIEW-TASK-005`           | Durable Queue Integration pending     | `Not started` |
+| `VIEW-FR-001`  | Durable fixed-identity Execution   | PostgreSQL/Redis/BullMQ recovery      | `Passed`      |
 | `VIEW-FR-002`  | Strict Owner-scoped Source DTO     | Unit + active lineage PostgreSQL      | `Passed`      |
-| `VIEW-FR-003`  | Required Just Tell Me Schema       | Fixed-section Strict Contract Unit    | `Partial`     |
-| `VIEW-FR-004`  | Required Analyst View Schema       | Fixed-section Strict Contract Unit    | `Partial`     |
-| `VIEW-FR-005`  | Required Buffett-Munger Schema     | Fixed-section Strict Contract Unit    | `Partial`     |
+| `VIEW-FR-003`  | Required Just Tell Me Generation   | Contract + deterministic runtime      | `Passed`      |
+| `VIEW-FR-004`  | Required Analyst View Generation   | Contract + deterministic runtime      | `Passed`      |
+| `VIEW-FR-005`  | Required Buffett-Munger Generation | Contract + deterministic runtime      | `Passed`      |
 | `VIEW-FR-006`  | Strict Three-view Root/Sections    | Unknown/order/Japanese/bounds Unit    | `Passed`      |
 | `VIEW-FR-007`  | Direct Owner/Finding Evidence ID   | Unit + lineage PostgreSQL             | `Passed`      |
 | `VIEW-FR-008`  | Missing Rule + Versioned Prompt    | Schema/prompt Unit; runtime pending   | `Partial`     |
-| `VIEW-FR-009`  | Atomic Three-JSONB Publish         | PostgreSQL passed; queue pending      | `Partial`     |
-| `VIEW-FR-010`  | Approved `VIEW-TASK-005`           | Repair/Retry Integration pending      | `Not started` |
+| `VIEW-FR-009`  | Durable Atomic Three-JSONB Publish | Queue + transaction integration       | `Passed`      |
+| `VIEW-FR-010`  | Bounded Repair/Retry/Failure       | Real BullMQ exhaustion + Attempt 2    | `Passed`      |
 | `VIEW-FR-011`  | Atomic Completion Status/Time      | PostgreSQL replacement/duplicate      | `Passed`      |
 | `VIEW-FR-012`  | Approved `VIEW-TASK-006`           | Aggregate API Integration pending     | `Not started` |
 | `VIEW-FR-013`  | Approved `VIEW-TASK-009`           | View UI/Accessibility pending         | `Not started` |
 | `VIEW-FR-014`  | Approved `VIEW-TASK-009`           | Evidence Drawer pending               | `Not started` |
 | `VIEW-FR-015`  | Approved `VIEW-TASK-007` / `010`   | Read Presign/PDF.js pending           | `Not started` |
 | `VIEW-FR-016`  | Approved `VIEW-TASK-008`           | Browser Session Tests pending         | `Not started` |
-| `VIEW-FR-017`  | Immutable Prompt + Usage Result    | Asset/content-free Unit; DB pending   | `Partial`     |
+| `VIEW-FR-017`  | Immutable Prompt + Usage Audit     | Per-call content-free PostgreSQL      | `Passed`      |
 | `VIEW-SEC-001` | Owner-scoped Generation Source     | Worker PostgreSQL passed; API pending | `Partial`     |
 | `VIEW-SEC-002` | Escaped Single Untrusted Block     | Injection/system separation Unit      | `Passed`      |
 | `VIEW-SEC-003` | Strict Zod/Plain-text Contract     | Schema Unit; UI render pending        | `Partial`     |
 | `VIEW-SEC-004` | Shared Advice Compliance Scanner   | Six category View Unit                | `Passed`      |
 | `VIEW-SEC-005` | View Framework Validator           | Impersonation/endorsement Unit        | `Passed`      |
-| `VIEW-SEC-006` | Content-free Provider Usage        | Result Unit; runtime logs pending     | `Partial`     |
+| `VIEW-SEC-006` | Content-free Provider Usage        | Runtime DB allowlist inspection       | `Passed`      |
 | `VIEW-SEC-007` | Approved `VIEW-TASK-007` / `010`   | Expiry/Private PDF Tests pending      | `Not started` |
 | `VIEW-SEC-008` | Approved `VIEW-TASK-008`           | Memory Token/Refresh Tests pending    | `Not started` |
-| `VIEW-SEC-009` | One-call Context/Output Budget     | Pre/post-call ceiling Unit            | `Partial`     |
+| `VIEW-SEC-009` | Call/Context/Output/Retry Budget   | Unit + real BullMQ call ceilings      | `Passed`      |
 | `VIEW-SEC-010` | Parent/Input/Prompt Commit Recheck | PostgreSQL race matrix                | `Passed`      |
 
 ## Job Re-run

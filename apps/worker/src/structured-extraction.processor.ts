@@ -6,6 +6,7 @@ import { UnrecoverableError } from 'bullmq';
 import {
   ANALYSIS_CALCULATE_METRICS_JOB_NAME,
   ANALYSIS_EXTRACT_JOB_NAME,
+  ANALYSIS_GENERATE_VIEWS_JOB_NAME,
   ANALYSIS_JOB_BACKOFF_DELAY_MS,
   ANALYSIS_JOB_MAX_ATTEMPTS,
   DEFAULT_STRUCTURED_EXTRACTION_BUDGET,
@@ -176,11 +177,12 @@ export class StructuredExtractionProcessor {
             result.output,
             claim.evidenceSources,
           );
-          await this.publishRepository.publish({
+          const viewExecutionId = await this.publishRepository.publish({
             analysisId: claim.analysisId,
             completion: {
               attempt: effectiveAttempt.attempt,
               jobExecutionId: effectiveAttempt.jobExecutionId,
+              viewRuntimeSha256: this.runtimeSha256,
             },
             expectedPrompt: {
               contentSha256: claim.prompt.contentSha256,
@@ -191,6 +193,17 @@ export class StructuredExtractionProcessor {
             ownerId: claim.ownerId,
             validated,
           });
+          if (viewExecutionId !== null) {
+            try {
+              await this.queue.add(
+                ANALYSIS_GENERATE_VIEWS_JOB_NAME,
+                { jobExecutionId: viewExecutionId },
+                analysisJobOptions(viewExecutionId),
+              );
+            } catch {
+              // Durable QUEUED view generation is recovered by the dispatcher.
+            }
+          }
           return;
         } catch (error: unknown) {
           if (

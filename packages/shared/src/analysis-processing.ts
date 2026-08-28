@@ -6,6 +6,7 @@ export const ANALYSIS_CHUNK_JOB_NAME = 'chunk-analysis';
 export const ANALYSIS_CALCULATE_METRICS_JOB_NAME =
   'calculate-analysis-financial-metrics';
 export const ANALYSIS_EXTRACT_JOB_NAME = 'extract-analysis';
+export const ANALYSIS_GENERATE_VIEWS_JOB_NAME = 'generate-analysis-views';
 export const ANALYSIS_JOB_MAX_ATTEMPTS = 3;
 export const ANALYSIS_JOB_BACKOFF_DELAY_MS = 1_000;
 
@@ -91,6 +92,58 @@ export function createValidationIdempotencyKey(
   extractionExecutionId: string,
 ): string {
   return `validate:${parseUuid(analysisId)}:${parseUuid(extractionExecutionId)}:evidence-v1`;
+}
+
+export function createAnalysisViewsIdempotencyKey(input: {
+  analysisId: string;
+  inputHash: string;
+  promptContentSha256: string;
+  promptVersionId: string;
+  runtimeSha256: string;
+  schemaVersion: string;
+}): string {
+  return [
+    'views',
+    parseUuid(input.analysisId),
+    parseHash(input.inputHash),
+    parseUuid(input.promptVersionId),
+    parseHash(input.promptContentSha256),
+    parseHash(input.runtimeSha256),
+    z
+      .string()
+      .regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/)
+      .parse(input.schemaVersion),
+    'generation-v1',
+  ].join(':');
+}
+
+export function parseAnalysisViewsIdempotencyKey(value: string): {
+  analysisId: string;
+  inputHash: string;
+  promptContentSha256: string;
+  promptVersionId: string;
+  runtimeSha256: string;
+  schemaVersion: string;
+} {
+  const parts = value.split(':');
+  if (
+    parts.length !== 8 ||
+    parts[0] !== 'views' ||
+    parts[7] !== 'generation-v1'
+  ) {
+    throw new Error('Analysis views idempotency key is invalid.');
+  }
+  return {
+    analysisId: parseUuid(parts[1] ?? ''),
+    inputHash: parseHash(parts[2] ?? ''),
+    promptVersionId: parseUuid(parts[3] ?? ''),
+    promptContentSha256: parseHash(parts[4] ?? ''),
+    runtimeSha256: parseHash(parts[5] ?? ''),
+    schemaVersion: z
+      .string()
+      .regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/)
+      .parse(parts[6] ?? ''),
+  };
 }
 
 function parseUuid(value: string): string {

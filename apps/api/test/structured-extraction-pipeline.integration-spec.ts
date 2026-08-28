@@ -92,6 +92,7 @@ describe('EXTRACT-TASK-009 durable PostgreSQL pipeline', () => {
       completion: {
         attempt: extractClaim.attempt,
         jobExecutionId: extractionExecutionId,
+        viewRuntimeSha256: runtimeSha256,
       },
       expectedPrompt: {
         contentSha256: extractClaim.prompt!.contentSha256,
@@ -120,10 +121,14 @@ describe('EXTRACT-TASK-009 durable PostgreSQL pipeline', () => {
       ['CALCULATE_FINANCIAL_METRICS', 'SUCCEEDED'],
       ['EXTRACT', 'SUCCEEDED'],
       ['VALIDATE', 'SUCCEEDED'],
+      ['GENERATE_VIEWS', 'QUEUED'],
     ]);
-    expect(executions.every(({ attempts }) => attempts.length === 1)).toBe(
-      true,
-    );
+    expect(
+      executions
+        .filter(({ step }) => step !== 'GENERATE_VIEWS')
+        .every(({ attempts }) => attempts.length === 1),
+    ).toBe(true);
+    expect(executions.at(-1)?.attempts).toHaveLength(0);
     await expect(
       prisma.analysis.findUniqueOrThrow({ where: { id: fixture.analysisId } }),
     ).resolves.toMatchObject({ status: 'READY_FOR_VIEW_GENERATION' });
@@ -288,6 +293,17 @@ async function createFixture(prisma: PrismaService) {
       name: 'structured-extraction',
       schemaVersion: 'structured-finding-v1',
       template: promptText,
+      version: 1,
+    },
+  });
+  const viewPromptText = 'Generate three evidence-based Japanese views.';
+  await prisma.promptVersion.create({
+    data: {
+      contentSha256: sha256(viewPromptText),
+      isActive: true,
+      name: 'analysis-views',
+      schemaVersion: 'analysis-views-v1',
+      template: viewPromptText,
       version: 1,
     },
   });

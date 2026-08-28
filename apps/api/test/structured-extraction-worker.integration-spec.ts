@@ -93,10 +93,14 @@ describe('EXTRACT-TASK-010 full worker integration', () => {
         ['CALCULATE_FINANCIAL_METRICS', 'SUCCEEDED'],
         ['EXTRACT', 'SUCCEEDED'],
         ['VALIDATE', 'SUCCEEDED'],
+        ['GENERATE_VIEWS', 'QUEUED'],
       ]);
-      expect(executions.every(({ attempts }) => attempts.length === 1)).toBe(
-        true,
-      );
+      expect(
+        executions
+          .filter(({ step }) => step !== 'GENERATE_VIEWS')
+          .every(({ attempts }) => attempts.length === 1),
+      ).toBe(true);
+      expect(executions.at(-1)?.attempts).toHaveLength(0);
       await expect(
         prisma.analysisFinding.count({
           where: { analysisId: fixture.analysisId },
@@ -423,6 +427,22 @@ async function createFixture(prisma: PrismaService) {
         isActive: true,
         name: 'structured-extraction',
         schemaVersion: 'structured-finding-v1',
+        template,
+        version: 1,
+      },
+    });
+  }
+  const viewPrompt = await prisma.promptVersion.findFirst({
+    where: { isActive: true, name: 'analysis-views' },
+  });
+  if (viewPrompt === null) {
+    const template = 'Generate three evidence-based Japanese views.';
+    await prisma.promptVersion.create({
+      data: {
+        contentSha256: sha256(template),
+        isActive: true,
+        name: 'analysis-views',
+        schemaVersion: 'analysis-views-v1',
         template,
         version: 1,
       },

@@ -1,5 +1,15 @@
 # StockLens AI 開発進捗
 
+## 2026-08-28
+
+### Phase 5 Durable Analysis View Generation
+
+- Approved `VIEW-TASK-005` として、Phase 4 Atomic Publish から Exact Source Hash、Active Prompt/Schema、Provider/Model Runtime Hash を固定した一意の Durable `GENERATE_VIEWS` Execution を同一 Transaction で作成する Handoff を実装しました。
+- View Worker は Owner-scoped Source を Database から再解決し、Initial 1 + Repair 最大 2 Calls、BullMQ 最大 3 Attempts、Content-free Usage Audit、Sanitized `FAILED_VALIDATION` / `FAILED_EXTRACTION` を実装しました。
+- Pending Dispatcher と Guarded Operator CLI は `GENERATE_VIEWS` を扱い、Redis Dispatch Failure、Process Restart、Manual Re-run を同一 Execution/Idempotency Key と Audit へ収束させます。
+- Real PostgreSQL/Redis/BullMQ で Pending Recovery → Citation Repair → Atomic Completion、Transient Attempt 2 Success、Validation Exhaustion → Manual Re-run Attempt 2 Success、No Duplicate Execution を検証しました。
+- Full Gate は Format、Spec Check 9 Features / 146 Requirements、Prisma Validate/Generate、7 Lint Tasks、10 Typecheck Tasks、248 Unit/Component Tests、7 Build Tasks、Integration 12 Suites / 73 Tests が成功しました。次は Approved `VIEW-TASK-006` の Completed-only Aggregate Read API、Shared Projection、OpenAPI、Owner A/B Integration です。
+
 ## 2026-08-24
 
 ### Phase 5 Analysis Views Draft

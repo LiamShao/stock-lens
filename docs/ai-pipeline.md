@@ -12,9 +12,11 @@ READY_FOR_EMBEDDING
   → EXTRACT
   → VALIDATE
   → READY_FOR_VIEW_GENERATION
+  → GENERATE_VIEWS
+  → COMPLETED
 ```
 
-`READY_FOR_VIEW_GENERATION` は Finding/Evidence 検証済み、Phase 5 View 未生成を表します。Phase 6 では `READY_FOR_EMBEDDING → EMBEDDING → EXTRACTING` に拡張します。
+`READY_FOR_VIEW_GENERATION` は Finding/Evidence 検証済み、Phase 5 View 未生成を表します。三 View の Atomic Publish 後だけ `COMPLETED` へ進みます。Phase 6 では `READY_FOR_EMBEDDING → EMBEDDING → EXTRACTING` に拡張します。
 
 ## 2. Durable Execution
 
@@ -22,7 +24,7 @@ READY_FOR_EMBEDDING
 - Worker は Database から Owner、Analysis、Active Document/Page/Chunk、Prompt Version、Input Hash を再解決します。
 - `JobExecution` は Step、Status、Attempt、開始/終了時刻、Stable/Sanitized Failure を保持します。
 - Idempotency Key は Analysis、Step、Input/Prompt/Runtime Version から作り、Duplicate Delivery と Manual Re-run を同じ結果へ収束させます。
-- `CALCULATE_FINANCIAL_METRICS` と `EXTRACT` の失敗は Guard 付き Operator CLI で再実行できます。内部 Commit Step の `VALIDATE` は手動実行できません。
+- `CALCULATE_FINANCIAL_METRICS`、`EXTRACT`、`GENERATE_VIEWS` の失敗は Guard 付き Operator CLI で再実行できます。内部 Commit Step の `VALIDATE` は手動実行できません。
 
 ## 3. Deterministic Financial Metrics
 
@@ -60,17 +62,19 @@ Validation 成功時だけ、Financial Metric Snapshot、Finding、Evidence、Fi
 
 `AiUsageLog` は Provider、Model、Operation、Prompt Version、Token、Latency、Estimated Cost、Provider Request ID の allowlist だけを保存します。Prompt、PDF/Chunk Text、Raw Request/Response/Error、Credential は保存・Log 出力しません。
 
-## 7. Analysis Views Publish Foundation
+## 7. Analysis Views Durable Generation
 
 Phase 5 は Finding、Finding-linked Evidence、Deterministic Financial Metrics を Strict Owner-scoped Source として再解決し、Just Tell Me、Analyst View、Buffett-Munger Lens の三 View を一回の bounded Structured Generation Candidate として扱います。Evidence は View JSONB に複製せず、Direct Evidence ID だけを保存します。
 
 Publish 前に Active Parent、Exact Source Input Hash、Active Prompt ID/SHA-256/Schema Version、FindingEvidence と Original Document/Page/Chunk/Excerpt を Serializable Transaction 内で再確認します。Schema、Citation、Compliance がすべて成功した場合だけ、三 View JSONB、`COMPLETED`、`completedAt` を原子的に保存します。Unknown、Unlinked、Cross-owner Citation と Input/Prompt/Delete Race は Partial Output を残さず拒否します。
 
+Phase 4 Publish Transaction は Exact View Source Hash、Prompt/Schema、Provider/Model Runtime Hash を固定した一意の `GENERATE_VIEWS` Execution を作成します。Redis 投入失敗は Durable `QUEUED` Row を Pending Dispatcher が回復します。Schema/Citation/Compliance Failure は同じ Attempt 内で最大 2 Repair、合計 3 Calls、Transient Provider Failure は BullMQ 最大 3 Attempts です。Validation Exhaustion と Provider Failure は Sanitized Code/Message だけを保存し、同一 Execution の Manual Re-run を許可します。
+
 ## 8. 未完了範囲
 
 - OpenAI opt-in Live Harness は実装済みですが、Live Passed Artifact は未取得です。
 - 5 Company / 15 Public IR PDF の Golden Dataset Evaluation は未実装です。
-- Phase 5 View Contract、One-call Orchestrator、Owner-scoped Citation/Atomic Publish Foundation は実装済みです。Durable `GENERATE_VIEWS` Queue、Repair/Retry/Usage Persist、Read API、Evidence UI は未実装です。
+- Phase 5 View Contract、One-call Orchestrator、Owner-scoped Citation/Atomic Publish、Durable `GENERATE_VIEWS` Queue、Repair/Retry/Usage Persist は実装済みです。Read API、Evidence UI は未実装です。
 - Production Secrets Manager/IAM Evidence は Phase 7 Deployment Scope です。
 
 Feature-level Source of Truth は `specs/features/structured-extraction/`、検証結果は `verification.md` と `specs/traceability.md` を参照してください。

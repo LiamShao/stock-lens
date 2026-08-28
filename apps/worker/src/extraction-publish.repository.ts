@@ -8,6 +8,7 @@ import {
   type PrismaClient,
 } from '@prisma/client';
 import {
+  createAnalysisViewsIdempotencyKey,
   createValidationIdempotencyKey,
   financialMetricSnapshotSchema,
   type FinancialMetricSnapshot,
@@ -17,6 +18,12 @@ import type {
   EvidenceSourceChunk,
   ValidatedExtractionSet,
 } from './evidence-validator';
+import {
+  ANALYSIS_VIEWS_PROMPT_NAME,
+  ANALYSIS_VIEWS_PROMPT_SCHEMA_VERSION,
+  createAnalysisViewsInputHash,
+  resolveAnalysisViewsSource,
+} from './analysis-views-publish.repository';
 
 export interface ActiveEvidenceSource extends EvidenceSourceChunk {
   readonly contentSha256: string;
@@ -38,13 +45,16 @@ export interface ExtractionPublishInput {
   readonly completion?: {
     readonly attempt: number;
     readonly jobExecutionId: string;
+    readonly viewRuntimeSha256: string;
   };
 }
 
 export type ExtractionPublishConflictCode =
   | 'EXTRACTION_TARGET_CHANGED'
   | 'EXTRACTION_INPUT_CHANGED'
-  | 'EXTRACTION_PROMPT_CHANGED';
+  | 'EXTRACTION_PROMPT_CHANGED'
+  | 'EXTRACTION_VIEW_SOURCE_UNAVAILABLE'
+  | 'EXTRACTION_VIEW_PROMPT_UNAVAILABLE';
 
 export class ExtractionPublishConflictError extends Error {
   readonly retryable = false;
@@ -106,11 +116,11 @@ export class ExtractionPublishRepository {
   async publish(
     input: ExtractionPublishInput,
     now = new Date(),
-  ): Promise<void> {
+  ): Promise<string | null> {
     const financialMetrics = financialMetricSnapshotSchema.parse(
       input.financialMetrics,
     );
-    await this.prisma.$transaction(
+    return this.prisma.$transaction(
       async (tx) => {
         const target = await tx.analysis.findFirst({
           select: { id: true },
@@ -345,7 +355,59 @@ export class ExtractionPublishRepository {
               },
             },
           });
+
+          const viewPrompt = await tx.promptVersion.findFirst({
+            orderBy: { version: 'desc' },
+            select: {
+              contentSha256: true,
+              id: true,
+              schemaVersion: true,
+            },
+            where: {
+              isActive: true,
+              name: ANALYSIS_VIEWS_PROMPT_NAME,
+              schemaVersion: ANALYSIS_VIEWS_PROMPT_SCHEMA_VERSION,
+            },
+          });
+          if (viewPrompt === null) {
+            throw new ExtractionPublishConflictError(
+              'EXTRACTION_VIEW_PROMPT_UNAVAILABLE',
+              'Analysis views prompt is unavailable.',
+            );
+          }
+          const viewSource = await resolveAnalysisViewsSource(
+            tx,
+            input.ownerId,
+            input.analysisId,
+          );
+          if (viewSource === null) {
+            throw new ExtractionPublishConflictError(
+              'EXTRACTION_VIEW_SOURCE_UNAVAILABLE',
+              'Analysis views source is unavailable.',
+            );
+          }
+          const idempotencyKey = createAnalysisViewsIdempotencyKey({
+            analysisId: input.analysisId,
+            inputHash: createAnalysisViewsInputHash(viewSource),
+            promptContentSha256: viewPrompt.contentSha256,
+            promptVersionId: viewPrompt.id,
+            runtimeSha256: input.completion.viewRuntimeSha256,
+            schemaVersion: viewPrompt.schemaVersion,
+          });
+          const viewExecution = await tx.jobExecution.upsert({
+            create: {
+              analysisId: input.analysisId,
+              idempotencyKey,
+              ownerId: input.ownerId,
+              status: JobStatus.QUEUED,
+              step: JobStep.GENERATE_VIEWS,
+            },
+            update: {},
+            where: { idempotencyKey },
+          });
+          return viewExecution.id;
         }
+        return null;
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );

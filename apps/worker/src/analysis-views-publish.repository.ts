@@ -1,6 +1,12 @@
 import { createHash } from 'node:crypto';
 
-import { AnalysisStatus, Prisma, type PrismaClient } from '@prisma/client';
+import {
+  AnalysisStatus,
+  JobStatus,
+  JobStep,
+  Prisma,
+  type PrismaClient,
+} from '@prisma/client';
 import {
   analysisViewsGenerationOutputSchema,
   financialMetricSnapshotSchema,
@@ -14,8 +20,8 @@ import {
 } from './ai/analysis-views-orchestrator';
 import { validateAnalysisViewsCitations } from './analysis-views-citation-validator';
 
-const ANALYSIS_VIEWS_PROMPT_NAME = 'analysis-views';
-const ANALYSIS_VIEWS_PROMPT_SCHEMA_VERSION = 'analysis-views-v1';
+export const ANALYSIS_VIEWS_PROMPT_NAME = 'analysis-views';
+export const ANALYSIS_VIEWS_PROMPT_SCHEMA_VERSION = 'analysis-views-v1';
 
 export interface AnalysisViewsSourceSnapshot {
   readonly inputHash: string;
@@ -31,6 +37,10 @@ export interface AnalysisViewsPublishInput {
   };
   readonly output: AnalysisViewsGenerationOutput;
   readonly ownerId: string;
+  readonly completion?: {
+    readonly attempt: number;
+    readonly jobExecutionId: string;
+  };
 }
 
 export type AnalysisViewsPublishErrorCode =
@@ -59,7 +69,11 @@ export class AnalysisViewsPublishRepository {
     ownerId: string,
     analysisId: string,
   ): Promise<AnalysisViewsSourceSnapshot> {
-    const source = await resolveSource(this.prisma, ownerId, analysisId);
+    const source = await resolveAnalysisViewsSource(
+      this.prisma,
+      ownerId,
+      analysisId,
+    );
     if (source === null) {
       throw new AnalysisViewsPublishError(
         'VIEW_SOURCE_UNAVAILABLE',
@@ -99,6 +113,36 @@ export class AnalysisViewsPublishRepository {
           );
         }
 
+        if (input.completion !== undefined) {
+          const [execution, attempt] = await Promise.all([
+            tx.jobExecution.findFirst({
+              select: { id: true },
+              where: {
+                analysisId: input.analysisId,
+                id: input.completion.jobExecutionId,
+                ownerId: input.ownerId,
+                status: JobStatus.RUNNING,
+                step: JobStep.GENERATE_VIEWS,
+              },
+            }),
+            tx.jobAttempt.findUnique({
+              select: { status: true },
+              where: {
+                jobExecutionId_attempt: {
+                  attempt: input.completion.attempt,
+                  jobExecutionId: input.completion.jobExecutionId,
+                },
+              },
+            }),
+          ]);
+          if (execution === null || attempt?.status !== JobStatus.RUNNING) {
+            throw new AnalysisViewsPublishError(
+              'VIEW_TARGET_CHANGED',
+              'Analysis view publish execution changed.',
+            );
+          }
+        }
+
         const prompt = await tx.promptVersion.findFirst({
           select: { id: true },
           where: {
@@ -116,7 +160,11 @@ export class AnalysisViewsPublishRepository {
           );
         }
 
-        const source = await resolveSource(tx, input.ownerId, input.analysisId);
+        const source = await resolveAnalysisViewsSource(
+          tx,
+          input.ownerId,
+          input.analysisId,
+        );
         if (
           source === null ||
           createAnalysisViewsInputHash(source) !== input.expectedInputHash
@@ -152,6 +200,27 @@ export class AnalysisViewsPublishRepository {
             'Analysis view publish target changed.',
           );
         }
+        if (input.completion !== undefined) {
+          await tx.jobAttempt.update({
+            data: { finishedAt: now, status: JobStatus.SUCCEEDED },
+            where: {
+              jobExecutionId_attempt: {
+                attempt: input.completion.attempt,
+                jobExecutionId: input.completion.jobExecutionId,
+              },
+            },
+          });
+          await tx.jobExecution.update({
+            data: {
+              errorCode: null,
+              errorDetails: Prisma.DbNull,
+              errorMessage: null,
+              finishedAt: now,
+              status: JobStatus.SUCCEEDED,
+            },
+            where: { id: input.completion.jobExecutionId },
+          });
+        }
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
@@ -166,10 +235,13 @@ export function createAnalysisViewsInputHash(
     .digest('hex');
 }
 
-async function resolveSource(
+export async function resolveAnalysisViewsSource(
   db: PrismaClient | Prisma.TransactionClient,
   ownerId: string,
   analysisId: string,
+  allowedStatuses: readonly AnalysisStatus[] = [
+    AnalysisStatus.READY_FOR_VIEW_GENERATION,
+  ],
 ): Promise<AnalysisViewsSource | null> {
   const analysis = await db.analysis.findFirst({
     select: {
@@ -182,7 +254,7 @@ async function resolveSource(
       deletedAt: null,
       id: analysisId,
       ownerId,
-      status: AnalysisStatus.READY_FOR_VIEW_GENERATION,
+      status: { in: [...allowedStatuses] },
     },
   });
   if (analysis === null) return null;

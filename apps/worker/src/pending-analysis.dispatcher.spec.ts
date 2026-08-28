@@ -14,6 +14,10 @@ describe('PendingAnalysisDispatcher', () => {
         step: 'CALCULATE_FINANCIAL_METRICS',
       },
       { id: '44444444-4444-4444-8444-444444444444', step: 'EXTRACT' },
+      {
+        id: '66666666-6666-4666-8666-666666666666',
+        step: 'GENERATE_VIEWS',
+      },
     ];
     const prisma = {
       jobExecution: { findMany: jest.fn().mockResolvedValue(executions) },
@@ -30,13 +34,19 @@ describe('PendingAnalysisDispatcher', () => {
       queue as unknown as Pick<Queue<AnalysisJobData>, 'add' | 'getJob'>,
     );
 
-    await expect(dispatcher.dispatch()).resolves.toBe(4);
+    await expect(dispatcher.dispatch()).resolves.toBe(5);
     expect(prisma.jobExecution.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
           status: 'QUEUED',
           step: {
-            in: ['PARSE', 'CHUNK', 'CALCULATE_FINANCIAL_METRICS', 'EXTRACT'],
+            in: [
+              'PARSE',
+              'CHUNK',
+              'CALCULATE_FINANCIAL_METRICS',
+              'EXTRACT',
+              'GENERATE_VIEWS',
+            ],
           },
         },
       }),
@@ -46,6 +56,7 @@ describe('PendingAnalysisDispatcher', () => {
       'chunk-analysis',
       'calculate-analysis-financial-metrics',
       'extract-analysis',
+      'generate-analysis-views',
     ]);
     expect(
       add.mock.calls.every(

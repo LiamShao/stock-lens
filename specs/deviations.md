@@ -91,6 +91,8 @@ User は同日 `VIEW-Q-001`〜`VIEW-Q-007` Option `A` を承認しました。Ph
 
 2026-08-27 の `VIEW-TASK-004` Owner-scoped Citation/Atomic Publish Review では新規 Deviation は検出されませんでした。Active FindingEvidence と Original Document/Page/Chunk/Excerpt の再解決、Unknown/Unlinked/Cross-owner Citation Reject、三 JSONB + Completion Atomic Publish、Input/Prompt/Delete Race は Unit/Real PostgreSQL Evidence を持ちます。Durable Queue、Repair/Retry、Usage Persist、Manual Re-run は Approved `VIEW-TASK-005` の既知 Gap として維持します。
 
+2026-08-28 の `VIEW-TASK-005` Durable Generation Review では新規 Deviation は検出されませんでした。Fixed Source/Prompt/Schema/Runtime Identity、Pending Recovery、Bounded Repair、Transient Retry、Content-free Usage、Sanitized Exhaustion、同一 Execution Manual Re-run、Atomic Completion は Unit と Real PostgreSQL/Redis/BullMQ Evidence を持ちます。Read API、Storage、Web は Approved `VIEW-TASK-006` 以降の既知 Scope として維持します。
+
 ## Resolution Evidence
 
 | Deviation                              | Resolution evidence                                                                                               |

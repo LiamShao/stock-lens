@@ -6,6 +6,7 @@ const ALLOWED_STEPS = [
   JobStep.CHUNK,
   JobStep.CALCULATE_FINANCIAL_METRICS,
   JobStep.EXTRACT,
+  JobStep.GENERATE_VIEWS,
 ] as const;
 const MAX_MANUAL_RERUNS = 5;
 

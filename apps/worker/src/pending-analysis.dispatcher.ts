@@ -4,6 +4,7 @@ import {
   ANALYSIS_CALCULATE_METRICS_JOB_NAME,
   ANALYSIS_CHUNK_JOB_NAME,
   ANALYSIS_EXTRACT_JOB_NAME,
+  ANALYSIS_GENERATE_VIEWS_JOB_NAME,
   ANALYSIS_JOB_BACKOFF_DELAY_MS,
   ANALYSIS_JOB_MAX_ATTEMPTS,
   ANALYSIS_PARSE_JOB_NAME,
@@ -29,6 +30,7 @@ export class PendingAnalysisDispatcher {
             JobStep.CHUNK,
             JobStep.CALCULATE_FINANCIAL_METRICS,
             JobStep.EXTRACT,
+            JobStep.GENERATE_VIEWS,
           ],
         },
       },
@@ -67,5 +69,6 @@ function jobNameForStep(step: JobStep): string {
   if (step === JobStep.CALCULATE_FINANCIAL_METRICS)
     return ANALYSIS_CALCULATE_METRICS_JOB_NAME;
   if (step === JobStep.EXTRACT) return ANALYSIS_EXTRACT_JOB_NAME;
+  if (step === JobStep.GENERATE_VIEWS) return ANALYSIS_GENERATE_VIEWS_JOB_NAME;
   throw new Error('Analysis job step is not dispatchable.');
 }

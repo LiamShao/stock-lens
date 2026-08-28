@@ -77,10 +77,12 @@ describe('StructuredExtractionProcessor', () => {
     expect(harness.usageRecorder.record).toHaveBeenCalledTimes(2);
     expect(harness.publishRepository.publish).toHaveBeenCalledTimes(1);
     const published = harness.publishRepository.publish.mock.calls[0]?.[0];
-    expect(published?.completion).toEqual({
-      attempt: 1,
-      jobExecutionId: executionId,
-    });
+    expect(published?.completion).toEqual(
+      expect.objectContaining({
+        attempt: 1,
+        jobExecutionId: executionId,
+      }),
+    );
     expect(published?.validated.findings[0]?.status).toBe('SUPPORTED');
     expect(harness.repository.fail).not.toHaveBeenCalled();
   });

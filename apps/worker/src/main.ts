@@ -9,6 +9,7 @@ import {
   ANALYSIS_PROCESSING_QUEUE_NAME,
   ANALYSIS_CALCULATE_METRICS_JOB_NAME,
   ANALYSIS_EXTRACT_JOB_NAME,
+  ANALYSIS_GENERATE_VIEWS_JOB_NAME,
   type AnalysisJobData,
   type ObjectCleanupJobData,
 } from '@stocklens/shared';
@@ -31,6 +32,9 @@ import { AiUsageRepository } from './ai-usage.repository';
 import { ExtractionPublishRepository } from './extraction-publish.repository';
 import { StructuredExtractionJobRepository } from './structured-extraction.repository';
 import { StructuredExtractionProcessor } from './structured-extraction.processor';
+import { AnalysisViewsGenerationProcessor } from './analysis-views-generation.processor';
+import { AnalysisViewsGenerationRepository } from './analysis-views-generation.repository';
+import { AnalysisViewsPublishRepository } from './analysis-views-publish.repository';
 
 loadLocalEnvironment();
 const config = getWorkerConfig();
@@ -70,6 +74,13 @@ const structuredExtractionProcessor = new StructuredExtractionProcessor(
   new OpenAiLlmProvider({ config: openAiConfig }),
   { model: openAiConfig.model, provider: 'openai' },
   analysisQueue,
+);
+const analysisViewsProcessor = new AnalysisViewsGenerationProcessor(
+  new AnalysisViewsGenerationRepository(prisma),
+  new AnalysisViewsPublishRepository(prisma),
+  new AiUsageRepository(prisma),
+  new OpenAiLlmProvider({ config: openAiConfig }),
+  { model: openAiConfig.model, provider: 'openai' },
 );
 const pendingAnalysisDispatcher = new PendingAnalysisDispatcher(
   prisma,
@@ -127,11 +138,14 @@ pendingCleanupDispatchInterval.unref();
 const worker = new Worker<AnalysisJobData>(
   ANALYSIS_PROCESSING_QUEUE_NAME,
   (job) =>
-    [ANALYSIS_CALCULATE_METRICS_JOB_NAME, ANALYSIS_EXTRACT_JOB_NAME].includes(
-      job.name,
-    )
-      ? structuredExtractionProcessor.process(job)
-      : analysisProcessor.process(job),
+    job.name === ANALYSIS_GENERATE_VIEWS_JOB_NAME
+      ? analysisViewsProcessor.process(job)
+      : [
+            ANALYSIS_CALCULATE_METRICS_JOB_NAME,
+            ANALYSIS_EXTRACT_JOB_NAME,
+          ].includes(job.name)
+        ? structuredExtractionProcessor.process(job)
+        : analysisProcessor.process(job),
   {
     concurrency: config.concurrency,
     connection,
