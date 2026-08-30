@@ -9,6 +9,7 @@ import { AuthModule } from '../auth/auth.module';
 import { DatabaseModule } from '../database/database.module';
 import { AnalysesController } from './analyses.controller';
 import { AnalysesService } from './analyses.service';
+import { AnalysisViewsService } from './analysis-views.service';
 import { AnalysisProcessingQueuePublisher } from './analysis-processing.queue';
 
 @Module({
@@ -16,6 +17,7 @@ import { AnalysisProcessingQueuePublisher } from './analysis-processing.queue';
   imports: [AuthModule, DatabaseModule],
   providers: [
     AnalysesService,
+    AnalysisViewsService,
     {
       provide: AnalysisProcessingQueuePublisher,
       useFactory: (): AnalysisProcessingQueuePublisher => {

@@ -46,6 +46,7 @@
 - User-owned Resource は必ず Authenticated User ID を `ownerId` / `userId` 条件として Repository Query に含めます。
 - Controller は Prisma を直接呼び出しません。
 - Analysis HTTP API は Bearer User から Repository まで `ownerId` を伝播し、Cross-user Read、Update、Delete を同じ `404 ANALYSIS_NOT_FOUND` とする Testcontainers HTTP Test を持ちます。
+- Analysis Views Read API も Bearer User から Evidence Query まで `ownerId` を伝播し、Cross-user を同じ `404` にします。Completed JSONB と Direct Citation は Read 時にも Strict Schema、Compliance、Active FindingEvidence/Document/Page Lineage を再検証し、破損時は Partial Content を返しません。
 - Document Start/Re-presign/Finalize/List/Delete は Bearer User A/B の End-to-end Authorization Test を持ち、Cross-user Request は Stable Not Found かつ Database/Storage/Cleanup Side Effect なしです。
 - `Analysis(ownerId, id)` と `Document(ownerId, analysisId)` の Composite FK で Parent/Child Owner Equality を Database でも強制します。
 - `AnalysisFinding`、`Evidence`、`FindingEvidence` は Owner/Analysis Composite FK を持ち、Evidence は Document/Page/Chunk の同一 Lineage まで Database Constraint で強制します。

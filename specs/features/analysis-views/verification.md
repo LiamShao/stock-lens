@@ -5,8 +5,8 @@
 | Field               | Value                                      |
 | ------------------- | ------------------------------------------ |
 | Related Spec        | `specs/features/analysis-views/spec.md`    |
-| Verification status | `Partial — durable generation implemented` |
-| Last updated        | `2026-08-28`                               |
+| Verification status | `Partial — aggregate read API implemented` |
+| Last updated        | `2026-08-30`                               |
 
 ## Implemented Evidence
 
@@ -32,7 +32,11 @@
 - Pending Dispatcher は Redis Dispatch Failure または Process Restart 後の Durable `QUEUED` View Execution を回復します。既存 Operator CLI は `GENERATE_VIEWS` の同一 Execution/Idempotency Key、5 回上限、Audit Contract で Manual Re-run できます。
 - Provider Usage は Call ごとに Content-free `AiUsageLog` へ保存し、Prompt、Source、Generated Text、Raw Provider Detail は保存しません。
 - 成功時は三 JSONB、`COMPLETED`、`completedAt`、Execution/Attempt `SUCCEEDED` を同じ Serializable Transaction で保存します。
-- 新規 Runtime Dependency、Database Migration、Public API の変更はありません。
+- Shared `analysisViewsResourceSchema` は Completed Status/Time、三 View、最大 120 件の Unique/Referenced Evidence Projection を Strict/Bounded Contract として固定します。
+- `GET /api/analyses/:analysisId/views` は Active Owner Scope を最初に解決し、Cross-owner/Missing/Deleted を同じ `404 ANALYSIS_NOT_FOUND`、未完成を `409 ANALYSIS_VIEWS_NOT_READY` とします。
+- Read Service は三 JSONB、`completedAt`、Compliance、全 Direct Citation を再検証し、Active Document と FindingEvidence Lineage から Document Name、1-based Page、Original Excerpt、Chunk ID を再投影します。Corrupt/Missing Lineage は Sanitized `500 INTERNAL_SERVER_ERROR` で全体を Fail closed にします。
+- OpenAPI は Bearer Security と `200/400/401/404/409/429/500` Response、View/Section/Block/Evidence DTO の Bound を公開します。
+- Task 006 で新規 Runtime Dependency、Database Migration はありません。Public API は Approved Contract の Aggregate Read Endpoint を追加しました。
 
 ## Automated Evidence
 
@@ -51,6 +55,11 @@
 - `analysis-views-worker.integration-spec.ts`: Real PostgreSQL/Redis/BullMQ で Pending Recovery → One Repair → Atomic Completion、Rate-limit Attempt 1 Failure → Attempt 2 Success、Validation Exhaustion → 同一 Execution Manual Re-run Attempt 2 Success、Usage Audit、No Duplicate Execution を 3 Tests で検証しました。
 - Task 005 Integration Gate: 12 Suites / 73 Tests が成功しました。
 - Task 005 Full Gate: Format、Spec Check 9 Features / 146 Requirements、Prisma Validate/Generate、7 Lint Tasks、10 Typecheck Tasks、248 Unit/Component Tests、7 Build Tasks、Integration 12 Suites / 73 Tests が成功しました。
+- `analysis-views.spec.ts`: Completed Aggregate、Exact Unique Citation Projection、Strict Unknown/Missing/Unused Evidence Reject の Read Contract Test を追加しました。
+- `analysis-views.service.spec.ts`: Completed Projection、404 Owner Boundary、409 Not Ready、Corrupt JSONB/Completion、Missing/Page Lineage Fail-closed を 6 Tests で検証しました。
+- `analyses.integration-spec.ts`: Real PostgreSQL + Bearer HTTP で Owner A Completed Aggregate、Owner B 404、Not Ready 409、FindingEvidence/Document/Page/Chunk Projection、Concrete OpenAPI を検証しました。
+- Task 006 Targeted Gate: Shared 9 Suites / 53 Tests、API 18 Suites / 94 Tests、Shared/API Lint/Typecheck、PostgreSQL HTTP 1 Suite / 6 Tests が成功しました。
+- Task 006 Full Gate: Format、Spec Check 9 Features / 146 Requirements、Prisma Validate/Generate、7 Lint Tasks、10 Typecheck Tasks、256 Unit/Component Tests、7 Build Tasks、Integration 12 Suites / 74 Tests が成功しました。
 - Deterministic Provider と PostgreSQL/Redis/BullMQ は接続済みです。Private Object Storage、Browser E2E は後続 Task で接続します。
 - OpenAI Live Call は実行していません。Approved `VIEW-Q-007` に従い Provider Integration は `Partial` です。
 
@@ -67,7 +76,7 @@
 | `VIEW-AC-007`        | `Passed`      | Invalid citation → same Execution one-repair success           |
 | `VIEW-AC-008`        | `Passed`      | Exhaustion + sanitized state + transient Attempt 2             |
 | `VIEW-AC-009`        | `Passed`      | Race/duplicate/manual re-run/no duplicate Execution            |
-| `VIEW-AC-010`        | `Not started` | Completed Aggregate Owner A/B API pending                      |
+| `VIEW-AC-010`        | `Passed`      | Completed Aggregate + Owner A/B real PostgreSQL HTTP           |
 | `VIEW-AC-011`        | `Not started` | Responsive/keyboard three-view UI pending                      |
 | `VIEW-AC-012`        | `Not started` | Evidence Drawer content/navigation pending                     |
 | `VIEW-AC-013`        | `Not started` | Five-minute read presign + real PDF.js page pending            |
@@ -95,7 +104,8 @@
 - Task 003 Review では新規 Deviation を検出しませんでした。
 - Task 004 Review では新規 Deviation を検出しませんでした。Durable Queue/Repair/Retry/Usage/Manual Re-run は Approved Task 005 の既知 Gap です。
 - Task 005 Review では新規 Deviation を検出しませんでした。Durable Queue/Repair/Retry/Usage/Manual Re-run の既知 Gap は実装と Real PostgreSQL/Redis/BullMQ Evidence で解消しました。
+- Task 006 Review では新規 Deviation を検出しませんでした。Private Object Storage、Browser Session/UI/PDF.js は Approved Task 007〜010 の既知 Gap です。
 
 ## Conclusion
 
-Approved `VIEW-TASK-002`〜`005` の Shared Contract、Versioned Prompt、Bounded One-call Orchestrator、Owner-scoped Citation Resolution、Atomic Publish、Durable Queue/Repair/Retry/Recovery/Re-run は実装・検証済みです。API、Storage、Web、Live/Golden Evidence は未実装のため Feature は `Implementing` / `Partial` です。
+Approved `VIEW-TASK-002`〜`006` の Shared Contract、Versioned Prompt、Bounded One-call Orchestrator、Owner-scoped Citation Resolution、Atomic Publish、Durable Queue/Repair/Retry/Recovery/Re-run、Completed-only Aggregate Read API は実装・検証済みです。Storage、Web、Live/Golden Evidence は未実装のため Feature は `Implementing` / `Partial` です。

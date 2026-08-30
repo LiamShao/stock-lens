@@ -7,11 +7,14 @@ import {
 } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import {
+  ANALYSIS_VIEW_SCHEMA_VERSION,
   analysisPageResponseSchema,
   analysisResourceSchema,
+  analysisViewsResourceSchema,
   authResponseSchema,
   processAnalysisResponseSchema,
   type AuthResponse,
+  type AnalysisViewsGenerationOutput,
 } from '@stocklens/shared';
 import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import type { InjectOptions, LightMyRequestResponse } from 'fastify';
@@ -290,6 +293,135 @@ describe('analysis management HTTP integration', () => {
     expect(invalidPath.json()).toMatchObject({ code: 'VALIDATION_ERROR' });
   });
 
+  it('VIEW-AC-010 returns completed aggregate views to Owner A and 404 to Owner B', async () => {
+    const [owner, other] = await Promise.all([
+      createAuthenticatedUser(),
+      createAuthenticatedUser(),
+    ]);
+    const evidenceId = randomUUID();
+    const output = analysisViewsOutput(evidenceId);
+    const analysis = await prisma.analysis.create({
+      data: {
+        analystViewOutput: output.analystView,
+        buffettMungerOutput: output.buffettMunger,
+        completedAt: new Date('2026-08-30T02:00:00.000Z'),
+        justTellMeOutput: output.justTellMe,
+        ownerId: owner.user.id,
+        status: 'COMPLETED',
+        title: 'Completed views',
+      },
+    });
+    const document = await prisma.document.create({
+      data: {
+        analysisId: analysis.id,
+        mimeType: 'application/pdf',
+        originalName: '2026年3月期決算短信.pdf',
+        ownerId: owner.user.id,
+        sha256: 'c'.repeat(64),
+        sizeBytes: 1024,
+        storageBucket: 'integration-private',
+        storageKey: `${owner.user.id}/${analysis.id}/${randomUUID()}.pdf`,
+      },
+    });
+    const page = await prisma.documentPage.create({
+      data: {
+        documentId: document.id,
+        ownerId: owner.user.id,
+        pageNumber: 3,
+        text: '売上高は前年同期比で増加しました。',
+        textSha256: 'd'.repeat(64),
+      },
+    });
+    const chunk = await prisma.documentChunk.create({
+      data: {
+        chunkIndex: 0,
+        content: page.text,
+        contentSha256: 'e'.repeat(64),
+        documentId: document.id,
+        ownerId: owner.user.id,
+        pageId: page.id,
+      },
+    });
+    await prisma.evidence.create({
+      data: {
+        analysisId: analysis.id,
+        chunkId: chunk.id,
+        documentId: document.id,
+        excerpt: page.text,
+        excerptSha256: 'f'.repeat(64),
+        id: evidenceId,
+        ownerId: owner.user.id,
+        pageId: page.id,
+        pageNumber: page.pageNumber,
+      },
+    });
+    const finding = await prisma.analysisFinding.create({
+      data: {
+        analysisId: analysis.id,
+        body: '現在の資料に基づく確認事項です。',
+        category: 'FINANCIAL_HIGHLIGHT',
+        findingKey: 'financial.highlight',
+        importance: 4,
+        ownerId: owner.user.id,
+        status: 'SUPPORTED',
+        title: '売上高の変化',
+      },
+    });
+    await prisma.findingEvidence.create({
+      data: {
+        analysisId: analysis.id,
+        evidenceId,
+        findingId: finding.id,
+        ownerId: owner.user.id,
+      },
+    });
+
+    const completed = await request(owner, {
+      method: 'GET',
+      url: `/api/analyses/${analysis.id}/views`,
+    });
+    expect(completed.statusCode).toBe(200);
+    const resource = analysisViewsResourceSchema.parse(
+      completed.json<unknown>(),
+    );
+    expect(resource).toMatchObject({
+      analysisId: analysis.id,
+      evidences: [
+        {
+          documentName: document.originalName,
+          excerpt: page.text,
+          id: evidenceId,
+          pageNumber: 3,
+        },
+      ],
+      status: 'COMPLETED',
+    });
+    expect(resource.evidences).toHaveLength(1);
+
+    const crossOwner = await request(other, {
+      method: 'GET',
+      url: `/api/analyses/${analysis.id}/views`,
+    });
+    expect(crossOwner.statusCode).toBe(404);
+    expect(crossOwner.json()).toMatchObject({ code: 'ANALYSIS_NOT_FOUND' });
+    expect(crossOwner.json<Record<string, unknown>>()).not.toHaveProperty(
+      'evidences',
+    );
+
+    await prisma.analysis.update({
+      data: { status: 'VALIDATING' },
+      where: { id: analysis.id },
+    });
+    const notReady = await request(owner, {
+      method: 'GET',
+      url: `/api/analyses/${analysis.id}/views`,
+    });
+    expect(notReady.statusCode).toBe(409);
+    expect(notReady.json()).toMatchObject({
+      code: 'ANALYSIS_VIEWS_NOT_READY',
+    });
+  });
+
   it('ANALYSIS-AC-010 publishes concrete OpenAPI operations and bearer security', () => {
     const document = SwaggerModule.createDocument(
       app,
@@ -314,6 +446,13 @@ describe('analysis management HTTP integration', () => {
     const processPath = document.paths['/api/analyses/{analysisId}/process'];
     expect(processPath?.post?.responses['202']).toBeDefined();
     expect(processPath?.post?.responses['404']).toBeDefined();
+    const viewsPath = document.paths['/api/analyses/{analysisId}/views'];
+    expect(viewsPath?.get?.responses['200']).toBeDefined();
+    expect(viewsPath?.get?.responses['400']).toBeDefined();
+    expect(viewsPath?.get?.responses['404']).toBeDefined();
+    expect(viewsPath?.get?.responses['409']).toBeDefined();
+    expect(viewsPath?.get?.responses['500']).toBeDefined();
+    expect(viewsPath?.get?.security).toEqual([{ bearer: [] }]);
   });
 
   async function verifyProcessing(): Promise<void> {
@@ -424,3 +563,55 @@ describe('analysis management HTTP integration', () => {
     });
   }
 });
+
+function analysisViewsOutput(
+  evidenceId: string,
+): AnalysisViewsGenerationOutput {
+  return {
+    analystView: analysisView(evidenceId, [
+      'BUSINESS_OVERVIEW',
+      'FINANCIAL_HIGHLIGHTS',
+      'MANAGEMENT_GUIDANCE',
+      'POSITIVE_FINDINGS',
+      'RISKS',
+      'UNCERTAINTIES',
+      'WATCH_ITEMS',
+      'SOURCES',
+    ]),
+    buffettMunger: analysisView(evidenceId, [
+      'BUSINESS_UNDERSTANDABILITY',
+      'COMPETITIVE_ADVANTAGE',
+      'CASH_GENERATION',
+      'CAPITAL_ALLOCATION',
+      'MANAGEMENT_INCENTIVES',
+      'LONG_TERM_RISKS',
+      'MISSING_INFORMATION',
+    ]),
+    justTellMe: analysisView(evidenceId, [
+      'HOW_THE_COMPANY_MAKES_MONEY',
+      'RECENT_CHANGES',
+      'POSITIVES',
+      'RISKS',
+      'WATCH_ITEMS',
+      'MISSING_INFORMATION',
+    ]),
+  } as AnalysisViewsGenerationOutput;
+}
+
+function analysisView(evidenceId: string, sectionKeys: readonly string[]) {
+  return {
+    schemaVersion: ANALYSIS_VIEW_SCHEMA_VERSION,
+    sections: sectionKeys.map((key, index) => ({
+      blocks: [
+        {
+          evidenceIds: [evidenceId],
+          isMissingInformation: false,
+          key: `block.${index}`,
+          text: '現在の資料に基づく確認事項です。',
+        },
+      ],
+      key,
+      title: `確認項目${index + 1}`,
+    })),
+  };
+}

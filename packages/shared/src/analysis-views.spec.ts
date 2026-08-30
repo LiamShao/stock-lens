@@ -2,6 +2,8 @@ import {
   ANALYSIS_VIEW_SCHEMA_VERSION,
   analysisViewsGenerationBudgetSchema,
   analysisViewsGenerationOutputSchema,
+  analysisViewsResourceSchema,
+  collectAnalysisViewEvidenceIds,
   DEFAULT_ANALYSIS_VIEWS_GENERATION_BUDGET,
   MAX_ANALYSIS_VIEW_BLOCK_TEXT_CHARACTERS,
   MAX_ANALYSIS_VIEW_PROVIDER_CALLS_PER_JOB_ATTEMPT,
@@ -169,6 +171,83 @@ describe('analysis views contract', () => {
       valid: true,
       violationCodes: [],
     });
+  });
+
+  it('VIEW-FR-012 VIEW-SEC-003 validates a completed normalized aggregate with unique evidence', () => {
+    const output = validOutput();
+    const resource = analysisViewsResourceSchema.parse({
+      analysisId: '5b64f0fd-805b-45fc-8671-929411281ceb',
+      completedAt: '2026-08-30T02:00:00.000Z',
+      evidences: [
+        {
+          chunkId: '4aedb1d7-b0aa-42cf-a1eb-8ac5043643f2',
+          documentId: 'fab6a43e-e2bd-4887-b878-886f56dd650a',
+          documentName: '決算短信.pdf',
+          excerpt: '売上高は前年同期比で増加しました。',
+          id: evidenceId,
+          pageNumber: 3,
+        },
+      ],
+      status: 'COMPLETED',
+      views: {
+        analyst: output.analystView,
+        buffettMunger: output.buffettMunger,
+        justTellMe: output.justTellMe,
+      },
+    });
+
+    expect(resource.evidences).toHaveLength(1);
+    expect(collectAnalysisViewEvidenceIds(output)).toEqual([evidenceId]);
+  });
+
+  it('VIEW-FR-012 rejects missing, duplicate, and unknown aggregate evidence projections', () => {
+    const output = validOutput();
+    const evidence = {
+      chunkId: '4aedb1d7-b0aa-42cf-a1eb-8ac5043643f2',
+      documentId: 'fab6a43e-e2bd-4887-b878-886f56dd650a',
+      documentName: '決算短信.pdf',
+      excerpt: '売上高は前年同期比で増加しました。',
+      id: evidenceId,
+      pageNumber: 3,
+    };
+    const base = {
+      analysisId: '5b64f0fd-805b-45fc-8671-929411281ceb',
+      completedAt: '2026-08-30T02:00:00.000Z',
+      status: 'COMPLETED',
+      views: {
+        analyst: output.analystView,
+        buffettMunger: output.buffettMunger,
+        justTellMe: output.justTellMe,
+      },
+    };
+
+    expect(() =>
+      analysisViewsResourceSchema.parse({ ...base, evidences: [] }),
+    ).toThrow();
+    expect(() =>
+      analysisViewsResourceSchema.parse({
+        ...base,
+        evidences: [evidence, evidence],
+      }),
+    ).toThrow();
+    expect(() =>
+      analysisViewsResourceSchema.parse({
+        ...base,
+        evidences: [{ ...evidence, unexpected: true }],
+      }),
+    ).toThrow();
+    expect(() =>
+      analysisViewsResourceSchema.parse({
+        ...base,
+        evidences: [
+          evidence,
+          {
+            ...evidence,
+            id: '34298bc8-51c7-4422-a673-aa2af7bb4c20',
+          },
+        ],
+      }),
+    ).toThrow();
   });
 });
 

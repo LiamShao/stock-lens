@@ -57,8 +57,8 @@ Analysis View Block は Evidence を複製せず Direct Evidence ID を参照し
 
 Phase 5 では Finding Click から Evidence Drawer を開き、Document Name、Page Number、Original Excerpt を表示します。技術的に可能な場合は短命 Presigned Download URL と PDF Viewer の Page Navigation を接続します。
 
-Frontend は Provider Candidate を直接表示せず、Database に Commit 済みの Evidence Projection だけを使用します。Finding Read API、Evidence Drawer、PDF Page Navigation は Phase 5 未実装です。
+Frontend は Provider Candidate を直接表示せず、Database に Commit 済みの Evidence Projection だけを使用します。Completed-only Analysis Views Read API は Block が参照する ID を重複排除し、Active Owner/Analysis/Document/FindingEvidence と Page Lineage を再確認して最大 120 件を Aggregate 返却します。Evidence Drawer と PDF Page Navigation は Phase 5 後続 Task です。
 
 ## 6. Verification
 
-現時点では Exact Chunk/Page Match、Offset/SHA-256、Evidence 0 件 Downgrade、Unknown Chunk、Unsupported Excerpt、Page 不一致、Cross-owner/Cross-document Database Constraint、Atomic Replace/Rollback に加え、View Citation の Unknown/Unlinked/Cross-owner Reject と Atomic Three-view Publish を Unit と PostgreSQL Integration で検証済みです。詳細は `specs/features/structured-extraction/verification.md` と `specs/features/analysis-views/verification.md` を参照してください。
+現時点では Exact Chunk/Page Match、Offset/SHA-256、Evidence 0 件 Downgrade、Unknown Chunk、Unsupported Excerpt、Page 不一致、Cross-owner/Cross-document Database Constraint、Atomic Replace/Rollback に加え、View Citation の Unknown/Unlinked/Cross-owner Reject、Atomic Three-view Publish、Completed Aggregate Owner A/B Read を Unit と PostgreSQL Integration で検証済みです。詳細は `specs/features/structured-extraction/verification.md` と `specs/features/analysis-views/verification.md` を参照してください。

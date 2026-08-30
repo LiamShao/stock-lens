@@ -93,6 +93,8 @@ User は同日 `VIEW-Q-001`〜`VIEW-Q-007` Option `A` を承認しました。Ph
 
 2026-08-28 の `VIEW-TASK-005` Durable Generation Review では新規 Deviation は検出されませんでした。Fixed Source/Prompt/Schema/Runtime Identity、Pending Recovery、Bounded Repair、Transient Retry、Content-free Usage、Sanitized Exhaustion、同一 Execution Manual Re-run、Atomic Completion は Unit と Real PostgreSQL/Redis/BullMQ Evidence を持ちます。Read API、Storage、Web は Approved `VIEW-TASK-006` 以降の既知 Scope として維持します。
 
+2026-08-30 の `VIEW-TASK-006` Aggregate Read API Review では新規 Deviation は検出されませんでした。Completed-only Strict Projection、Owner A/B 404 Boundary、Not-ready 409、Corrupt/Missing Lineage Fail-closed、OpenAPI は Unit と Real PostgreSQL HTTP Evidence を持ちます。Storage、Browser Session/UI、PDF.js は Approved `VIEW-TASK-007`〜`010` の既知 Scope として維持します。
+
 ## Resolution Evidence
 
 | Deviation                              | Resolution evidence                                                                                               |

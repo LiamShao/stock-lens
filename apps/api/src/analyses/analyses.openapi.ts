@@ -68,3 +68,84 @@ export class ProcessAnalysisOpenApi {
   @ApiProperty({ format: 'date-time' })
   declare acceptedAt: string;
 }
+
+export class AnalysisViewBlockOpenApi {
+  @ApiProperty({ maxLength: 80, pattern: '^[a-z0-9][a-z0-9._-]{0,79}$' })
+  declare key: string;
+
+  @ApiProperty({ maxLength: 800, minLength: 1 })
+  declare text: string;
+
+  @ApiProperty({ format: 'uuid', isArray: true, maxItems: 5 })
+  declare evidenceIds: string[];
+
+  @ApiProperty()
+  declare isMissingInformation: boolean;
+}
+
+export class AnalysisViewSectionOpenApi {
+  @ApiProperty()
+  declare key: string;
+
+  @ApiProperty({ maxLength: 80, minLength: 1 })
+  declare title: string;
+
+  @ApiProperty({ maxItems: 3, minItems: 1, type: [AnalysisViewBlockOpenApi] })
+  declare blocks: AnalysisViewBlockOpenApi[];
+}
+
+export class AnalysisViewOpenApi {
+  @ApiProperty({ enum: ['1.0.0'] })
+  declare schemaVersion: '1.0.0';
+
+  @ApiProperty({ type: [AnalysisViewSectionOpenApi] })
+  declare sections: AnalysisViewSectionOpenApi[];
+}
+
+export class AnalysisViewsOpenApi {
+  @ApiProperty({ type: AnalysisViewOpenApi })
+  declare justTellMe: AnalysisViewOpenApi;
+
+  @ApiProperty({ type: AnalysisViewOpenApi })
+  declare analyst: AnalysisViewOpenApi;
+
+  @ApiProperty({ type: AnalysisViewOpenApi })
+  declare buffettMunger: AnalysisViewOpenApi;
+}
+
+export class AnalysisViewEvidenceOpenApi {
+  @ApiProperty({ format: 'uuid' })
+  declare id: string;
+
+  @ApiProperty({ format: 'uuid' })
+  declare documentId: string;
+
+  @ApiProperty({ maxLength: 255 })
+  declare documentName: string;
+
+  @ApiProperty({ minimum: 1 })
+  declare pageNumber: number;
+
+  @ApiProperty({ maxLength: 800, minLength: 1 })
+  declare excerpt: string;
+
+  @ApiProperty({ format: 'uuid' })
+  declare chunkId: string;
+}
+
+export class AnalysisViewsResourceOpenApi {
+  @ApiProperty({ format: 'uuid' })
+  declare analysisId: string;
+
+  @ApiProperty({ enum: ['COMPLETED'] })
+  declare status: 'COMPLETED';
+
+  @ApiProperty({ format: 'date-time' })
+  declare completedAt: string;
+
+  @ApiProperty({ type: AnalysisViewsOpenApi })
+  declare views: AnalysisViewsOpenApi;
+
+  @ApiProperty({ maxItems: 120, type: [AnalysisViewEvidenceOpenApi] })
+  declare evidences: AnalysisViewEvidenceOpenApi[];
+}

@@ -1,9 +1,13 @@
 import { z } from 'zod';
 
 import {
+  MAX_EVIDENCE_CANDIDATES_PER_FINDING,
+  MAX_EVIDENCE_EXCERPT_CHARACTERS,
+  MAX_EXTRACTION_FINDINGS,
   extractionComplianceViolationCodeSchema,
   findInvestmentAdviceComplianceViolations,
 } from './structured-extraction';
+import { pdfOriginalNameSchema } from './document-upload';
 
 export const ANALYSIS_VIEW_SCHEMA_VERSION = '1.0.0';
 export const MAX_ANALYSIS_VIEW_BLOCKS_PER_SECTION = 3;
@@ -13,6 +17,8 @@ export const MAX_ANALYSIS_VIEW_SECTION_TITLE_CHARACTERS = 80;
 export const MAX_ANALYSIS_VIEW_TOTAL_AUTHORED_CHARACTERS = 18_000;
 export const MAX_ANALYSIS_VIEW_REPAIR_ATTEMPTS = 2;
 export const MAX_ANALYSIS_VIEW_PROVIDER_CALLS_PER_JOB_ATTEMPT = 3;
+export const MAX_ANALYSIS_VIEW_RESPONSE_EVIDENCES =
+  MAX_EXTRACTION_FINDINGS * MAX_EVIDENCE_CANDIDATES_PER_FINDING;
 
 const STABLE_VIEW_KEY_PATTERN = /^[a-z0-9][a-z0-9._-]{0,79}$/;
 const JAPANESE_TEXT_PATTERN =
@@ -176,6 +182,73 @@ export type AnalysisViewsGenerationOutput = z.infer<
   typeof analysisViewsGenerationOutputSchema
 >;
 
+export const analysisViewEvidenceSchema = z
+  .object({
+    chunkId: z.uuid(),
+    documentId: z.uuid(),
+    documentName: pdfOriginalNameSchema,
+    excerpt: z.string().trim().min(1).max(MAX_EVIDENCE_EXCERPT_CHARACTERS),
+    id: z.uuid(),
+    pageNumber: z.number().int().positive(),
+  })
+  .strict();
+
+export type AnalysisViewEvidence = z.infer<typeof analysisViewEvidenceSchema>;
+
+export const analysisViewsResourceSchema = z
+  .object({
+    analysisId: z.uuid(),
+    completedAt: z.iso.datetime(),
+    evidences: z
+      .array(analysisViewEvidenceSchema)
+      .max(MAX_ANALYSIS_VIEW_RESPONSE_EVIDENCES),
+    status: z.literal('COMPLETED'),
+    views: z
+      .object({
+        analyst: analystViewSchema,
+        buffettMunger: buffettMungerViewSchema,
+        justTellMe: justTellMeViewSchema,
+      })
+      .strict(),
+  })
+  .strict()
+  .superRefine((resource, context) => {
+    const evidenceIds = resource.evidences.map(({ id }) => id);
+    if (new Set(evidenceIds).size !== evidenceIds.length) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Analysis view response evidence IDs must be unique.',
+        path: ['evidences'],
+      });
+    }
+
+    const availableIds = new Set(evidenceIds);
+    const citedIds = collectAnalysisViewEvidenceIds({
+      analystView: resource.views.analyst,
+      buffettMunger: resource.views.buffettMunger,
+      justTellMe: resource.views.justTellMe,
+    });
+    for (const evidenceId of citedIds) {
+      if (!availableIds.has(evidenceId)) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Every cited evidence ID must have a response projection.',
+          path: ['evidences'],
+        });
+        break;
+      }
+    }
+    if (evidenceIds.some((evidenceId) => !citedIds.includes(evidenceId))) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Response projections must be referenced by a view block.',
+        path: ['evidences'],
+      });
+    }
+  });
+
+export type AnalysisViewsResource = z.infer<typeof analysisViewsResourceSchema>;
+
 export const analysisViewsGenerationBudgetSchema = z
   .object({
     maxContextCharacters: z.number().int().min(1_000).max(100_000),
@@ -257,6 +330,18 @@ export function countAnalysisViewAuthoredCharacters(
     (total, value) => total + Array.from(value).length,
     0,
   );
+}
+
+export function collectAnalysisViewEvidenceIds(
+  output: AnalysisViewsGenerationOutput,
+): string[] {
+  return [output.justTellMe, output.analystView, output.buffettMunger]
+    .flatMap((view) =>
+      view.sections.flatMap((section) =>
+        section.blocks.flatMap((block) => block.evidenceIds),
+      ),
+    )
+    .filter((id, index, ids) => ids.indexOf(id) === index);
 }
 
 function authoredStrings(output: AnalysisViewsGenerationOutput): string[] {

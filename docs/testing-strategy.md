@@ -34,6 +34,7 @@ StockLens AI の Test は、Build が通ることだけでなく、Security Boun
 - PDF Upload: Start Validation、3 File Limit、Production S3 Adapter による Real MinIO Presigned PUT、Valid/Invalid Header Finalize、Bearer User A/B Start/Re-presign/Finalize/List/Delete、Real Redis/BullMQ Worker Cleanup
 - Structured Extraction Audit: Fresh Migration、Real Prompt Activation CLI、Repeated/Concurrent Activation、Immutable Prompt、Content-free AI Usage、Cross-owner Usage Reject
 - Provider Boundary: Deterministic Strict Fixture、OpenAI Responses Zod Format、No-tool/No-store、Output/Timeout Budget、Refusal/Incomplete/Malformed、HTTP/Connection Retry Classification、Secret-free Error
+- Analysis Views Read: Completed-only Strict Aggregate、Owner A/B 404、Not-ready 409、Active FindingEvidence/Document/Page/Chunk Projection、OpenAPI
 
 ## 4. Security Test Requirements
 

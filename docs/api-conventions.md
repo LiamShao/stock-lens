@@ -122,7 +122,17 @@ Delete、Invalid/Expired Finalize は、Database に Durable `OBJECT_CLEANUP` �
 
 Request Body はありません。`UPLOADED` の Owner-scoped Analysis と 1〜3 件の Active Document を確認し、`executionId`、`analysisId`、`status=PARSING`、`acceptedAt` を返します。同一実行中 Request は同じ Execution ID に収束します。Cross-user は `404 ANALYSIS_NOT_FOUND`、Document 0 件は `409 ANALYSIS_HAS_NO_DOCUMENTS`、不正な Status は `409 ANALYSIS_NOT_PROCESSABLE` です。Public Job List や Attempt Detail API は追加しません。
 
-## 8. Validation
+## 8. Analysis Views Read Endpoint
+
+| Method | Path                          | 成功 | 説明                                         |
+| ------ | ----------------------------- | ---- | -------------------------------------------- |
+| GET    | `/analyses/:analysisId/views` | 200  | 完成済み三 View と参照 Evidence の Aggregate |
+
+Bearer Authentication と Active Owner Scope を必須とします。`COMPLETED` かつ `completedAt` と三 JSONB が Strict Shared Schema/Compliance に合格した場合だけ、`justTellMe`、`analyst`、`buffettMunger` と、Block が直接参照する Unique Evidence Projection を返します。Evidence は `id`、`documentId`、Active `documentName`、1-based `pageNumber`、Original `excerpt`、`chunkId` に限定し、最大 120 件です。Owner ID、Storage Coordinate、Full PDF/Page/Chunk Text は返しません。
+
+Missing、Cross-user、Soft-deleted Analysis は `404 ANALYSIS_NOT_FOUND`、未完成は `409 ANALYSIS_VIEWS_NOT_READY` です。Corrupt JSONB、Missing Citation、Deleted Document、Broken Page Lineage は Partial Response を返さず、`500 INTERNAL_SERVER_ERROR` の Sanitized Error にします。Status Polling は軽量 Analysis Metadata Endpoint を使用し、この Endpoint は Partial/Stale Output を公開しません。
+
+## 9. Validation
 
 - 外部入力は Controller Boundary で Zod Schema により検証します。
 - Email は trim と lowercase を適用してから保存・検索します。
@@ -131,7 +141,7 @@ Request Body はありません。`UPLOADED` の Owner-scoped Analysis と 1〜3
 - 不正な入力は HTTP 400 / `VALIDATION_ERROR` とします。
 - PDF Upload は Extension、Declared MIME、Declared Size、SHA-256 を Presign 前に検証し、Finalize 時に実 Object を再検証します。
 
-## 9. Status Code
+## 10. Status Code
 
 - `200 OK`: Login、Refresh、通常の取得
 - `201 Created`: Register、Resource 作成

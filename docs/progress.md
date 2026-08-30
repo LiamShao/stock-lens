@@ -1,5 +1,15 @@
 # StockLens AI 開発進捗
 
+## 2026-08-30
+
+### Phase 5 Completed-only Analysis Views Read API
+
+- Approved `VIEW-TASK-006` として `GET /api/analyses/:analysisId/views`、Shared Strict Aggregate Schema、Owner-scoped Repository/Service、Concrete OpenAPI を実装しました。
+- `COMPLETED` と `completedAt`、三 JSONB、Compliance、Direct Citation を Read 時に再検証し、Active FindingEvidence/Document/Page Lineage から Unique Evidence を投影します。Cross-user/Missing は `404`、未完成は `409`、Corrupt/Missing Lineage は Sanitized `500 INTERNAL_SERVER_ERROR` で全体を Fail closed にします。
+- Shared/API Unit 147 Tests と Targeted Real PostgreSQL HTTP 1 Suite / 6 Tests が成功しました。Database Migration と新規 Dependency はありません。
+- Full Gate は Format、Spec Check 9 Features / 146 Requirements、Prisma Validate/Generate、7 Lint Tasks、10 Typecheck Tasks、256 Unit/Component Tests、7 Build Tasks、Integration 12 Suites / 74 Tests が成功しました。
+- 次は Approved `VIEW-TASK-007` の Read-only Presign Adapter/API、5 分 Expiry、Missing/Provider Failure、Redaction Integration です。
+
 ## 2026-08-28
 
 ### Phase 5 Durable Analysis View Generation
