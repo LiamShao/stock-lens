@@ -37,3 +37,11 @@ export class DocumentListResponseOpenApi {
   @ApiProperty({ isArray: true, maxItems: 3, type: DocumentResourceOpenApi })
   declare items: DocumentResourceOpenApi[];
 }
+
+export class PresignedDocumentDownloadOpenApi {
+  @ApiProperty({ format: 'uri' })
+  declare url: string;
+
+  @ApiProperty({ format: 'date-time' })
+  declare expiresAt: string;
+}

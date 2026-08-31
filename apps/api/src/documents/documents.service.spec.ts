@@ -3,6 +3,7 @@ import type {
   DocumentRecord,
   DocumentRepository,
 } from '../database/document.repository';
+import type { ObjectStorage } from '@stocklens/object-storage';
 import type { ObjectCleanupQueuePublisher } from './object-cleanup-queue';
 import { DocumentsService } from './documents.service';
 
@@ -32,16 +33,25 @@ describe('DocumentsService (PDF-TASK-009)', () => {
   const repository: jest.Mocked<
     Pick<
       DocumentRepository,
-      'deleteFinalizedForAnalysis' | 'listFinalizedForAnalysis'
+      | 'deleteFinalizedForAnalysis'
+      | 'findFinalizedForDownload'
+      | 'listFinalizedForAnalysis'
     >
   > = {
     deleteFinalizedForAnalysis: jest.fn(),
+    findFinalizedForDownload: jest.fn(),
     listFinalizedForAnalysis: jest.fn(),
   };
   const cleanupPublisher: jest.Mocked<
     Pick<ObjectCleanupQueuePublisher, 'enqueue'>
   > = {
     enqueue: jest.fn(),
+  };
+  const objectStorage: jest.Mocked<
+    Pick<ObjectStorage, 'createPresignedPdfDownload' | 'headObject'>
+  > = {
+    createPresignedPdfDownload: jest.fn(),
+    headObject: jest.fn(),
   };
   let service: DocumentsService;
 
@@ -55,6 +65,8 @@ describe('DocumentsService (PDF-TASK-009)', () => {
     service = new DocumentsService(
       repository as unknown as DocumentRepository,
       cleanupPublisher as unknown as ObjectCleanupQueuePublisher,
+      objectStorage as unknown as ObjectStorage,
+      'private-test',
     );
   });
 
@@ -100,6 +112,142 @@ describe('DocumentsService (PDF-TASK-009)', () => {
     await expect(service.list(ownerId, analysisId)).resolves.toEqual({
       items: [],
     });
+  });
+
+  it('VIEW-FR-015 returns a bounded read URL after owner lineage and object checks', async () => {
+    repository.findFinalizedForDownload.mockResolvedValue({
+      document: documentRecord,
+      kind: 'found',
+    });
+    objectStorage.headObject.mockResolvedValue({
+      checksumSha256: null,
+      contentLength: 1024,
+      contentType: 'application/pdf',
+      eTag: null,
+      lastModified: fixedNow,
+      metadata: {},
+    });
+    objectStorage.createPresignedPdfDownload.mockResolvedValue({
+      expiresAt: new Date('2026-08-06T06:05:00.000Z'),
+      url: 'https://storage.test/private.pdf?signature=secret',
+    });
+
+    await expect(
+      service.createDownloadUrl(ownerId, analysisId, documentId),
+    ).resolves.toEqual({
+      expiresAt: '2026-08-06T06:05:00.000Z',
+      url: 'https://storage.test/private.pdf?signature=secret',
+    });
+    expect(objectStorage.headObject).toHaveBeenCalledWith(
+      documentRecord.storageKey,
+    );
+    expect(objectStorage.createPresignedPdfDownload).toHaveBeenCalledWith({
+      objectKey: documentRecord.storageKey,
+    });
+  });
+
+  it.each([
+    ['analysis', { kind: 'analysis-not-found' }, 'ANALYSIS_NOT_FOUND'],
+    ['document', { kind: 'document-not-found' }, 'DOCUMENT_NOT_FOUND'],
+  ] as const)(
+    'VIEW-SEC-001 hides a missing or cross-user %s before storage access',
+    async (_label, result, code) => {
+      repository.findFinalizedForDownload.mockResolvedValue(result);
+
+      await expect(
+        service.createDownloadUrl(ownerId, analysisId, documentId),
+      ).rejects.toMatchObject({ code });
+      expect(objectStorage.headObject).not.toHaveBeenCalled();
+      expect(objectStorage.createPresignedPdfDownload).not.toHaveBeenCalled();
+    },
+  );
+
+  it('VIEW-AC-015 sanitizes a read-presign provider failure', async () => {
+    repository.findFinalizedForDownload.mockResolvedValue({
+      document: documentRecord,
+      kind: 'found',
+    });
+    objectStorage.headObject.mockResolvedValue({
+      checksumSha256: null,
+      contentLength: 1024,
+      contentType: 'application/pdf',
+      eTag: null,
+      lastModified: fixedNow,
+      metadata: {},
+    });
+    objectStorage.createPresignedPdfDownload.mockRejectedValue(
+      new Error('secret signing endpoint'),
+    );
+
+    await expect(
+      service.createDownloadUrl(ownerId, analysisId, documentId),
+    ).rejects.toMatchObject({
+      code: 'DOCUMENT_DOWNLOAD_UNAVAILABLE',
+      message: 'Document download is temporarily unavailable.',
+      status: 503,
+    });
+  });
+
+  it.each([
+    ['missing object', null],
+    ['provider failure', new Error('secret provider endpoint')],
+  ])(
+    'VIEW-AC-015 maps %s to a sanitized unavailable error',
+    async (_label, storageResult) => {
+      repository.findFinalizedForDownload.mockResolvedValue({
+        document: documentRecord,
+        kind: 'found',
+      });
+      if (storageResult instanceof Error) {
+        objectStorage.headObject.mockRejectedValue(storageResult);
+      } else {
+        objectStorage.headObject.mockResolvedValue(storageResult);
+      }
+
+      await expect(
+        service.createDownloadUrl(ownerId, analysisId, documentId),
+      ).rejects.toMatchObject({
+        code: 'DOCUMENT_DOWNLOAD_UNAVAILABLE',
+        message: 'Document download is temporarily unavailable.',
+        status: 503,
+      });
+      expect(objectStorage.createPresignedPdfDownload).not.toHaveBeenCalled();
+    },
+  );
+
+  it('fails closed when persisted and runtime storage buckets diverge', async () => {
+    repository.findFinalizedForDownload.mockResolvedValue({
+      document: { ...documentRecord, storageBucket: 'unexpected-private' },
+      kind: 'found',
+    });
+
+    await expect(
+      service.createDownloadUrl(ownerId, analysisId, documentId),
+    ).rejects.toMatchObject({ code: 'DOCUMENT_DOWNLOAD_UNAVAILABLE' });
+    expect(objectStorage.headObject).not.toHaveBeenCalled();
+  });
+
+  it('VIEW-SEC-007 rejects a provider expiry beyond five minutes', async () => {
+    repository.findFinalizedForDownload.mockResolvedValue({
+      document: documentRecord,
+      kind: 'found',
+    });
+    objectStorage.headObject.mockResolvedValue({
+      checksumSha256: null,
+      contentLength: 1024,
+      contentType: 'application/pdf',
+      eTag: null,
+      lastModified: fixedNow,
+      metadata: {},
+    });
+    objectStorage.createPresignedPdfDownload.mockResolvedValue({
+      expiresAt: new Date(fixedNow.getTime() + 300_001),
+      url: 'https://storage.test/private.pdf?signature=secret',
+    });
+
+    await expect(
+      service.createDownloadUrl(ownerId, analysisId, documentId),
+    ).rejects.toMatchObject({ code: 'DOCUMENT_DOWNLOAD_UNAVAILABLE' });
   });
 
   it('PDF-SEC-006 maps a missing or cross-user analysis list to ANALYSIS_NOT_FOUND', async () => {

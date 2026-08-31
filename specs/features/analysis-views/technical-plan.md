@@ -6,7 +6,7 @@
 | ------------ | --------------------------------------- |
 | Related Spec | `specs/features/analysis-views/spec.md` |
 | Plan status  | `Approved`                              |
-| Last updated | `2026-08-24`                            |
+| Last updated | `2026-08-31`                            |
 
 ## Approach
 
@@ -54,6 +54,8 @@ API は既存 Metadata Polling と View Payload を分離します。Completed-o
 - Evidence は Unique ID ごとに `id/documentId/documentName/pageNumber/excerpt/chunkId` を投影し、JSONB に Excerpt を複製しません。
 - `POST /api/analyses/:analysisId/documents/:documentId/download-url` は Active lineage を確認し、S3 `GetObject` の URL と expiry だけを返します。
 - Storage Provider Error は Coordinate/Endpoint を除去して `503 DOCUMENT_DOWNLOAD_UNAVAILABLE` とします。
+- Download Response は Shared Strict Schema の `url` / `expiresAt` だけとし、`Cache-Control: no-store` を返します。Repository は Active Owner/Analysis/Finalized Document を解決し、Runtime Bucket 一致と Object `HEAD` を確認してから最大 300 秒の `GetObject` URL を発行します。
+- Read Presign は既存 Object Storage Config/Dependency を再利用し、Database Migration と新規 Runtime Dependency を追加しません。
 
 ## Web Session and UI
 

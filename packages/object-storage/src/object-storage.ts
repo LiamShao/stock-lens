@@ -10,9 +10,18 @@ export interface PresignPdfUploadInput {
   sha256: string;
 }
 
+export interface PresignPdfDownloadInput {
+  objectKey: string;
+}
+
 export interface PresignedUpload {
   expiresAt: Date;
   headers: Readonly<Record<string, string>>;
+  url: string;
+}
+
+export interface PresignedDownload {
+  expiresAt: Date;
   url: string;
 }
 
@@ -26,6 +35,9 @@ export interface StoredObjectMetadata {
 }
 
 export interface ObjectStorage {
+  createPresignedPdfDownload(
+    input: PresignPdfDownloadInput,
+  ): Promise<PresignedDownload>;
   createPresignedPdfUpload(
     input: PresignPdfUploadInput,
   ): Promise<PresignedUpload>;

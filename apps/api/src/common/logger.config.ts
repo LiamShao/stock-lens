@@ -39,6 +39,15 @@ export const SENSITIVE_LOG_PATHS = [
   'presignedUpload.url',
   '*.presignedUpload.url',
   '*.*.presignedUpload.url',
+  'documentDownload.url',
+  '*.documentDownload.url',
+  '*.*.documentDownload.url',
+  'download.url',
+  '*.download.url',
+  '*.*.download.url',
+  'presignedDownload.url',
+  '*.presignedDownload.url',
+  '*.*.presignedDownload.url',
 ] as const satisfies readonly string[];
 
 export function getFastifyLoggerOptions(): {

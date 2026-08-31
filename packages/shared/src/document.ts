@@ -36,3 +36,14 @@ export const documentListResponseSchema = z.object({
 });
 
 export type DocumentListResponse = z.infer<typeof documentListResponseSchema>;
+
+export const presignedDocumentDownloadSchema = z
+  .object({
+    expiresAt: z.iso.datetime(),
+    url: z.url(),
+  })
+  .strict();
+
+export type PresignedDocumentDownload = z.infer<
+  typeof presignedDocumentDownloadSchema
+>;

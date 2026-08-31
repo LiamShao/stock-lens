@@ -1,5 +1,15 @@
 # StockLens AI 開発進捗
 
+## 2026-08-31
+
+### Phase 5 Private PDF Read Presign
+
+- Approved `VIEW-TASK-007` として `POST /api/analyses/:analysisId/documents/:documentId/download-url`、Shared Strict Response、Owner-scoped Repository/Service、Concrete OpenAPI を実装しました。
+- Active Owner/Analysis/Finalized Document、Runtime Bucket、Object Existence を確認してから、単一 PDF `GetObject` の URL を最大 300 秒で発行し、`Cache-Control: no-store` を返します。
+- Cross-user/Missing は `404`、Missing Object/Provider Failure/Bucket Mismatch は Storage Detail を除去した `503 DOCUMENT_DOWNLOAD_UNAVAILABLE` に収束し、Download URL の Logger Redaction を追加しました。
+- Full Gate は Format、Spec Check 9 Features / 146 Requirements、Prisma Validate/Generate、7 Lint Tasks、10 Typecheck Tasks、267 Unit/Component Tests、7 Build Tasks、Real PostgreSQL/Redis/BullMQ/MinIO Integration 12 Suites / 75 Tests が成功しました。Database Migration と新規 Dependency はありません。
+- 次は Approved `VIEW-TASK-008` の Web API Client、In-memory Session、Login/Refresh/Logout、History/Detail Shell です。
+
 ## 2026-08-30
 
 ### Phase 5 Completed-only Analysis Views Read API

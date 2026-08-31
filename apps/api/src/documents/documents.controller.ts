@@ -2,9 +2,11 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   Param,
+  Post,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -18,6 +20,7 @@ import {
   ApiTags,
   ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
+  ApiServiceUnavailableResponse,
 } from '@nestjs/swagger';
 import {
   documentItemPathParamsSchema,
@@ -26,13 +29,17 @@ import {
   type DocumentItemPathParams,
   type DocumentListResponse,
   type DocumentPathParams,
+  type PresignedDocumentDownload,
 } from '@stocklens/shared';
 
 import { AccessTokenGuard } from '../auth/access-token.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { ApiErrorOpenApi } from '../auth/auth.openapi';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
-import { DocumentListResponseOpenApi } from './documents.openapi';
+import {
+  DocumentListResponseOpenApi,
+  PresignedDocumentDownloadOpenApi,
+} from './documents.openapi';
 import { DocumentsService } from './documents.service';
 
 @Controller('analyses/:analysisId/documents')
@@ -71,6 +78,41 @@ export class DocumentsController {
     params: DocumentPathParams,
   ): Promise<DocumentListResponse> {
     return this.service.list(user.id, params.analysisId);
+  }
+
+  @Post(':documentId/download-url')
+  @HttpCode(HttpStatus.OK)
+  @Header('Cache-Control', 'no-store')
+  @ApiOperation({ summary: 'Create a short-lived read-only PDF URL' })
+  @ApiParam({ format: 'uuid', name: 'analysisId' })
+  @ApiParam({ format: 'uuid', name: 'documentId' })
+  @ApiOkResponse({
+    description:
+      'Owner-scoped read-only PDF URL valid for at most five minutes',
+    type: PresignedDocumentDownloadOpenApi,
+  })
+  @ApiBadRequestResponse({
+    description: 'Path validation failed',
+    type: ApiErrorOpenApi,
+  })
+  @ApiNotFoundResponse({
+    description: 'Analysis or document was not found for this owner',
+    type: ApiErrorOpenApi,
+  })
+  @ApiServiceUnavailableResponse({
+    description: 'Document object or object storage is unavailable',
+    type: ApiErrorOpenApi,
+  })
+  createDownloadUrl(
+    @CurrentUser() user: AuthUser,
+    @Param(new ZodValidationPipe(documentItemPathParamsSchema))
+    params: DocumentItemPathParams,
+  ): Promise<PresignedDocumentDownload> {
+    return this.service.createDownloadUrl(
+      user.id,
+      params.analysisId,
+      params.documentId,
+    );
   }
 
   @Delete(':documentId')

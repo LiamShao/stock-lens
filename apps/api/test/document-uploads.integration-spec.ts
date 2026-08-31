@@ -32,11 +32,15 @@ describe('document upload HTTP integration (PDF-TASK-011, PDF-TASK-013)', () => 
   const createPresignedPdfUpload: jest.MockedFunction<
     ObjectStorage['createPresignedPdfUpload']
   > = jest.fn();
+  const createPresignedPdfDownload: jest.MockedFunction<
+    ObjectStorage['createPresignedPdfDownload']
+  > = jest.fn();
   const getObjectStream: jest.MockedFunction<ObjectStorage['getObjectStream']> =
     jest.fn();
   const headObject: jest.MockedFunction<ObjectStorage['headObject']> =
     jest.fn();
   const objectStorage: jest.Mocked<ObjectStorage> = {
+    createPresignedPdfDownload,
     createPresignedPdfUpload,
     deleteObject: jest.fn(),
     getObjectStream,

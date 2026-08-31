@@ -35,6 +35,7 @@ StockLens AI の Test は、Build が通ることだけでなく、Security Boun
 - Structured Extraction Audit: Fresh Migration、Real Prompt Activation CLI、Repeated/Concurrent Activation、Immutable Prompt、Content-free AI Usage、Cross-owner Usage Reject
 - Provider Boundary: Deterministic Strict Fixture、OpenAI Responses Zod Format、No-tool/No-store、Output/Timeout Budget、Refusal/Incomplete/Malformed、HTTP/Connection Retry Classification、Secret-free Error
 - Analysis Views Read: Completed-only Strict Aggregate、Owner A/B 404、Not-ready 409、Active FindingEvidence/Document/Page/Chunk Projection、OpenAPI
+- PDF Read Presign: Real MinIO `GetObject`、300-second Expiry、`no-store`、Owner A/B、Missing Document/Object、Sanitized `503`、Concrete OpenAPI
 
 ## 4. Security Test Requirements
 

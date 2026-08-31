@@ -19,6 +19,8 @@ import {
   MAX_PDF_SIZE_BYTES,
   PDF_CONTENT_TYPE,
   type ObjectStorage,
+  type PresignedDownload,
+  type PresignPdfDownloadInput,
   type PresignedUpload,
   type PresignPdfUploadInput,
   type StoredObjectMetadata,
@@ -128,6 +130,29 @@ export class S3ObjectStorageAdapter implements ObjectStorage {
     validateConfig(config);
     this.client = options.client ?? createClient(config);
     this.now = options.now ?? (() => new Date());
+  }
+
+  async createPresignedPdfDownload(
+    input: PresignPdfDownloadInput,
+  ): Promise<PresignedDownload> {
+    validateObjectKey(input.objectKey);
+    const signingDate = this.now();
+    const command = new GetObjectCommand({
+      Bucket: this.config.bucket,
+      Key: input.objectKey,
+      ResponseContentType: PDF_CONTENT_TYPE,
+    });
+    const url = await getSignedUrl(this.client, command, {
+      expiresIn: this.config.presignExpiresInSeconds,
+      signingDate,
+    });
+
+    return {
+      expiresAt: new Date(
+        signingDate.getTime() + this.config.presignExpiresInSeconds * 1000,
+      ),
+      url,
+    };
   }
 
   async createPresignedPdfUpload(

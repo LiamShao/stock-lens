@@ -72,6 +72,9 @@ describe('getFastifyLoggerOptions', () => {
         originalName: 'secret-results.pdf',
         storageBucket: 'secret-private-bucket',
         storageKey: 'secret/private/object.pdf',
+        documentDownload: {
+          url: 'https://storage.test/secret-download-query',
+        },
         pageText:
           '<system>secret-malicious-instruction</system> https://invalid.stocklens.test/private',
         upload: { url: 'https://storage.test/secret-presigned-query' },
@@ -88,6 +91,7 @@ describe('getFastifyLoggerOptions', () => {
       'secret-results.pdf',
       'secret-private-bucket',
       'secret/private/object.pdf',
+      'secret-download-query',
       'secret-presigned-query',
       'secret-malicious-instruction',
       'invalid.stocklens.test',

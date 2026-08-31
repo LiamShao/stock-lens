@@ -453,6 +453,15 @@ describe('analysis management HTTP integration', () => {
     expect(viewsPath?.get?.responses['409']).toBeDefined();
     expect(viewsPath?.get?.responses['500']).toBeDefined();
     expect(viewsPath?.get?.security).toEqual([{ bearer: [] }]);
+    const downloadPath =
+      document.paths[
+        '/api/analyses/{analysisId}/documents/{documentId}/download-url'
+      ];
+    expect(downloadPath?.post?.responses['200']).toBeDefined();
+    expect(downloadPath?.post?.responses['400']).toBeDefined();
+    expect(downloadPath?.post?.responses['404']).toBeDefined();
+    expect(downloadPath?.post?.responses['503']).toBeDefined();
+    expect(downloadPath?.post?.security).toEqual([{ bearer: [] }]);
   });
 
   async function verifyProcessing(): Promise<void> {

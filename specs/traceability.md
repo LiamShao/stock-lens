@@ -151,35 +151,35 @@ Status は Requirement の実装・検証状況を表します。`Partial` は C
 
 ## Analysis Views
 
-| Requirement    | Implementation                     | Verification                        | Status        |
-| -------------- | ---------------------------------- | ----------------------------------- | ------------- |
-| `VIEW-FR-001`  | Durable fixed-identity Execution   | PostgreSQL/Redis/BullMQ recovery    | `Passed`      |
-| `VIEW-FR-002`  | Strict Owner-scoped Source DTO     | Unit + active lineage PostgreSQL    | `Passed`      |
-| `VIEW-FR-003`  | Required Just Tell Me Generation   | Contract + deterministic runtime    | `Passed`      |
-| `VIEW-FR-004`  | Required Analyst View Generation   | Contract + deterministic runtime    | `Passed`      |
-| `VIEW-FR-005`  | Required Buffett-Munger Generation | Contract + deterministic runtime    | `Passed`      |
-| `VIEW-FR-006`  | Strict Three-view Root/Sections    | Unknown/order/Japanese/bounds Unit  | `Passed`      |
-| `VIEW-FR-007`  | Direct Owner/Finding Evidence ID   | Unit + lineage PostgreSQL           | `Passed`      |
-| `VIEW-FR-008`  | Missing Rule + Versioned Prompt    | Schema/prompt Unit; runtime pending | `Partial`     |
-| `VIEW-FR-009`  | Durable Atomic Three-JSONB Publish | Queue + transaction integration     | `Passed`      |
-| `VIEW-FR-010`  | Bounded Repair/Retry/Failure       | Real BullMQ exhaustion + Attempt 2  | `Passed`      |
-| `VIEW-FR-011`  | Atomic Completion Status/Time      | PostgreSQL replacement/duplicate    | `Passed`      |
-| `VIEW-FR-012`  | Completed Aggregate API + Schema   | Owner A/B PostgreSQL HTTP + Unit    | `Passed`      |
-| `VIEW-FR-013`  | Approved `VIEW-TASK-009`           | View UI/Accessibility pending       | `Not started` |
-| `VIEW-FR-014`  | Approved `VIEW-TASK-009`           | Evidence Drawer pending             | `Not started` |
-| `VIEW-FR-015`  | Approved `VIEW-TASK-007` / `010`   | Read Presign/PDF.js pending         | `Not started` |
-| `VIEW-FR-016`  | Approved `VIEW-TASK-008`           | Browser Session Tests pending       | `Not started` |
-| `VIEW-FR-017`  | Immutable Prompt + Usage Audit     | Per-call content-free PostgreSQL    | `Passed`      |
-| `VIEW-SEC-001` | Owner-scoped Generation/Read Query | Worker + Owner A/B API PostgreSQL   | `Passed`      |
-| `VIEW-SEC-002` | Escaped Single Untrusted Block     | Injection/system separation Unit    | `Passed`      |
-| `VIEW-SEC-003` | Strict Zod/Plain-text Contract     | Schema Unit; UI render pending      | `Partial`     |
-| `VIEW-SEC-004` | Shared Advice Compliance Scanner   | Six category View Unit              | `Passed`      |
-| `VIEW-SEC-005` | View Framework Validator           | Impersonation/endorsement Unit      | `Passed`      |
-| `VIEW-SEC-006` | Content-free Provider Usage        | Runtime DB allowlist inspection     | `Passed`      |
-| `VIEW-SEC-007` | Approved `VIEW-TASK-007` / `010`   | Expiry/Private PDF Tests pending    | `Not started` |
-| `VIEW-SEC-008` | Approved `VIEW-TASK-008`           | Memory Token/Refresh Tests pending  | `Not started` |
-| `VIEW-SEC-009` | Call/Context/Output/Retry Budget   | Unit + real BullMQ call ceilings    | `Passed`      |
-| `VIEW-SEC-010` | Parent/Input/Prompt Commit Recheck | PostgreSQL race matrix              | `Passed`      |
+| Requirement    | Implementation                       | Verification                          | Status        |
+| -------------- | ------------------------------------ | ------------------------------------- | ------------- |
+| `VIEW-FR-001`  | Durable fixed-identity Execution     | PostgreSQL/Redis/BullMQ recovery      | `Passed`      |
+| `VIEW-FR-002`  | Strict Owner-scoped Source DTO       | Unit + active lineage PostgreSQL      | `Passed`      |
+| `VIEW-FR-003`  | Required Just Tell Me Generation     | Contract + deterministic runtime      | `Passed`      |
+| `VIEW-FR-004`  | Required Analyst View Generation     | Contract + deterministic runtime      | `Passed`      |
+| `VIEW-FR-005`  | Required Buffett-Munger Generation   | Contract + deterministic runtime      | `Passed`      |
+| `VIEW-FR-006`  | Strict Three-view Root/Sections      | Unknown/order/Japanese/bounds Unit    | `Passed`      |
+| `VIEW-FR-007`  | Direct Owner/Finding Evidence ID     | Unit + lineage PostgreSQL             | `Passed`      |
+| `VIEW-FR-008`  | Missing Rule + Versioned Prompt      | Schema/prompt Unit; runtime pending   | `Partial`     |
+| `VIEW-FR-009`  | Durable Atomic Three-JSONB Publish   | Queue + transaction integration       | `Passed`      |
+| `VIEW-FR-010`  | Bounded Repair/Retry/Failure         | Real BullMQ exhaustion + Attempt 2    | `Passed`      |
+| `VIEW-FR-011`  | Atomic Completion Status/Time        | PostgreSQL replacement/duplicate      | `Passed`      |
+| `VIEW-FR-012`  | Completed Aggregate API + Schema     | Owner A/B PostgreSQL HTTP + Unit      | `Passed`      |
+| `VIEW-FR-013`  | Approved `VIEW-TASK-009`             | View UI/Accessibility pending         | `Not started` |
+| `VIEW-FR-014`  | Approved `VIEW-TASK-009`             | Evidence Drawer pending               | `Not started` |
+| `VIEW-FR-015`  | Owner Read Presign + Task 010 PDF.js | Real MinIO GET passed; Viewer pending | `Partial`     |
+| `VIEW-FR-016`  | Approved `VIEW-TASK-008`             | Browser Session Tests pending         | `Not started` |
+| `VIEW-FR-017`  | Immutable Prompt + Usage Audit       | Per-call content-free PostgreSQL      | `Passed`      |
+| `VIEW-SEC-001` | Owner-scoped Generation/Read Query   | Worker + Owner A/B API PostgreSQL     | `Passed`      |
+| `VIEW-SEC-002` | Escaped Single Untrusted Block       | Injection/system separation Unit      | `Passed`      |
+| `VIEW-SEC-003` | Strict Zod/Plain-text Contract       | Schema Unit; UI render pending        | `Partial`     |
+| `VIEW-SEC-004` | Shared Advice Compliance Scanner     | Six category View Unit                | `Passed`      |
+| `VIEW-SEC-005` | View Framework Validator             | Impersonation/endorsement Unit        | `Passed`      |
+| `VIEW-SEC-006` | Content-free Provider Usage          | Runtime DB allowlist inspection       | `Passed`      |
+| `VIEW-SEC-007` | Owner/HEAD/GetObject 300s Presign    | MinIO/Owner/Missing/No-store passed   | `Partial`     |
+| `VIEW-SEC-008` | Approved `VIEW-TASK-008`             | Memory Token/Refresh Tests pending    | `Not started` |
+| `VIEW-SEC-009` | Call/Context/Output/Retry Budget     | Unit + real BullMQ call ceilings      | `Passed`      |
+| `VIEW-SEC-010` | Parent/Input/Prompt Commit Recheck   | PostgreSQL race matrix                | `Passed`      |
 
 ## Job Re-run
 

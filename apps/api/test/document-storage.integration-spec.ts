@@ -18,6 +18,7 @@ import {
   documentResourceSchema,
   OBJECT_CLEANUP_JOB_NAME,
   OBJECT_CLEANUP_QUEUE_NAME,
+  presignedDocumentDownloadSchema,
   processAnalysisResponseSchema,
   startDocumentUploadResponseSchema,
   type AnalysisJobData,
@@ -203,6 +204,66 @@ describe('document storage integration (PDF-TASK-012/014, PROC-TASK-011)', () =>
     ).resolves.toMatchObject({ status: 'UPLOADED' });
   });
 
+  it('VIEW-AC-013/015 issues an owner-scoped five-minute read URL and hides unavailable objects', async () => {
+    const pdf = Buffer.from('%PDF-1.7\nread presign acceptance\n%%EOF\n');
+    const finalized = await createFinalizedPdf(pdf);
+    const requestedAt = Date.now();
+    const response = await request(finalized.auth, {
+      method: 'POST',
+      url: `/api/analyses/${finalized.analysisId}/documents/${finalized.documentId}/download-url`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['cache-control']).toBe('no-store');
+    const download = presignedDocumentDownloadSchema.parse(
+      response.json<unknown>(),
+    );
+    expect(new Date(download.expiresAt).getTime()).toBeGreaterThanOrEqual(
+      requestedAt + 299_000,
+    );
+    expect(new Date(download.expiresAt).getTime()).toBeLessThanOrEqual(
+      Date.now() + 300_000,
+    );
+    const fetched = await fetch(download.url);
+    expect(fetched.status).toBe(200);
+    expect(fetched.headers.get('content-type')).toContain('application/pdf');
+    expect(Buffer.from(await fetched.arrayBuffer())).toEqual(pdf);
+
+    const { auth: outsider } = await createOwnedAnalysis();
+    const crossOwner = await request(outsider, {
+      method: 'POST',
+      url: `/api/analyses/${finalized.analysisId}/documents/${finalized.documentId}/download-url`,
+    });
+    expect(crossOwner.statusCode).toBe(404);
+    expect(crossOwner.json()).toMatchObject({ code: 'ANALYSIS_NOT_FOUND' });
+    expect(JSON.stringify(crossOwner.json())).not.toContain(
+      finalized.storageKey,
+    );
+
+    const missingDocument = await request(finalized.auth, {
+      method: 'POST',
+      url: `/api/analyses/${finalized.analysisId}/documents/${randomUUID()}/download-url`,
+    });
+    expect(missingDocument.statusCode).toBe(404);
+    expect(missingDocument.json()).toMatchObject({
+      code: 'DOCUMENT_NOT_FOUND',
+    });
+
+    await objectStorage.deleteObject(finalized.storageKey);
+    const missingObject = await request(finalized.auth, {
+      method: 'POST',
+      url: `/api/analyses/${finalized.analysisId}/documents/${finalized.documentId}/download-url`,
+    });
+    expect(missingObject.statusCode).toBe(503);
+    expect(missingObject.json()).toMatchObject({
+      code: 'DOCUMENT_DOWNLOAD_UNAVAILABLE',
+      message: 'Document download is temporarily unavailable.',
+    });
+    expect(JSON.stringify(missingObject.json())).not.toContain(
+      finalized.storageKey,
+    );
+  });
+
   it('PROC-AC-002 PROC-AC-004 PROC-AC-012 completes the real processing pipeline', async () => {
     const pdf = createTextPdf([
       `First page ${'A'.repeat(1_350)}`,
@@ -373,6 +434,8 @@ describe('document storage integration (PDF-TASK-012/014, PROC-TASK-011)', () =>
     );
     let reads = 0;
     const retryingStorage: ObjectStorage = {
+      createPresignedPdfDownload: (input) =>
+        objectStorage.createPresignedPdfDownload(input),
       createPresignedPdfUpload: (input) =>
         objectStorage.createPresignedPdfUpload(input),
       deleteObject: (objectKey) => objectStorage.deleteObject(objectKey),
@@ -462,6 +525,8 @@ describe('document storage integration (PDF-TASK-012/014, PROC-TASK-011)', () =>
       createTextPdf(['Parse re-run recovery evidence.']),
     );
     const unavailableStorage: ObjectStorage = {
+      createPresignedPdfDownload: (input) =>
+        objectStorage.createPresignedPdfDownload(input),
       createPresignedPdfUpload: (input) =>
         objectStorage.createPresignedPdfUpload(input),
       deleteObject: (objectKey) => objectStorage.deleteObject(objectKey),
@@ -699,6 +764,8 @@ describe('document storage integration (PDF-TASK-012/014, PROC-TASK-011)', () =>
     const finalized = await createFinalizedDocument();
     let targetDeleteAttempts = 0;
     const retryingStorage: ObjectStorage = {
+      createPresignedPdfDownload: (input) =>
+        objectStorage.createPresignedPdfDownload(input),
       createPresignedPdfUpload: (input) =>
         objectStorage.createPresignedPdfUpload(input),
       deleteObject: async (objectKey) => {
@@ -758,6 +825,8 @@ describe('document storage integration (PDF-TASK-012/014, PROC-TASK-011)', () =>
   it('RERUN-AC-001 RERUN-AC-007 inspects and re-runs failed cleanup through the real CLI', async () => {
     const finalized = await createFinalizedDocument();
     const failingStorage: ObjectStorage = {
+      createPresignedPdfDownload: (input) =>
+        objectStorage.createPresignedPdfDownload(input),
       createPresignedPdfUpload: (input) =>
         objectStorage.createPresignedPdfUpload(input),
       deleteObject: async (objectKey) => {

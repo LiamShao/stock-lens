@@ -117,6 +117,7 @@ function createRepository(
 
 function createObjectStorage() {
   return {
+    createPresignedPdfDownload: jest.fn(),
     createPresignedPdfUpload: jest.fn(),
     deleteObject: jest.fn().mockResolvedValue(undefined),
     getObjectStream: jest.fn(),

@@ -47,6 +47,11 @@ export type DeleteDocumentResult =
   | { kind: 'deleted' }
   | { kind: 'document-not-found' };
 
+export type FindDocumentForDownloadResult =
+  | { document: DocumentRecord; kind: 'found' }
+  | { kind: 'analysis-not-found' }
+  | { kind: 'document-not-found' };
+
 @Injectable()
 export class DocumentRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -115,6 +120,34 @@ export class DocumentRepository {
         },
       });
       return { documents, kind: 'found' };
+    });
+  }
+
+  findFinalizedForDownload(
+    ownerId: string,
+    analysisId: string,
+    documentId: string,
+  ): Promise<FindDocumentForDownloadResult> {
+    return runSerializableTransaction(this.prisma, async (transaction) => {
+      const analysis = await transaction.analysis.findFirst({
+        select: { id: true },
+        where: { deletedAt: null, id: analysisId, ownerId },
+      });
+      if (analysis === null) return { kind: 'analysis-not-found' };
+
+      const document = await transaction.document.findFirst({
+        select: documentSelection,
+        where: {
+          analysisId,
+          deletedAt: null,
+          id: documentId,
+          ownerId,
+          uploadedAt: { not: null },
+        },
+      });
+      return document === null
+        ? { kind: 'document-not-found' }
+        : { document, kind: 'found' };
     });
   }
 

@@ -70,6 +70,7 @@ Cross-user、Missing、Soft-deleted Analysis は同じ HTTP 404 / `ANALYSIS_NOT_
 | POST   | `/analyses/:analysisId/document-uploads/:uploadId/presign`  | 200  | Active `PENDING` Session の PUT URL を再発行      |
 | POST   | `/analyses/:analysisId/document-uploads/:uploadId/finalize` | 200  | Object を Trusted Validation して Document を確定 |
 | GET    | `/analyses/:analysisId/documents`                           | 200  | Active Finalized Document を最大 3 件返す         |
+| POST   | `/analyses/:analysisId/documents/:documentId/download-url`  | 200  | 最大 5 分の Read-only PDF URL を発行              |
 | DELETE | `/analyses/:analysisId/documents/:documentId`               | 204  | Metadata を Soft Delete し Object Cleanup を登録  |
 
 Upload Start Body は次の形式です。Unknown Field は拒否します。
@@ -96,21 +97,24 @@ Finalize は Object Storage Metadata だけを信頼せず、Object を Streamin
 
 Document List Response は `{ "items": DocumentResource[] }` です。`DocumentResource` は `id`、`analysisId`、`originalName`、`documentType`、`mimeType`、`sizeBytes`、`sha256`、`uploadedAt`、`createdAt`、`updatedAt` だけを含み、`ownerId`、Bucket、Object Key は含みません。
 
+Download URL Response は `{ "url": string, "expiresAt": ISO-8601 }` だけを返し、`Cache-Control: no-store` を付与します。API は Active Owner/Analysis/Finalized Document、Runtime Bucket、Object Existence を確認してから単一 Object の `GetObject` を最大 300 秒で署名します。Bucket、Object Key、Credential は返しません。
+
 主な Stable Error は次のとおりです。
 
-| HTTP | Code                         | 条件                                                   |
-| ---: | ---------------------------- | ------------------------------------------------------ |
-|  400 | `VALIDATION_ERROR`           | Path または Upload Metadata が不正                     |
-|  404 | `ANALYSIS_NOT_FOUND`         | Analysis が Missing/Cross-user/Soft-deleted            |
-|  404 | `DOCUMENT_UPLOAD_NOT_FOUND`  | Upload Session が Missing/Cross-user                   |
-|  404 | `DOCUMENT_NOT_FOUND`         | Document が Missing/Cross-analysis/Deleted             |
-|  409 | `DOCUMENT_LIMIT_EXCEEDED`    | Active Document と予約 Session の合計が 3 件以上       |
-|  409 | `DOCUMENT_UPLOAD_NOT_ACTIVE` | Session が Finalize 中、Rejected、Expired など         |
-|  409 | `UPLOAD_EXPIRED`             | 24-hour Session TTL を超過                             |
-|  409 | `DUPLICATE_DOCUMENT`         | 同一 Analysis に同じ SHA-256 の Active Document が存在 |
-|  422 | `INVALID_PDF`                | Trusted Size/SHA/Header/Metadata Validation に失敗     |
-|  503 | `OBJECT_STORAGE_UNAVAILABLE` | Presigned URL を発行できない                           |
-|  503 | `STORAGE_VALIDATION_FAILED`  | Object を読み取れず Finalize を再試行可能              |
+| HTTP | Code                            | 条件                                                   |
+| ---: | ------------------------------- | ------------------------------------------------------ |
+|  400 | `VALIDATION_ERROR`              | Path または Upload Metadata が不正                     |
+|  404 | `ANALYSIS_NOT_FOUND`            | Analysis が Missing/Cross-user/Soft-deleted            |
+|  404 | `DOCUMENT_UPLOAD_NOT_FOUND`     | Upload Session が Missing/Cross-user                   |
+|  404 | `DOCUMENT_NOT_FOUND`            | Document が Missing/Cross-analysis/Deleted             |
+|  409 | `DOCUMENT_LIMIT_EXCEEDED`       | Active Document と予約 Session の合計が 3 件以上       |
+|  409 | `DOCUMENT_UPLOAD_NOT_ACTIVE`    | Session が Finalize 中、Rejected、Expired など         |
+|  409 | `UPLOAD_EXPIRED`                | 24-hour Session TTL を超過                             |
+|  409 | `DUPLICATE_DOCUMENT`            | 同一 Analysis に同じ SHA-256 の Active Document が存在 |
+|  422 | `INVALID_PDF`                   | Trusted Size/SHA/Header/Metadata Validation に失敗     |
+|  503 | `OBJECT_STORAGE_UNAVAILABLE`    | Presigned URL を発行できない                           |
+|  503 | `STORAGE_VALIDATION_FAILED`     | Object を読み取れず Finalize を再試行可能              |
+|  503 | `DOCUMENT_DOWNLOAD_UNAVAILABLE` | Download Object が Missing または Storage が利用不能   |
 
 Delete、Invalid/Expired Finalize は、Database に Durable `OBJECT_CLEANUP` を保存してから Redis/BullMQ Dispatch を試行します。Queue 障害があっても HTTP Outcome と Cleanup Pending State は失われません。
 

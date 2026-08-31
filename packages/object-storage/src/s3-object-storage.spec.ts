@@ -89,6 +89,33 @@ describe('S3ObjectStorageAdapter.createPresignedPdfUpload', () => {
   });
 });
 
+describe('S3ObjectStorageAdapter.createPresignedPdfDownload', () => {
+  it('VIEW-SEC-007 returns a five-minute GetObject URL for one PDF key', async () => {
+    const now = new Date('2026-08-31T00:00:00.000Z');
+    const adapter = new S3ObjectStorageAdapter(config, { now: () => now });
+
+    const result = await adapter.createPresignedPdfDownload({
+      objectKey: validInput.objectKey,
+    });
+    const url = new URL(result.url);
+
+    expect(url.pathname).toContain(`/stocklens-dev/${validInput.objectKey}`);
+    expect(url.searchParams.get('X-Amz-Expires')).toBe('300');
+    expect(url.searchParams.get('response-content-type')).toBe(
+      PDF_CONTENT_TYPE,
+    );
+    expect(result.expiresAt).toEqual(new Date('2026-08-31T00:05:00.000Z'));
+  });
+
+  it('rejects an invalid object coordinate before signing', async () => {
+    const adapter = new S3ObjectStorageAdapter(config);
+
+    await expect(
+      adapter.createPresignedPdfDownload({ objectKey: '../private.pdf' }),
+    ).rejects.toThrow('objectKey is invalid.');
+  });
+});
+
 describe('S3ObjectStorageAdapter object operations', () => {
   it('maps head metadata and treats missing objects as null', async () => {
     const sentCommands: unknown[] = [];

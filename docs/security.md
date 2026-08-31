@@ -47,7 +47,7 @@
 - Controller は Prisma を直接呼び出しません。
 - Analysis HTTP API は Bearer User から Repository まで `ownerId` を伝播し、Cross-user Read、Update、Delete を同じ `404 ANALYSIS_NOT_FOUND` とする Testcontainers HTTP Test を持ちます。
 - Analysis Views Read API も Bearer User から Evidence Query まで `ownerId` を伝播し、Cross-user を同じ `404` にします。Completed JSONB と Direct Citation は Read 時にも Strict Schema、Compliance、Active FindingEvidence/Document/Page Lineage を再検証し、破損時は Partial Content を返しません。
-- Document Start/Re-presign/Finalize/List/Delete は Bearer User A/B の End-to-end Authorization Test を持ち、Cross-user Request は Stable Not Found かつ Database/Storage/Cleanup Side Effect なしです。
+- Document Start/Re-presign/Finalize/List/Read Presign/Delete は Bearer User A/B の End-to-end Authorization Test を持ち、Cross-user Request は Stable Not Found かつ Database/Storage/Cleanup Side Effect なしです。
 - `Analysis(ownerId, id)` と `Document(ownerId, analysisId)` の Composite FK で Parent/Child Owner Equality を Database でも強制します。
 - `AnalysisFinding`、`Evidence`、`FindingEvidence` は Owner/Analysis Composite FK を持ち、Evidence は Document/Page/Chunk の同一 Lineage まで Database Constraint で強制します。
 - PostgreSQL RLS は MVP 必須ではありません。Repository Boundary と Authorization Test で保証します。
@@ -60,6 +60,8 @@ PDF Upload は二段階の信頼境界を持ちます。
 2. Direct PUT 後の Finalize で、Private Object を Trusted Server-side Code が Streaming Read します。Head Metadata、Content Type/Length、Signed SHA Metadata、Actual Size、Actual SHA-256、先頭 `%PDF-` を相互検証し、20 MB + 1 byte または不正 Header を検出した時点で Stream を破棄します。
 
 Presigned PUT は単一の Random Object Key、Content Length、Content Type、SHA Metadata に署名し、有効期限を最大 300 秒に制限します。Object Key は Owner/Analysis/Upload Session Prefix と Random UUID から作り、Original Filename を含めません。API Response は Bucket、Object Key、Credential を返しません。
+
+Presigned GET は Active Owner/Analysis/Finalized Document、Runtime Bucket 一致、Object `HEAD` を確認した後、単一 Object の `GetObject` と `application/pdf` Response Content Type だけを最大 300 秒で署名します。Response は URL/Expiry だけとし `Cache-Control: no-store` を付与します。Missing Object、Provider Failure、Bucket Mismatch は Storage Detail を含まない `DOCUMENT_DOWNLOAD_UNAVAILABLE` に統一します。
 
 Upload Session は 24 時間で期限切れになります。Worker は起動時と 60 秒ごとに期限切れ `PENDING` / `VALIDATING` Session を bounded scan し、`EXPIRED` Transition と Durable Cleanup Execution を同じ Serializable Transaction に保存します。Invalid/Expired Upload と Soft-deleted Document の Object Delete は最大 3 Attempt の Exponential Backoff で再試行します。Queue Payload は `jobExecutionId` のみで、Storage Coordinate や Credential を Redis に複製しません。
 
@@ -77,7 +79,7 @@ FAILED Job の再実行は Public API へ公開せず、Explicit Enable、Worklo
 - 予期しない Error は Client に内部 Detail を返しません。
 - Password、Access Token、Refresh Token、PDF 全文を Log に記録しません。
 - Structured Logger は Authorization、Cookie、Set-Cookie、Password、Access/Refresh Token Field を明示的に Redact します。
-- PDF Upload の Presigned URL、Storage Bucket/Key、Object Key、Original Filename、Object Body、Full PDF/Page/Chunk Text も既知の Nested Field を含めて Redact します。
+- PDF Upload/Download の Presigned URL、Storage Bucket/Key、Object Key、Original Filename、Object Body、Full PDF/Page/Chunk Text も既知の Nested Field を含めて Redact します。
 - Client Request ID は最大 128 文字の限定文字種だけを受理し、Log Injection/Storage Abuse を抑えます。
 - User-Agent は必要な場合も平文ではなく SHA-256 Hash として Token Record に保存します。
 

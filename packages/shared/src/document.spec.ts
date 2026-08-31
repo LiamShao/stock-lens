@@ -3,6 +3,7 @@ import {
   documentListResponseSchema,
   documentPathParamsSchema,
   documentResourceSchema,
+  presignedDocumentDownloadSchema,
 } from './document';
 
 const analysisId = '3e4becba-9f40-4dd5-a900-f98919c31469';
@@ -59,6 +60,21 @@ describe('document API contract (PDF-TASK-009)', () => {
     expect(
       documentListResponseSchema.safeParse({
         items: [resource, resource, resource, resource],
+      }).success,
+    ).toBe(false);
+  });
+
+  it('VIEW-FR-015 accepts only a strict URL and ISO expiry projection', () => {
+    const download = {
+      expiresAt: '2026-08-31T00:05:00.000Z',
+      url: 'https://storage.test/private.pdf?signature=redacted',
+    };
+
+    expect(presignedDocumentDownloadSchema.parse(download)).toEqual(download);
+    expect(
+      presignedDocumentDownloadSchema.safeParse({
+        ...download,
+        storageKey: 'owners/private/object.pdf',
       }).success,
     ).toBe(false);
   });

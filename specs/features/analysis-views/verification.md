@@ -2,11 +2,11 @@
 
 ## Metadata
 
-| Field               | Value                                      |
-| ------------------- | ------------------------------------------ |
-| Related Spec        | `specs/features/analysis-views/spec.md`    |
-| Verification status | `Partial — aggregate read API implemented` |
-| Last updated        | `2026-08-30`                               |
+| Field               | Value                                   |
+| ------------------- | --------------------------------------- |
+| Related Spec        | `specs/features/analysis-views/spec.md` |
+| Verification status | `Partial — read presign implemented`    |
+| Last updated        | `2026-08-31`                            |
 
 ## Implemented Evidence
 
@@ -37,6 +37,11 @@
 - Read Service は三 JSONB、`completedAt`、Compliance、全 Direct Citation を再検証し、Active Document と FindingEvidence Lineage から Document Name、1-based Page、Original Excerpt、Chunk ID を再投影します。Corrupt/Missing Lineage は Sanitized `500 INTERNAL_SERVER_ERROR` で全体を Fail closed にします。
 - OpenAPI は Bearer Security と `200/400/401/404/409/429/500` Response、View/Section/Block/Evidence DTO の Bound を公開します。
 - Task 006 で新規 Runtime Dependency、Database Migration はありません。Public API は Approved Contract の Aggregate Read Endpoint を追加しました。
+- Shared `presignedDocumentDownloadSchema` は `url` と ISO `expiresAt` だけを許可し、Storage Coordinate と Unknown Field を拒否します。
+- `POST /api/analyses/:analysisId/documents/:documentId/download-url` は Bearer Owner、Active Analysis、Active Finalized Document を Repository で解決し、Cross-owner/Missing Analysis を `404 ANALYSIS_NOT_FOUND`、Owned Analysis 内の Missing/Deleted Document を `404 DOCUMENT_NOT_FOUND` とします。
+- `S3ObjectStorageAdapter.createPresignedPdfDownload` は一つの Object Key に対する `GetObject` と `application/pdf` Response Content Type だけを最大 300 秒で署名します。Service は Runtime/Record Bucket 一致と Object `HEAD` を確認してから URL を返します。
+- Missing Object、Provider/Signing Failure、Bucket Mismatch は URL/Endpoint/Bucket/Key/Raw Error を返さず `503 DOCUMENT_DOWNLOAD_UNAVAILABLE` に収束します。Success Response は `Cache-Control: no-store` を持ち、Logger は Nested Download URL を Redact します。
+- Task 007 で Database Migration、新規 Dependency はありません。
 
 ## Automated Evidence
 
@@ -60,29 +65,34 @@
 - `analyses.integration-spec.ts`: Real PostgreSQL + Bearer HTTP で Owner A Completed Aggregate、Owner B 404、Not Ready 409、FindingEvidence/Document/Page/Chunk Projection、Concrete OpenAPI を検証しました。
 - Task 006 Targeted Gate: Shared 9 Suites / 53 Tests、API 18 Suites / 94 Tests、Shared/API Lint/Typecheck、PostgreSQL HTTP 1 Suite / 6 Tests が成功しました。
 - Task 006 Full Gate: Format、Spec Check 9 Features / 146 Requirements、Prisma Validate/Generate、7 Lint Tasks、10 Typecheck Tasks、256 Unit/Component Tests、7 Build Tasks、Integration 12 Suites / 74 Tests が成功しました。
-- Deterministic Provider と PostgreSQL/Redis/BullMQ は接続済みです。Private Object Storage、Browser E2E は後続 Task で接続します。
+- `document.spec.ts`、`s3-object-storage.spec.ts`、`documents.service.spec.ts`、`logger.config.spec.ts` は Strict Response、GetObject/300-second Sign、Owner/Missing/Provider/Bucket Failure、URL Redaction を検証しました。
+- `document-storage.integration-spec.ts` は Real PostgreSQL/MinIO と Bearer HTTP で Owner Download、300-second Expiry、`no-store`、実 GET/PDF Byte、Owner B 404、Missing Document 404、Missing Object 503、No Coordinate Leak を検証しました。
+- `analyses.integration-spec.ts` は Download Endpoint の Bearer Security と `200/400/404/503` Concrete OpenAPI を検証しました。
+- Task 007 Infrastructure Gate: Integration 12 Suites / 75 Tests が成功しました。
+- Task 007 Full Gate: Format、Spec Check 9 Features / 146 Requirements、Prisma Validate/Generate、7 Lint Tasks、10 Typecheck Tasks、267 Unit/Component Tests、7 Build Tasks、Integration 12 Suites / 75 Tests が成功しました。
+- Deterministic Provider と PostgreSQL/Redis/BullMQ/Private MinIO は接続済みです。Browser E2E は後続 Task で接続します。
 - OpenAI Live Call は実行していません。Approved `VIEW-Q-007` に従い Provider Integration は `Partial` です。
 
 ## Acceptance Status
 
-| Acceptance Criterion | Status        | Evidence / Gap                                                 |
-| -------------------- | ------------- | -------------------------------------------------------------- |
-| `VIEW-AC-001`        | `Passed`      | Fixed identity + Pending Dispatcher + real BullMQ              |
-| `VIEW-AC-002`        | `Passed`      | Deterministic provider → atomic three-view completion          |
-| `VIEW-AC-003`        | `Partial`     | Missing contract passed; generation pending                    |
-| `VIEW-AC-004`        | `Passed`      | Owner/Finding/Document/Page/Chunk/Excerpt PostgreSQL           |
-| `VIEW-AC-005`        | `Passed`      | Unknown/cross-owner/unlinked pre-persist rejection             |
-| `VIEW-AC-006`        | `Passed`      | Orchestrator + repository pre-persist rejection                |
-| `VIEW-AC-007`        | `Passed`      | Invalid citation → same Execution one-repair success           |
-| `VIEW-AC-008`        | `Passed`      | Exhaustion + sanitized state + transient Attempt 2             |
-| `VIEW-AC-009`        | `Passed`      | Race/duplicate/manual re-run/no duplicate Execution            |
-| `VIEW-AC-010`        | `Passed`      | Completed Aggregate + Owner A/B real PostgreSQL HTTP           |
-| `VIEW-AC-011`        | `Not started` | Responsive/keyboard three-view UI pending                      |
-| `VIEW-AC-012`        | `Not started` | Evidence Drawer content/navigation pending                     |
-| `VIEW-AC-013`        | `Not started` | Five-minute read presign + real PDF.js page pending            |
-| `VIEW-AC-014`        | `Not started` | Memory token + refresh rotation UI pending                     |
-| `VIEW-AC-015`        | `Partial`     | Content-free runtime usage passed; API/Storage/Browser pending |
-| `VIEW-AC-016`        | `Partial`     | Escaped untrusted context; UI render pending                   |
+| Acceptance Criterion | Status        | Evidence / Gap                                           |
+| -------------------- | ------------- | -------------------------------------------------------- |
+| `VIEW-AC-001`        | `Passed`      | Fixed identity + Pending Dispatcher + real BullMQ        |
+| `VIEW-AC-002`        | `Passed`      | Deterministic provider → atomic three-view completion    |
+| `VIEW-AC-003`        | `Partial`     | Missing contract passed; generation pending              |
+| `VIEW-AC-004`        | `Passed`      | Owner/Finding/Document/Page/Chunk/Excerpt PostgreSQL     |
+| `VIEW-AC-005`        | `Passed`      | Unknown/cross-owner/unlinked pre-persist rejection       |
+| `VIEW-AC-006`        | `Passed`      | Orchestrator + repository pre-persist rejection          |
+| `VIEW-AC-007`        | `Passed`      | Invalid citation → same Execution one-repair success     |
+| `VIEW-AC-008`        | `Passed`      | Exhaustion + sanitized state + transient Attempt 2       |
+| `VIEW-AC-009`        | `Passed`      | Race/duplicate/manual re-run/no duplicate Execution      |
+| `VIEW-AC-010`        | `Passed`      | Completed Aggregate + Owner A/B real PostgreSQL HTTP     |
+| `VIEW-AC-011`        | `Not started` | Responsive/keyboard three-view UI pending                |
+| `VIEW-AC-012`        | `Not started` | Evidence Drawer content/navigation pending               |
+| `VIEW-AC-013`        | `Partial`     | Real five-minute GET presign passed; PDF.js page pending |
+| `VIEW-AC-014`        | `Not started` | Memory token + refresh rotation UI pending               |
+| `VIEW-AC-015`        | `Partial`     | Runtime/API/Storage redaction passed; Browser pending    |
+| `VIEW-AC-016`        | `Partial`     | Escaped untrusted context; UI render pending             |
 
 ## Quality Gates
 
@@ -99,13 +109,14 @@
 ## Deviations and Residual Risks
 
 - `VIEW-DEV-001` / `VIEW-DEV-002` の Material Decision は User-approved Option A で解消済みです。
-- Runtime、Live Provider、Golden Dataset、Real PDF.js Navigation Evidence は未着手です。
+- Browser Session/UI、Live Provider、Golden Dataset、Real PDF.js Navigation Evidence は未着手です。
 - Task 002 Review では新規 Deviation を検出しませんでした。
 - Task 003 Review では新規 Deviation を検出しませんでした。
 - Task 004 Review では新規 Deviation を検出しませんでした。Durable Queue/Repair/Retry/Usage/Manual Re-run は Approved Task 005 の既知 Gap です。
 - Task 005 Review では新規 Deviation を検出しませんでした。Durable Queue/Repair/Retry/Usage/Manual Re-run の既知 Gap は実装と Real PostgreSQL/Redis/BullMQ Evidence で解消しました。
 - Task 006 Review では新規 Deviation を検出しませんでした。Private Object Storage、Browser Session/UI/PDF.js は Approved Task 007〜010 の既知 Gap です。
+- Task 007 Review では新規 Deviation を検出しませんでした。Private Read Presign、Expiry、Owner/Missing/Provider Failure、No-store/Redaction は Unit と Real MinIO Evidence を持ちます。Browser Session/UI/PDF.js は Approved Task 008〜010 の既知 Gap です。
 
 ## Conclusion
 
-Approved `VIEW-TASK-002`〜`006` の Shared Contract、Versioned Prompt、Bounded One-call Orchestrator、Owner-scoped Citation Resolution、Atomic Publish、Durable Queue/Repair/Retry/Recovery/Re-run、Completed-only Aggregate Read API は実装・検証済みです。Storage、Web、Live/Golden Evidence は未実装のため Feature は `Implementing` / `Partial` です。
+Approved `VIEW-TASK-002`〜`007` の Shared Contract、Versioned Prompt、Bounded One-call Orchestrator、Owner-scoped Citation Resolution、Atomic Publish、Durable Queue/Repair/Retry/Recovery/Re-run、Completed-only Aggregate Read API、Private Read Presign は実装・検証済みです。Web/PDF.js、Live/Golden Evidence は未実装のため Feature は `Implementing` / `Partial` です。
