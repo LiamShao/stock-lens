@@ -53,6 +53,17 @@ export const authResponseSchema = z.object({
 
 export type AuthResponse = z.infer<typeof authResponseSchema>;
 
+export const apiErrorResponseSchema = z
+  .object({
+    code: z.string().min(1),
+    details: z.record(z.string(), z.unknown()),
+    message: z.string().min(1),
+    requestId: z.string().min(1),
+  })
+  .strict();
+
+export type ApiErrorResponse = z.infer<typeof apiErrorResponseSchema>;
+
 export const authEnvironmentSchema = z.object({
   ACCESS_TOKEN_AUDIENCE: z.string().min(1).default('stocklens-web'),
   ACCESS_TOKEN_EXPIRES_IN_SECONDS: z.coerce

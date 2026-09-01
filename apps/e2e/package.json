@@ -1,0 +1,26 @@
+{
+  "name": "@stocklens/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint . --max-warnings=0",
+    "test:e2e": "playwright test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.0",
+    "@stocklens/object-storage": "workspace:*",
+    "@stocklens/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "@stocklens/config": "workspace:*",
+    "@stocklens/eslint-config": "workspace:*",
+    "@testcontainers/postgresql": "^12.0.4",
+    "@types/node": "^24.10.0",
+    "eslint": "^9.39.5",
+    "testcontainers": "12.0.4",
+    "typescript": "^5.9.3"
+  }
+}

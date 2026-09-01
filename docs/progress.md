@@ -1,5 +1,40 @@
 # StockLens AI 開発進捗
 
+## 2026-09-01
+
+### Phase 5 Full-stack Analysis Views E2E and Live Harness
+
+- Approved `VIEW-TASK-011` として `apps/e2e` Playwright Workspace を追加し、`pnpm e2e` を Real Integration → Production Build → Full-stack Browser Acceptance の一つの Gate にしました。
+- E2E は専用 PostgreSQL/Redis/Private MinIO、空 Migration、Built API/Web、Owner A/B を起動します。追跡対象 Test Code が生成する Valid 3-page PDF を Presigned PUT し、Login/HttpOnly Refresh Cookie/History/Detail、Three-view Keyboard、Mobile Drawer、Plain-text Injection、Real Presigned GET/PDF.js Page 2 → 3、Reload Recovery、Cross-owner 404、URL/Storage/DOM/Log Redaction を Chromium で検証します。
+- `VIEW-DEV-004` で検出した ignored Local IR PDF 依存を削除し、Fresh Checkout で再現可能な Synthetic Real-PDF + Browser Evidence に置換しました。
+- Analysis Views 専用の `pnpm openai:live-analysis-views` を追加しました。明示 opt-in 後だけ Production Adapter を 1 Call 使用し、Content-free Report で Three-view、Japanese、Citation、Lineage、Missing、Compliance、Injection Defense を評価します。Deterministic Harness 2 Tests と opt-in 無効時の Pre-network Fail-closed を確認しました。Live Passed Artifact は未取得です。
+- Test-only Dependency として `@playwright/test@1.61.1` を追加しました。Database Migration、Production Dependency、Public API 変更はありません。Chromium 以外の Browser Engine と 5社/15 PDF Golden Dataset は残存 Gap です。
+- Task 011 Full Gate は Format、Spec Check 9 Features / 146 Requirements、Prisma Validate/Generate、8 Lint Tasks、11 Typecheck Tasks、297 Unit/Component Tests、Real PostgreSQL/Redis/BullMQ/MinIO Integration 12 Suites / 75 Tests、7 Build Tasks、Playwright Chromium 2 Tests が成功しました。次は Approved `VIEW-TASK-012` の Documentation、Verification、Traceability、Deviation Audit です。
+
+### Phase 5 Evidence PDF.js Viewer
+
+- Approved `VIEW-TASK-010` として、Evidence Drawer の明示操作時だけ Owner-scoped Read Presign を取得し、PDF.js Embedded Canvas Viewer で Evidence の 1-based Page を開く Flow を実装しました。Previous/Next Page Navigation と Request/Render/Document Cleanup を持ちます。
+- Presigned URL は Query Cache、Browser Storage、DOM、Log に保存せず、`no-store` / Credential Omit / Redirect Reject の一回の Byte Fetch に限定します。Browser Boundary で `application/pdf`、20 MB、`%PDF-` を再検証し、Storage/API/PDF Error は固定日本語 Message に収束します。
+- PDF.js は `pdfjs-dist@6.2.108` の Version-matched bundled Worker、XFA 無効、Canvas-only Rendering を使用し、Annotation/Link/Text/Scripting Layer を生成しません。Web Package に Workspace 既存 Version の直接 Runtime Dependency を追加しました。Database Migration と Public API 変更はありません。
+- Web Targeted Gate は 8 Files / 28 Tests、Lint、Typecheck、Production Build が成功し、Build Asset に bundled PDF Worker を確認しました。Real Repository IR PDF の第 10 Page Load、Evidence Page 12 → 13 Canvas Navigation、URL No-DOM、Abort、既存 Real MinIO/Owner Boundary を検証しています。
+- Full Gate は Format、Spec Check 9 Features / 146 Requirements、Prisma Validate/Generate、7 Lint Tasks、10 Typecheck Tasks、295 Unit/Component Tests、7 Build Tasks、Real PostgreSQL/Redis/BullMQ/MinIO Integration 12 Suites / 75 Tests が成功しました。Sandbox 内 Workspace Build は Turbopack/PostCSS の Port Bind 制限で失敗し、承認済み Sandbox 外再実行が成功しました。
+- Task 010 Review で新規 Deviation は検出しませんでした。Full Browser Cross-service E2E は Approved `VIEW-TASK-011` に残します。
+
+### Phase 5 Analysis View Tabs and Evidence Drawer
+
+- Approved `VIEW-TASK-009` として、Analysis Metadata の 5 秒間隔・最大 5 分・Active Status 限定 Polling、`COMPLETED` 後だけ有効になる Strict View Query、三 View の Responsive ARIA Tabs を実装しました。
+- Section/Block、Missing Information、Compliance Notice、Buffett-Munger Non-impersonation/Non-endorsement Disclaimer と Citation Trigger を Plain Text で描画し、Evidence Drawer に Document Name、1-based Page、Original Excerpt を表示します。
+- Drawer は Initial Focus、Tab Focus Trap、Escape/Overlay Close、Trigger Focus Restore、Body Scroll Lock を持ちます。Read Presign/PDF.js は Task 010 まで呼びません。Database Migration、Public API、新規 Dependency はありません。
+- `VIEW-DEV-003` として Client Polling 未実装時の `VIEW-SEC-009 Passed` 過早表記を記録し、bounded Polling Implementation/Test と Traceability 修正で解消しました。
+- Full Gate は Format、Spec Check 9 Features / 146 Requirements、Prisma Validate/Generate、7 Lint Tasks、10 Typecheck Tasks、287 Unit/Component Tests、7 Build Tasks、Real PostgreSQL/Redis/BullMQ/MinIO Integration 12 Suites / 75 Tests が成功しました。次は Approved `VIEW-TASK-010` の PDF.js Embedded Viewer、Page Navigation、Untrusted PDF Action Boundary です。
+
+### Phase 5 Browser Session and Metadata Shell
+
+- Approved `VIEW-TASK-008` として、`credentials: include` / `cache: no-store` の Strict Web API Client、Memory-only Access Token、Initial Refresh、Concurrent `401` single-flight Rotation、各 Request 一回 Replay、Failure 時の Session/Query Cache Clear を実装しました。
+- React Hook Form + Shared Zod の `/login`、TanStack Query の Owner-scoped `/analyses` History と `/analyses/:analysisId` Detail Shell、Logout、Stable Japanese Error と Compliance Notice を追加しました。View/Drawer/PDF.js は Task 009/010 へ維持しています。
+- `@tanstack/react-query`、`react-hook-form`、`@hookform/resolvers`、`zod` と既存 Shared Workspace Package を Web Dependency に追加しました。Database Migration と Public API 変更はありません。
+- Full Gate は Format、Spec Check 9 Features / 146 Requirements、Prisma Validate/Generate、7 Lint Tasks、10 Typecheck Tasks、278 Unit/Component Tests、7 Build Tasks、Real PostgreSQL/Redis/BullMQ/MinIO Integration 12 Suites / 75 Tests が成功しました。次は Approved `VIEW-TASK-009` の View Tabs、Status Polling、Responsive/Accessible Evidence Drawer です。
+
 ## 2026-08-31
 
 ### Phase 5 Private PDF Read Presign

@@ -5,8 +5,8 @@
 | Field               | Value                                   |
 | ------------------- | --------------------------------------- |
 | Related Spec        | `specs/features/analysis-views/spec.md` |
-| Verification status | `Partial — read presign implemented`    |
-| Last updated        | `2026-08-31`                            |
+| Verification status | `Partial — PDF viewer implemented`      |
+| Last updated        | `2026-09-01`                            |
 
 ## Implemented Evidence
 
@@ -42,6 +42,21 @@
 - `S3ObjectStorageAdapter.createPresignedPdfDownload` は一つの Object Key に対する `GetObject` と `application/pdf` Response Content Type だけを最大 300 秒で署名します。Service は Runtime/Record Bucket 一致と Object `HEAD` を確認してから URL を返します。
 - Missing Object、Provider/Signing Failure、Bucket Mismatch は URL/Endpoint/Bucket/Key/Raw Error を返さず `503 DOCUMENT_DOWNLOAD_UNAVAILABLE` に収束します。Success Response は `Cache-Control: no-store` を持ち、Logger は Nested Download URL を Redact します。
 - Task 007 で Database Migration、新規 Dependency はありません。
+- Web `ApiClient` は `NEXT_PUBLIC_API_BASE_URL`、`credentials: include`、`cache: no-store`、Shared Strict Success/Error Schema を使用し、Access Token を Instance Memory だけに保持します。Browser Storage、URL、Client Cookie へ Token を保存しません。
+- Initial Refresh は既存 `HttpOnly` Cookie を Rotate し、Concurrent Protected `401` は一つの single-flight Refresh に収束します。各 Request は最新 Token で一回だけ Replay し、Refresh Failure または Replay `401` は Memory Auth と TanStack Query Cache を Clear します。
+- React Session Provider は Bootstrap 完了まで Protected Query を無効にし、Refresh Failure/Logout では Login へ戻します。Login Form は React Hook Form + Shared Zod、History/Detail は TanStack Query + Shared Response Schema で Owner-scoped Existing API だけを使用します。
+- `/login`、`/analyses`、`/analyses/:analysisId` は Responsive Shell、Semantic Heading/Form/Button、Visible Focus、Stable Japanese Error、Compliance Notice を持ちます。Task 008 は View Read、Evidence Drawer、Read Presign、PDF.js を呼ばず、Task 009/010 の境界を維持します。
+- Task 008 では `@tanstack/react-query`、`react-hook-form`、`@hookform/resolvers`、`zod` と既存 `@stocklens/shared` Workspace Dependency を追加しました。Database Migration と Public API 変更はありません。
+- Web Detail は Owner-scoped Metadata を 5 秒間隔、Page Mount から最大 5 分、処理中 Status だけ Polling し、`COMPLETED` / Failed / DRAFT / UPLOADED で停止します。History も表示 Page 内に処理中 Analysis がある場合だけ同じ Bound を使用します。
+- Metadata が `COMPLETED` の場合だけ `GET /api/analyses/:analysisId/views` を呼び、Shared `analysisViewsResourceSchema` で Completed Aggregate、三 View、Unique Evidence Projection を Browser Boundary でも再検証します。
+- Just Tell Me、Analyst View、Buffett-Munger Lens は ARIA Tabs として Responsive に表示し、Arrow Left/Right、Home/End、roving `tabIndex`、Visible Focus を実装します。Section/Block、Missing Information、Compliance Notice、Buffett-Munger Non-impersonation/Non-endorsement Disclaimer を表示します。
+- Citation Trigger は bounded Response Evidence ID を解決し、Modal Drawer に Document Name、1-based Page、Original Excerpt を Plain Text で表示します。Drawer は Initial Close Focus、Tab Trap、Escape/Overlay Close、Trigger Focus Restore、Body Scroll Lock を持ちます。
+- View/Evidence に含まれる HTML-like Text は React Text Node としてのみ描画し、Script/HTML/Link として実行しません。Task 009 は Read Presign を呼ばず、PDF Navigation と Untrusted PDF Action Boundary を Task 010 に維持します。
+- Task 009 で Database Migration、Public API、新規 Dependency はありません。
+- Evidence Drawer は User 操作時だけ `createDocumentDownloadUrl` を呼び、Presigned URL を Query Cache、Browser Storage、DOM、Log に置かず、`no-store` / Credential Omit / Redirect Reject の一回の Byte Fetch にだけ使用します。
+- Browser PDF Boundary は `application/pdf`、Declared/Actual 20 MB、`%PDF-` Header を検証します。Storage/API/PDF Failure は URL、Coordinate、Raw Detail を含まない固定日本語 Error に収束し、Retry は新しい Presign から開始します。
+- `pdfjs-dist@6.2.108` の Main Library と bundled Worker を同 Version で使用し、XFA 無効、Canvas-only Rendering、Annotation/Link/Text/Scripting Layer 非生成とします。Evidence の 1-based Page を初期 Page として検証し、Previous/Next を Document 範囲に制限します。
+- Drawer Close/Viewer Unmount では Presign/Fetch Abort、Render Task Cancel、Document Loading Task Destroy を実行します。Task 010 で Web Package に Workspace 既存 Version の `pdfjs-dist` Direct Runtime Dependency を追加し、Database Migration と Public API 変更はありません。
 
 ## Automated Evidence
 
@@ -70,29 +85,47 @@
 - `analyses.integration-spec.ts` は Download Endpoint の Bearer Security と `200/400/404/503` Concrete OpenAPI を検証しました。
 - Task 007 Infrastructure Gate: Integration 12 Suites / 75 Tests が成功しました。
 - Task 007 Full Gate: Format、Spec Check 9 Features / 146 Requirements、Prisma Validate/Generate、7 Lint Tasks、10 Typecheck Tasks、267 Unit/Component Tests、7 Build Tasks、Integration 12 Suites / 75 Tests が成功しました。
-- Deterministic Provider と PostgreSQL/Redis/BullMQ/Private MinIO は接続済みです。Browser E2E は後続 Task で接続します。
-- OpenAI Live Call は実行していません。Approved `VIEW-Q-007` に従い Provider Integration は `Partial` です。
+- `api-client.spec.ts`: Memory-only Token、`credentials/include` + `no-store`、Shared Login Normalization、Concurrent 401 single-flight Rotation、一回 Replay、Replay Failure Clear、Malformed Response Sanitization を 5 Tests で検証しました。
+- `session-provider.spec.tsx`: Browser Reload の Initial Refresh Success と Refresh Failure 時の Unauthenticated/Private Query Cache Clear を 2 Tests で検証しました。
+- `session-shells.spec.tsx`: Login Request/Navigation、Bearer Owner History、Logout Cookie Request、Detail Metadata Shell、未完成 View Endpoint を先行取得しない境界を 3 Tests で検証しました。
+- Task 008 Targeted Gate: Web 4 Files / 11 Tests、Shared 10 Suites / 55 Tests、両 Package の Lint/Typecheck、Web Production Build が成功しました。最初の sandboxed Build は Turbopack/PostCSS の Port Bind 制限で失敗し、同一 Command の承認済み sandbox 外再実行が成功しました。
+- Task 008 Full Gate: Format、Spec Check 9 Features / 146 Requirements、Prisma Validate/Generate、7 Lint Tasks、10 Typecheck Tasks、278 Unit/Component Tests、7 Build Tasks、Integration 12 Suites / 75 Tests が成功しました。
+- `analysis-polling.spec.ts`: Processing Status の 5 秒 Interval、5 分上限、Completed/Failed/Draft/Uploaded Stop、History Any-active Rule を 6 Tests で検証しました。
+- `analysis-views-panel.spec.tsx`: 三 View Arrow/Home/End Keyboard、ARIA Selection/Focus、Missing Information、Buffett Disclaimer、Drawer Document/Page/Excerpt、Initial/Trapped/Restored Focus、Escape、HTML-like Evidence Plain-text Render を 2 Tests で検証しました。
+- `session-shells.spec.tsx`: Incomplete Metadata では View API を呼ばず、Completed Metadata 後だけ Bearer View Query を有効化して Strict Aggregate を描画する Test を追加しました。
+- Task 009 Targeted Gate: Web 6 Files / 20 Tests、Lint、Typecheck、Production Build が成功しました。
+- Task 009 Full Gate: Format、Spec Check 9 Features / 146 Requirements、Prisma Validate/Generate、7 Lint Tasks、10 Typecheck Tasks、287 Unit/Component Tests、7 Build Tasks、Integration 12 Suites / 75 Tests が成功しました。
+- `pdf-document.spec.ts`: Operation-only Fetch Options、MIME/Declared Size/Header/Sanitized Error と Repository の実 IR PDF を PDF.js で解析して第 10 Page を解決する 5 Tests を検証しました。
+- `pdf-viewer.spec.tsx`: Evidence Page 12 の Canvas-only Open、Page 13 への Navigation、Presigned URL No-DOM、No Link、Unmount Abort を 2 Tests で検証しました。
+- `api-client.spec.ts`: Owner-scoped Read Presign POST、Bearer/No-store/Strict Response、Browser Storage Non-persistence の Test を追加しました。
+- Task 010 Targeted Gate: Web 8 Files / 28 Tests、Lint、Typecheck、Production Build が成功し、Build Output に Version-matched bundled PDF Worker Asset を確認しました。Task 007 の Real PostgreSQL/MinIO Owner A/B、300-second Expiry、実 GET/PDF Byte Evidence と分層して `VIEW-AC-013` を検証します。
+- Task 010 Full Gate: Format、Spec Check 9 Features / 146 Requirements、Prisma Validate/Generate、7 Lint Tasks、10 Typecheck Tasks、295 Unit/Component Tests、7 Build Tasks、Real PostgreSQL/Redis/BullMQ/MinIO Integration 12 Suites / 75 Tests が成功しました。Sandbox 内 Workspace Build は Turbopack/PostCSS の Port Bind 制限で失敗し、同一 Command の承認済み Sandbox 外再実行が成功しました。
+- `apps/e2e/tests/analysis-views.e2e.spec.ts`: Isolated PostgreSQL/Redis/Private MinIO、Migration、Built API/Web、Owner A/B、Tracked Synthetic 3-page PDF を接続し、Login/HttpOnly Refresh Cookie/History/Detail、Three-view Keyboard、Mobile Drawer、Plain-text Injection、Real Presigned GET/PDF.js Page 2 → 3、Reload、Cross-owner 404、URL/Storage/DOM/Log Redaction を Chromium 2 Tests で検証しました。
+- `analysis-views-live-evaluation.spec.ts`: One-call Live-shaped Three-view Report の Structure/Japanese/Citation/Lineage/Missing/Compliance/Injection Defense と Content-free Passed/Failed Report を 2 Tests で検証しました。`pnpm openai:live-analysis-views` は opt-in=false の場合、Provider Config/Network Access 前に Sanitized JSON で Fail-closed することを確認しました。
+- `VIEW-DEV-004` は ignored Local IR PDF Fixture を Test Code 生成の Valid 3-page PDF と Full Browser E2E に置換して解消しました。
+- Task 011 Full Gate: Format、Spec Check 9 Features / 146 Requirements、Prisma Validate/Generate、8 Lint Tasks、11 Typecheck Tasks、297 Unit/Component Tests、Real PostgreSQL/Redis/BullMQ/MinIO Integration 12 Suites / 75 Tests、7 Build Tasks、Playwright Chromium 2 Tests が成功しました。
+- OpenAI Live Call は実行していません。Approved `VIEW-Q-007` に従い Production Provider Integration は `Partial` です。
 
 ## Acceptance Status
 
-| Acceptance Criterion | Status        | Evidence / Gap                                           |
-| -------------------- | ------------- | -------------------------------------------------------- |
-| `VIEW-AC-001`        | `Passed`      | Fixed identity + Pending Dispatcher + real BullMQ        |
-| `VIEW-AC-002`        | `Passed`      | Deterministic provider → atomic three-view completion    |
-| `VIEW-AC-003`        | `Partial`     | Missing contract passed; generation pending              |
-| `VIEW-AC-004`        | `Passed`      | Owner/Finding/Document/Page/Chunk/Excerpt PostgreSQL     |
-| `VIEW-AC-005`        | `Passed`      | Unknown/cross-owner/unlinked pre-persist rejection       |
-| `VIEW-AC-006`        | `Passed`      | Orchestrator + repository pre-persist rejection          |
-| `VIEW-AC-007`        | `Passed`      | Invalid citation → same Execution one-repair success     |
-| `VIEW-AC-008`        | `Passed`      | Exhaustion + sanitized state + transient Attempt 2       |
-| `VIEW-AC-009`        | `Passed`      | Race/duplicate/manual re-run/no duplicate Execution      |
-| `VIEW-AC-010`        | `Passed`      | Completed Aggregate + Owner A/B real PostgreSQL HTTP     |
-| `VIEW-AC-011`        | `Not started` | Responsive/keyboard three-view UI pending                |
-| `VIEW-AC-012`        | `Not started` | Evidence Drawer content/navigation pending               |
-| `VIEW-AC-013`        | `Partial`     | Real five-minute GET presign passed; PDF.js page pending |
-| `VIEW-AC-014`        | `Not started` | Memory token + refresh rotation UI pending               |
-| `VIEW-AC-015`        | `Partial`     | Runtime/API/Storage redaction passed; Browser pending    |
-| `VIEW-AC-016`        | `Partial`     | Escaped untrusted context; UI render pending             |
+| Acceptance Criterion | Status    | Evidence / Gap                                               |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| `VIEW-AC-001`        | `Passed`  | Fixed identity + Pending Dispatcher + real BullMQ            |
+| `VIEW-AC-002`        | `Passed`  | Deterministic provider → atomic three-view completion        |
+| `VIEW-AC-003`        | `Partial` | Missing contract passed; generation pending                  |
+| `VIEW-AC-004`        | `Passed`  | Owner/Finding/Document/Page/Chunk/Excerpt PostgreSQL         |
+| `VIEW-AC-005`        | `Passed`  | Unknown/cross-owner/unlinked pre-persist rejection           |
+| `VIEW-AC-006`        | `Passed`  | Orchestrator + repository pre-persist rejection              |
+| `VIEW-AC-007`        | `Passed`  | Invalid citation → same Execution one-repair success         |
+| `VIEW-AC-008`        | `Passed`  | Exhaustion + sanitized state + transient Attempt 2           |
+| `VIEW-AC-009`        | `Passed`  | Race/duplicate/manual re-run/no duplicate Execution          |
+| `VIEW-AC-010`        | `Passed`  | Completed Aggregate + Owner A/B real PostgreSQL HTTP         |
+| `VIEW-AC-011`        | `Passed`  | Chromium desktop/mobile viewport + keyboard Browser E2E      |
+| `VIEW-AC-012`        | `Passed`  | Drawer document/page/excerpt + modal focus keyboard          |
+| `VIEW-AC-013`        | `Passed`  | Tracked 3-page PDF + real MinIO/API/PDF.js page 2 → 3 E2E    |
+| `VIEW-AC-014`        | `Passed`  | Memory-only token + reload/401 single-flight rotation        |
+| `VIEW-AC-015`        | `Passed`  | Server/browser sanitized errors; URL/content not exposed     |
+| `VIEW-AC-016`        | `Passed`  | Plain text + canvas-only PDF; no action/link/scripting layer |
 
 ## Quality Gates
 
@@ -105,18 +138,24 @@
 | `pnpm test`             | Passed |
 | `pnpm test:integration` | Passed |
 | `pnpm build`            | Passed |
+| `pnpm e2e`              | Passed |
 
 ## Deviations and Residual Risks
 
 - `VIEW-DEV-001` / `VIEW-DEV-002` の Material Decision は User-approved Option A で解消済みです。
-- Browser Session/UI、Live Provider、Golden Dataset、Real PDF.js Navigation Evidence は未着手です。
+- Chromium Desktop/Mobile Viewport の Full Browser Flow は Passed です。Firefox/WebKit、Live Provider Passed Artifact、Golden Dataset は未実装です。
 - Task 002 Review では新規 Deviation を検出しませんでした。
 - Task 003 Review では新規 Deviation を検出しませんでした。
 - Task 004 Review では新規 Deviation を検出しませんでした。Durable Queue/Repair/Retry/Usage/Manual Re-run は Approved Task 005 の既知 Gap です。
 - Task 005 Review では新規 Deviation を検出しませんでした。Durable Queue/Repair/Retry/Usage/Manual Re-run の既知 Gap は実装と Real PostgreSQL/Redis/BullMQ Evidence で解消しました。
 - Task 006 Review では新規 Deviation を検出しませんでした。Private Object Storage、Browser Session/UI/PDF.js は Approved Task 007〜010 の既知 Gap です。
 - Task 007 Review では新規 Deviation を検出しませんでした。Private Read Presign、Expiry、Owner/Missing/Provider Failure、No-store/Redaction は Unit と Real MinIO Evidence を持ちます。Browser Session/UI/PDF.js は Approved Task 008〜010 の既知 Gap です。
+- Task 008 Review では新規 Deviation を検出しませんでした。Browser Session、Login、History/Detail Shell の Gap は Component Evidence で解消し、View/Drawer/PDF.js は Approved Task 009/010 に残します。Full Browser E2E は Task 011 です。
+- Task 009 Review で `VIEW-DEV-003` を検出しました。`VIEW-SEC-009` は Server-side Budget だけで過早に Passed とされていましたが、5 秒/5 分/Active Status 限定 Client Polling と Boundary Test を追加して解消しました。Responsive/Cross-browser Playwright は Task 011、PDF.js は Task 010 に残します。
+- Task 010 Review では新規 Deviation を検出しませんでした。Operation-only Read Presign、Strict PDF Byte Boundary、Version-matched Worker、Canvas-only Page Navigation を実装しました。Full Browser Cross-service E2E は Task 011 です。
+- Task 011 Initial Audit で `VIEW-DEV-004` を検出しました。Task 010 の Real PDF.js Test は ignored Local IR PDF に依存して CI 再現不能だったため `VIEW-AC-013` を一時 `Partial` に戻し、Tracked Synthetic Real-PDF + Full Browser MinIO/API/PDF.js Evidence で置換します。
+- Task 011 で `VIEW-DEV-004` を解消し、Full-stack Chromium E2E と Analysis Views 専用 opt-in Live Harness を追加しました。Production Live Call/Passed Artifact と Golden Dataset は Approved Scope 上 `Partial` のまま、Firefox/WebKit は残存 Browser Coverage Risk として Task 012 Audit へ引き継ぎます。
 
 ## Conclusion
 
-Approved `VIEW-TASK-002`〜`007` の Shared Contract、Versioned Prompt、Bounded One-call Orchestrator、Owner-scoped Citation Resolution、Atomic Publish、Durable Queue/Repair/Retry/Recovery/Re-run、Completed-only Aggregate Read API、Private Read Presign は実装・検証済みです。Web/PDF.js、Live/Golden Evidence は未実装のため Feature は `Implementing` / `Partial` です。
+Approved `VIEW-TASK-002`〜`011` の Shared Contract、Versioned Prompt、Bounded One-call Orchestrator、Owner-scoped Citation Resolution、Atomic Publish、Durable Queue/Repair/Retry/Recovery/Re-run、Completed-only Aggregate Read API、Private Read Presign、Memory-only Browser Session、Login/History/Detail、Three-view Tabs、Evidence Drawer、PDF.js Canvas Page Navigation、Full-stack Chromium E2E、Opt-in Live Harness は実装済みです。Production Live Passed Artifact と Golden Dataset は未取得であり、Task 012 の最終 Documentation/Traceability/Quality Audit 前なので Feature は `Implementing` / `Partial` です。

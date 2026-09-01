@@ -2,7 +2,7 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  transpilePackages: ['@stocklens/ui'],
+  transpilePackages: ['@stocklens/shared', '@stocklens/ui'],
 };
 
 export default nextConfig;

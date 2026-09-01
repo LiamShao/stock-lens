@@ -1,0 +1,10 @@
+{
+  "extends": "@stocklens/config/typescript/base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "types": ["node", "@playwright/test"]
+  },
+  "include": ["*.ts", "support/**/*.ts", "tests/**/*.ts"]
+}

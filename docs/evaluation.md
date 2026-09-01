@@ -6,13 +6,13 @@ AI Evaluation は Unit Test、Infrastructure Integration、Opt-in Live Smoke、G
 
 ## 2. 評価 Layer
 
-| Layer                  | 目的                                                | CI                     | 現在の状態                             |
-| ---------------------- | --------------------------------------------------- | ---------------------- | -------------------------------------- |
-| Strict Schema Unit     | Zod、Bound、Compliance、Error Classification        | 必須                   | 実装済み                               |
-| Deterministic Pipeline | Retry/Repair、Evidence、Atomic Publish、Idempotency | 必須                   | 実装済み                               |
-| Infrastructure E2E     | PostgreSQL/Redis/BullMQ、Race、Content-free Audit   | 必須                   | 実装済み                               |
-| OpenAI Live Smoke      | Production Adapter と Versioned Prompt の最小疎通   | 明示 opt-in            | Harness 実装済み、Passed Artifact なし |
-| Golden Dataset         | 5 Company / 15 Public IR PDF の品質回帰             | 将来の repeatable gate | 未実装                                 |
+| Layer                  | 目的                                                | CI                     | 現在の状態                                       |
+| ---------------------- | --------------------------------------------------- | ---------------------- | ------------------------------------------------ |
+| Strict Schema Unit     | Zod、Bound、Compliance、Error Classification        | 必須                   | 実装済み                                         |
+| Deterministic Pipeline | Retry/Repair、Evidence、Atomic Publish、Idempotency | 必須                   | 実装済み                                         |
+| Infrastructure E2E     | PostgreSQL/Redis/BullMQ、Race、Content-free Audit   | 必須                   | 実装済み                                         |
+| OpenAI Live Smoke      | Production Adapter と Versioned Prompt の最小疎通   | 明示 opt-in            | Extraction/View Harness 済、Passed Artifact なし |
+| Golden Dataset         | 5 Company / 15 Public IR PDF の品質回帰             | 将来の repeatable gate | 未実装                                           |
 
 ## 3. Phase 4 OpenAI Live Smoke
 
@@ -34,6 +34,18 @@ Harness は Production `OpenAiLlmProvider` と Git-tracked Prompt を使い、sy
 Result は JSON 1 Record です。Provider、Model、Prompt Name/Version/SHA-256、Schema Version、Token、Latency、Provider Request ID、Boolean Check、Count だけを含み、Prompt、Source、Generated Text を含みません。`status: PASSED` の Artifact を Review するまで Provider Integration は `Partial` です。
 
 Opt-in がない場合は API Call 前に `OPENAI_LIVE_EVALUATION_NOT_ALLOWED` で終了します。Live Smoke は Cost/Availability に依存するため CI の標準 Gate へ含めません。
+
+### Analysis Views Live Smoke
+
+三 View 専用 Harness は同じ Environment を使い、次を実行します。
+
+```bash
+pnpm openai:live-analysis-views
+```
+
+Git-tracked `prompts/analysis-views/v1.json`、Production `OpenAiLlmProvider`、Supported Finding/Evidence と Insufficient Finding を含む Synthetic Source を 1 Call で処理します。Three-view Structure、Japanese Output、Citation Coverage、Source Lineage、Missing Information、Compliance、Injection Sentinel 非出力を判定します。標準出力は Count、Usage、Provider Request ID、Model、Prompt Version/SHA-256、Boolean Check のみで、Prompt、Source、生成本文を含みません。
+
+Opt-in がない場合は Provider Config 読込や Network Access 前に `OPENAI_ANALYSIS_VIEWS_LIVE_EVALUATION_NOT_ALLOWED` で終了します。Passed Artifact は未取得のため、Analysis Views Production Provider Verification は `Partial` のままです。
 
 ## 4. Golden Dataset Target
 

@@ -23,7 +23,7 @@ Next.js Web ─────► NestJS + Fastify API ─────► PostgreSQ
                            └────────────────────► LLM / Embedding Provider
 ```
 
-- `apps/web`: UI、TanStack Query、Form Validation、Evidence Drawer、PDF Page Navigation を担当します。現時点では Skeleton です。
+- `apps/web`: In-memory Access Token、Refresh Rotation、Login、Owner-scoped History/Detail、bounded Status Polling、Three-view ARIA Tabs、Evidence Drawer、TanStack Query、Form Validation を実装済みです。PDF Page Navigation は後続 Task です。
 - `apps/api`: HTTP、Authentication、Analysis Management、Authorization Boundary、Validation、OpenAPI、Job Enqueue を担当します。Controller は Prisma を直接呼びません。
 - `apps/worker`: Upload Cleanup、PDF Parse/Chunk、Deterministic Financial Metrics、Bounded Structured Extraction、Evidence/Compliance Validation、Atomic Phase 5 Handoff、View Contract/One-call Orchestrator、Owner-scoped Atomic Publish、Durable View Queue/Retry/Repair/Recovery/Re-run を実装済みです。Embedding、RAG は未実装です。
 - PostgreSQL: Transactional Data、Owner Scope、JSONB Output、Full Text Search、pgvector を一つの整合性境界で管理します。
@@ -71,6 +71,7 @@ PostgreSQL constraint
 - Access Token は短命 JWT で、Sign/Verify Algorithm は `HS256` に固定します。
 - Refresh Token は Random Opaque Secret、DB には SHA-256 Hash のみを保存し、Rotation/Reuse Detection を行います。
 - Refresh Cookie は `HttpOnly`、`SameSite=Strict`、Production `Secure` です。
+- Web は `credentials: include` / `cache: no-store` の API Client を使い、Reload 時に Refresh Cookie を一回 Rotate します。Concurrent `401` は single-flight Refresh と各 Request 一回 Replay に収束し、失敗時は Memory Token と Query Cache を破棄します。
 - Credential CORS は設定済み Origin の完全一致だけを許可します。
 - Request ID は 128 文字以内の限定文字種だけを受理し、それ以外は Server UUID に置換します。
 - Structured Logger は Authorization、Cookie、Password、Token Field を Redact します。
@@ -118,7 +119,7 @@ Worker maintenance (startup + every 60 s)
 
 S3-compatible Object Storage Interface と MinIO/AWS Adapter は `@stocklens/object-storage` に実装済みです。Object Cleanup は PostgreSQL の `JobExecution` を Durable Source、BullMQ を Dispatch Layer とし、Queue Payload を `jobExecutionId` のみに限定します。独立 Worker は Database Relation から Target を解決し、Idempotent Delete、最大 3 Attempt の Exponential Backoff、Sanitized Failure History を管理します。
 
-Evidence PDF の Read Presign は API が Active Owner/Analysis/Finalized Document と Object `HEAD` を確認し、単一 Object の `GetObject` を最大 300 秒で署名します。Response は URL/Expiry だけで `no-store` とし、Missing/Provider Failure は Storage Coordinate を除去した Stable `503` にします。PDF.js Page Navigation は後続 Web Task でこの URL を操作時だけ取得します。
+Evidence PDF の Read Presign は API が Active Owner/Analysis/Finalized Document と Object `HEAD` を確認し、単一 Object の `GetObject` を最大 300 秒で署名します。Response は URL/Expiry だけで `no-store` とし、Missing/Provider Failure は Storage Coordinate を除去した Stable `503` にします。Web は Citation Drawer の明示操作時だけ URL を取得し、`no-store` / Credential Omit / Redirect Reject で PDF Bytes に交換します。URL を State/Cache/DOM/Log に残さず、PDF.js の Version-matched Worker と Canvas-only Page Renderer で Evidence Page を開きます。
 
 Active Document と未期限 Upload Reservation の合計 3 件制限、Finalize、Delete、Expiry/Cleanup Upsert は Serializable Transaction で保護します。同一 Session の Concurrent/Repeated Finalize は一つの Completed Document に収束し、Delete/Finalize Race は重複 Cleanup Execution を作りません。
 
@@ -129,8 +130,8 @@ Target は AWS-oriented Architecture です。Web/API/Worker を独立 Deployabl
 ## 8. 現在の既知 Gap
 
 - Analysis と Document HTTP API の Cross-user Authorization は Bearer User A/B で検証済みです。
-- Object Storage Adapter、PDF Upload/Finalize/Delete API、Concurrent Reservation/Finalize、24-hour Orphan Scan、Cleanup Queue/Worker、PDF Parse/Chunk、Phase 4 Durable LLM Pipeline/Atomic Evidence Publish、Phase 5 Durable View Generation/Atomic Publish は実装・検証済みです。OpenAI Live Passed Artifact、RAG、Evidence UI は未実装です。
-- Read Presign API と Real MinIO GET は実装・検証済みです。Production Private Bucket Policy、Browser PUT/GET CORS、API/Worker IAM Policy と PDF.js Viewer Flow は未実装・未検証です。
+- Object Storage Adapter、PDF Upload/Finalize/Delete API、Concurrent Reservation/Finalize、24-hour Orphan Scan、Cleanup Queue/Worker、PDF Parse/Chunk、Phase 4 Durable LLM Pipeline/Atomic Evidence Publish、Phase 5 Durable View Generation/Atomic Publish、Browser Session/History/Detail、Three-view/Evidence Drawer/PDF.js UI は実装・検証済みです。OpenAI Live Passed Artifact と RAG は未実装です。
+- Read Presign API、Real MinIO GET、Real PDF.js Document/Page Load、Canvas Page Navigation は実装・検証済みです。Production Private Bucket Policy、Browser PUT/GET CORS、API/Worker IAM Policy と Full Browser E2E は未実装・未検証です。
 - FAILED Cleanup/Parse/Chunk/Metrics/Extract は Guard 付き Operator CLI から既存 Execution を再実行できます。Production Workload IAM/Secrets Manager Evidence は Phase 7 に残ります。
 - Rate Limit Store は Process Local であり、Multi-instance 前に Redis-backed Store が必要です。
 - AI Pipeline、Evidence、Evaluation の詳細文書は作成済みです。Required ADR と Deployment 文書は関連 Phase で追加します。

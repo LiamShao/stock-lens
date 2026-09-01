@@ -16,8 +16,8 @@
 - [x] `VIEW-TASK-005` (`VIEW-FR-001`, `VIEW-FR-009`〜`VIEW-FR-011`, `VIEW-SEC-009`) Durable `GENERATE_VIEWS` Queue、Repair/Retry、Pending Recovery、Manual Re-run
 - [x] `VIEW-TASK-006` (`VIEW-FR-012`, `VIEW-SEC-001`, `VIEW-SEC-003`) Completed-only Aggregate Read API、Shared Projection、OpenAPI、Owner A/B Integration
 - [x] `VIEW-TASK-007` (`VIEW-FR-015`, `VIEW-SEC-001`, `VIEW-SEC-006`, `VIEW-SEC-007`) Read-only Presign Adapter/API、Expiry、Missing/Provider Failure、Redaction Integration
-- [ ] `VIEW-TASK-008` (`VIEW-FR-016`, `VIEW-SEC-008`, `VIEW-AC-014`) Web API Client、In-memory Session、Login/Refresh/Logout、History/Detail Shell
-- [ ] `VIEW-TASK-009` (`VIEW-FR-013`, `VIEW-FR-014`, `VIEW-AC-010`〜`VIEW-AC-012`) View Tabs、Status Polling、Responsive/Accessible Evidence Drawer
-- [ ] `VIEW-TASK-010` (`VIEW-FR-015`, `VIEW-SEC-007`, `VIEW-AC-013`, `VIEW-AC-016`) PDF.js Embedded Viewer、Page Navigation、Untrusted PDF Action Boundary
-- [ ] `VIEW-TASK-011` (`VIEW-AC-001`〜`VIEW-AC-016`) Full PostgreSQL/Redis/BullMQ/Storage/API/Web/E2E/Security Matrix と Opt-in Live Harness
+- [x] `VIEW-TASK-008` (`VIEW-FR-016`, `VIEW-SEC-008`, `VIEW-AC-014`) Web API Client、In-memory Session、Login/Refresh/Logout、History/Detail Shell
+- [x] `VIEW-TASK-009` (`VIEW-FR-013`, `VIEW-FR-014`, `VIEW-AC-010`〜`VIEW-AC-012`) View Tabs、Status Polling、Responsive/Accessible Evidence Drawer
+- [x] `VIEW-TASK-010` (`VIEW-FR-015`, `VIEW-SEC-007`, `VIEW-AC-013`, `VIEW-AC-016`) PDF.js Embedded Viewer、Page Navigation、Untrusted PDF Action Boundary
+- [x] `VIEW-TASK-011` (`VIEW-AC-001`〜`VIEW-AC-016`) Full PostgreSQL/Redis/BullMQ/Storage/API/Web/E2E/Security Matrix と Opt-in Live Harness
 - [ ] `VIEW-TASK-012` Documentation、Verification、Traceability、Deviation Audit、Full Quality Gate

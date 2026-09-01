@@ -53,6 +53,8 @@ pnpm dev
 - MinIO API: `localhost:9000`
 - MinIO Console: `localhost:9001`
 
+Web は `NEXT_PUBLIC_API_BASE_URL`（Local Default は `http://localhost:3001/api`）へ接続します。Access Token は Browser Memory だけに保持し、Reload 時は API の `HttpOnly` Refresh Cookie を Rotate して Session を回復します。Login は `/login`、Owner-scoped Analysis History は `/analyses`、Detail Shell は `/analyses/:analysisId` です。
+
 ## 品質チェック
 
 ```bash
@@ -83,7 +85,10 @@ Live Smoke は `ALLOW_OPENAI_LIVE_EVALUATION=true` を追加で設定し、次�
 
 ```bash
 pnpm openai:live-evaluation
+pnpm openai:live-analysis-views
 ```
+
+前者は Structured Extraction、後者は Analysis Views の Versioned Prompt/Structured Output を 1 Call で確認します。どちらも Prompt、Source、生成本文を含まない Content-free JSON だけを出力します。
 
 Long Document の抽出は全 Chunk を stable order の bounded Map/Merge で処理します。Default は最大 2 Map + 1 Merge とし、Context/Estimated Token/Call Budget を超える場合は先頭だけを採用せず Stable Failure とします。PDF Text と Intermediate Candidate は Escaped Untrusted User Context に限定します。
 

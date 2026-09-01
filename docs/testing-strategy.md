@@ -14,7 +14,7 @@ StockLens AI の Test は、Build が通ることだけでなく、Security Boun
 | E2E           | Browser Upload、Status Polling、View、Evidence Drawer、PDF Navigation        | Playwright                           | 隔離 Full Stack             |
 | AI Evaluation | Schema、Evidence Coverage、Citation/Numeric Consistency、Unsupported Claim   | Repeatable Evaluation Script         | Golden Dataset              |
 
-現時点では API Unit/Component と PostgreSQL Integration を実装済みです。Frontend E2E と AI Evaluation は対象 Feature 未実装のため未着手です。
+現時点では API Unit/Component、PostgreSQL Integration、Web Session/Metadata/View/Drawer/PDF Viewer の Vitest/React Testing Library Component Test に加え、Playwright Chromium の Full-stack E2E を実装済みです。PDF Fixture は Test Code から生成する追跡対象の Valid 3-page PDF を使い、Real MinIO Presigned GET、PDF.js Canvas の Evidence Page/Next Page、Browser Session、Owner A/B 404 を一つの隔離 Flow で検証します。Golden Dataset AI Evaluation は後続 Task です。
 
 ## 3. PostgreSQL Integration Harness
 
@@ -47,6 +47,8 @@ StockLens AI の Test は、Build が通ることだけでなく、Security Boun
 - `ownerId` / `userId` は Request Body ではなく Authentication Context から取得する。
 - Cookie Attribute、CORS、CSRF 前提、Rate Limit、Deleted User を検証する。
 - Logger の実出力を Capture し、Password、Authorization、Cookie、Token が Redact されることを検証する。
+- Browser Session は Storage 非使用、Initial Refresh、single-flight Rotation、401 一回 Replay、Refresh/Replay Failure 時の Cache Clear/Login Return を検証する。
+- Analysis View UI は completed-only Query、5 秒/5 分 Polling、ARIA Tab Keyboard、Missing Information、Citation Drawer Content、Escape/Tab/Focus Restore、Plain-text Render を検証する。Playwright Chromium では Desktop/Mobile Viewport、Real PDF Page Navigation、Cookie/Storage、Injection、URL/Log Redaction を検証する。他 Browser Engine の回帰は未実装の残存 Risk とする。
 - Upload は Extension、MIME、`%PDF-` Header、File Count、Size、Cross-user Object Access を検証する。
 - Uploaded PDF 内の Prompt Injection Delimiter を Escape し、`role: user` / `trust: untrusted` の Context に固定する Unit Test を持つ。Pure Map/Merge Orchestrator では System/User Separation、全 Chunk Coverage、No Silent Truncation、Map Candidate Re-escape、Call/Character/Estimated Token Limit を検証済みです。Durable Runtime 接続後に Golden/Live Evaluation を追加します。
 
@@ -87,6 +89,18 @@ pnpm openai:live-evaluation
 Harness は Git-tracked Prompt と Production `OpenAiLlmProvider` を使用し、Strict Schema、Japanese Output、Evidence Coverage、Exact Source Lineage、Compliance、Prompt Injection Defense を確認します。標準出力は Provider、Model、Prompt Name/Version/SHA-256、Schema Version、Token、Latency、Provider Request ID、Check Result だけの JSON で、Prompt、Fixture、生成本文を含みません。Opt-in がない場合は API Call 前に `OPENAI_LIVE_EVALUATION_NOT_ALLOWED` で終了します。
 
 `status: PASSED` の Result Artifact が保存・Review されるまでは OpenAI Provider Integration を `Partial` と報告します。Live Smoke は 5 Company / 15 Public IR PDF の Golden Dataset Evaluation を置き換えません。
+
+### Analysis Views Full-stack E2E と Live Smoke
+
+`pnpm e2e` は既存 PostgreSQL Integration、Production Build、Playwright を順に実行します。Playwright は固定 Port が使用中なら既存 Process を停止せず Fail-closed とし、専用 PostgreSQL/Redis/Private MinIO Container、空 Database Migration、Built API/Web、Owner A/B、追跡対象の 3-page PDF Fixture を起動・破棄します。
+
+Analysis Views の Production Provider Smoke は同じ明示 opt-in を使い、次を実行します。
+
+```bash
+pnpm openai:live-analysis-views
+```
+
+Versioned Analysis Views Prompt と Production Adapter を 1 Call だけ使用し、Three-view Structure、Japanese Output、Citation Coverage、Source Lineage、Missing Information、Compliance、Prompt Injection Defense を評価します。Report は Prompt/Source/Generated Text を含まない Count/Usage/Version/Boolean だけです。Opt-in がない場合は Provider Config 読込や Network Access より前に `OPENAI_ANALYSIS_VIEWS_LIVE_EVALUATION_NOT_ALLOWED` で終了します。Passed Artifact がない現状は `Partial` です。
 
 ## 7. Quality Gates
 

@@ -20,12 +20,14 @@
     "typecheck": "turbo run typecheck",
     "db:generate": "dotenv -e .env.example -- prisma generate --schema prisma/schema.prisma",
     "db:validate": "dotenv -e .env.example -- prisma validate --schema prisma/schema.prisma",
+    "e2e": "pnpm test:integration && pnpm build && pnpm --filter @stocklens/e2e test:e2e",
     "db:migrate:dev": "dotenv -e .env -- prisma migrate dev --schema prisma/schema.prisma",
     "db:migrate:deploy": "dotenv -e .env -- prisma migrate deploy --schema prisma/schema.prisma",
     "demo:user:provision": "pnpm --filter @stocklens/api demo:user:provision",
     "job:inspect": "pnpm --filter @stocklens/worker job:operations inspect",
     "job:rerun": "pnpm --filter @stocklens/worker job:operations rerun",
     "openai:live-evaluation": "pnpm --filter @stocklens/worker openai:live-evaluation",
+    "openai:live-analysis-views": "pnpm --filter @stocklens/worker openai:live-analysis-views",
     "prompt:activate": "pnpm --filter @stocklens/worker prompt:activate"
   },
   "dependencies": {

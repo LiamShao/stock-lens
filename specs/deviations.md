@@ -38,6 +38,8 @@
 | `EXTRACT-DEV-002`  | Operations        |   Medium | Resolved 2026-08-19 | Phase 4 Metrics/Extract を既存 Manual Re-run Allowlist に追加   |
 | `VIEW-DEV-001`     | Frontend scope    |   Medium | Resolved 2026-08-24 | Phase 5 に最小 Web Auth/History/Detail Foundation を含める      |
 | `VIEW-DEV-002`     | Status model      |     High | Resolved 2026-08-24 | 三 View の Atomic Publish 後だけ `COMPLETED` とする             |
+| `VIEW-DEV-003`     | Traceability      |      Low | Resolved 2026-09-01 | Client Polling の実装前 Passed 表記を Task 009 Evidence で修正  |
+| `VIEW-DEV-004`     | Verification      |   Medium | Resolved 2026-09-01 | Tracked Synthetic Real-PDF + Browser E2E に置換                 |
 
 2026-08-10 の `PDF-TASK-012`〜`PDF-TASK-014` Review では新規 Deviation は検出されませんでした。Real MinIO Storage、Document Bearer A/B HTTP、Redis/BullMQ Worker Cleanup の Acceptance Evidence を追加し、`OWN-DEV-004` を解消しました。
 
@@ -97,6 +99,14 @@ User は同日 `VIEW-Q-001`〜`VIEW-Q-007` Option `A` を承認しました。Ph
 
 2026-08-31 の `VIEW-TASK-007` Read Presign Review では新規 Deviation は検出されませんでした。Owner/Analysis/Finalized Document Scope、Runtime Bucket/Object Existence、最大 300 秒の Read-only `GetObject`、Missing/Provider Failure の Sanitized `503`、`no-store`、URL/Coordinate Redaction は Unit と Real PostgreSQL/MinIO HTTP Evidence を持ちます。Browser Session/UI/PDF.js は Approved `VIEW-TASK-008`〜`010` の既知 Scope として維持します。
 
+2026-09-01 の `VIEW-TASK-009` Review で、`VIEW-SEC-009` は Provider/Context/Output/Retry Budget の Evidence だけで `Passed` とされていた一方、同 Requirement が明示する Client Polling Limit は未実装で Task 009 に残っていた `VIEW-DEV-003` を検出しました。Approved Plan の範囲内で 5 秒間隔・Page Mount から最大 5 分・処理中 Status 限定の Polling と Unit Test を追加し、Traceability Evidence を Server/Client 両方へ修正しました。Public API、Database、Security Decision の変更はないため新しい User Decision は不要です。
+
+同日の `VIEW-TASK-010` PDF.js Viewer Review では新規 Deviation は検出されませんでした。Approved `VIEW-Q-006` Option A に従い、操作時だけの Read Presign、Browser PDF Byte Boundary、Version-matched Worker、Canvas-only Page Navigation を実装しました。Full Browser Cross-service E2E は Approved `VIEW-TASK-011` の既知 Gap として維持します。
+
+同日の `VIEW-TASK-011` Initial Verification Audit で、Task 010 の `pdf-document.spec.ts` が `.gitignore` 対象の Local `test-data/決算短信.pdf` に依存し、Fresh CI Checkout では Real PDF.js Page Evidence を再現できない `VIEW-DEV-004` を検出しました。Mock-only Evidence への Downgrade は Tasks Rule に違反するため、`VIEW-AC-013` と Traceability を一時 `Partial` に戻し、Tracked Test Code が生成する Valid Multi-page PDF と Full Browser MinIO/API/PDF.js Flow で置換するまで Task 010 Evidence を Passed と扱いません。
+
+`VIEW-DEV-004` は同日、Test Code だけから決定的に生成する Valid 3-page PDF と Playwright Full-stack Flow へ置換して解消しました。専用 MinIO への Presigned PUT、Owner-scoped Read Presign、Browser Fetch、PDF.js Canvas の Page 2 初期表示と Page 3 Navigation を Fresh Test Environment で通し、ignored Local File 依存を除去しました。
+
 ## Resolution Evidence
 
 | Deviation                              | Resolution evidence                                                                                               |
@@ -117,6 +127,7 @@ User は同日 `VIEW-Q-001`〜`VIEW-Q-007` Option `A` を承認しました。Ph
 | `RERUN-DEV-002`                        | Approved B、`READ COMMITTED` + `FOR UPDATE`、Concurrent 1 queued / 1 not-rerunnable / 1 Audit Integration         |
 | `EXTRACT-DEV-001`                      | `EXTRACT-Q-001` Approved A、Phase 4 Handoff を `READY_FOR_VIEW_GENERATION` として Spec/Plan に固定                |
 | `VIEW-DEV-001`, `VIEW-DEV-002`         | `VIEW-Q-001` / `VIEW-Q-005` Approved A、三 View Completion と最小 Web Foundation を Scope に固定                  |
+| `VIEW-DEV-003`                         | 5 秒 / 最大 5 分 / Active Status 限定 Polling、Terminal Stop、Component/Pure Boundary Test                        |
 
 ## Detail
 

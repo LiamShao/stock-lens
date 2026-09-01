@@ -6,7 +6,7 @@
 | ------------ | --------------------------------------- |
 | Related Spec | `specs/features/analysis-views/spec.md` |
 | Plan status  | `Approved`                              |
-| Last updated | `2026-08-31`                            |
+| Last updated | `2026-09-01`                            |
 
 ## Approach
 
@@ -60,11 +60,21 @@ API は既存 Metadata Polling と View Payload を分離します。Completed-o
 ## Web Session and UI
 
 - API Client は `credentials: include` と in-memory Access Token を使い、Initial Refresh と 401 時の single-flight Refresh/一回 Replay を実装します。
+- API Origin は `NEXT_PUBLIC_API_BASE_URL` で明示し、未指定時は Local API の `http://localhost:3001/api` を使用します。Browser Storage、URL、Cookie 以外の永続領域へ Token を保存しません。
+- Session Bootstrap 中は Protected Query を開始せず、Refresh 成功後だけ History/Detail を有効化します。Refresh 失敗、または Replay 後も 401 の場合は Memory Session を Clear して Login へ戻します。
 - Login Form は React Hook Form + Shared Zod、Server State は TanStack Query を使用します。追加 Dependency と理由は導入 Task で記録します。
 - History/Detail は Status を bounded polling し、Completed 時だけ View Query を有効化します。
+- Metadata Polling は 5 秒間隔、Page Mount から最大 5 分とし、`PARSING`、`CHUNKING`、`READY_FOR_EMBEDDING`、`EMBEDDING`、`EXTRACTING`、`VALIDATING`、`READY_FOR_VIEW_GENERATION` だけを対象にします。`DRAFT`、`UPLOADED`、`COMPLETED`、全 Failed Status では停止します。
 - View Tabs と Evidence Drawer は Keyboard、Visible Focus、Semantic Heading/Button、Responsive Layout を満たします。
+- Tabs は ARIA `tablist/tab/tabpanel`、Arrow Left/Right、Home/End を実装します。Evidence Drawer は Modal `dialog`、Initial Close Focus、Tab Focus Trap、Escape Close、Trigger Focus Restore、Background Overlay を実装し、Task 010 まで Download URL を取得しません。
 - PDF 操作時だけ Read URL を取得し、URL を永続 Cache/Log/Analytics に送りません。
 - PDF.js は version-matched bundled Worker を使い、PDF Embedded JavaScript、Tool Request、Automatic External Navigation を実行しません。
+- Task 010 は Citation Evidence の操作後にだけ既存 Read Presign API を直接呼び、Response を TanStack Query Cache、Browser Storage、DOM Link、Telemetry に保持しません。Presigned URL は `cache: no-store`、`credentials: omit`、Redirect Reject で一度だけ PDF Bytes の取得に使い、その後 State に残しません。
+- Browser Boundary は `Content-Length` がある場合と実 Byte Length の両方を 20 MB 以下に制限し、`application/pdf` Response と `%PDF-` Header を検証します。Failure は URL、Storage Coordinate、Raw PDF Error を含まない安定した日本語 Error に収束し、Retry は新しい Read Presign から開始します。
+- Embedded Viewer は `pdfjs-dist@6.2.108` の Main Library と同 Version の bundled Worker を使用し、XFA 無効、Canvas-only Rendering、Annotation/Link/Text/Scripting Layer 非生成で Untrusted PDF Action を無効化します。Evidence の 1-based Page を初期 Page として厳密に検証し、Previous/Next Control で Document 範囲内を移動します。Unmount 時は Render Task と Document Loading Task を破棄します。
+- Task 010 では Web Package に Workspace 既存 Version の `pdfjs-dist` Direct Runtime Dependency を追加します。Database Migration と Public API 変更はありません。
+
+Task 008 では `@tanstack/react-query@5.102.8` を Server State、`react-hook-form@7.87.0` と `@hookform/resolvers@5.9.1` を Shared Zod Login Form、`zod@4.4.3` と既存 `@stocklens/shared` Workspace Package を Browser Response Boundary に使用します。Session/Query/Form を個別実装せず、既存 Strict Contract と React 19 対応 Library を再利用するための追加です。
 
 ## Test Strategy
 
@@ -76,6 +86,16 @@ API は既存 Metadata Polling と View Payload を分離します。Completed-o
 | `VIEW-AC-006`, `AC-016`           | Security Unit/Evaluation       | Advice/impersonation、prompt injection、plain-text render           |
 
 CI は Deterministic Provider を使用します。OpenAI Live Smoke は明示 opt-in の content-free Artifact とし、Passed Artifact がない間 Provider Integration は `Partial` です。Mocked Viewer だけで PDF Navigation を Passed としません。
+
+Task 011 は既存 Real PostgreSQL/Redis/BullMQ/MinIO Integration Matrix と、新しい Playwright Full-stack Browser Flow を一つの `pnpm e2e` Gate で構成します。Playwright Global Setup は Testcontainers の一時 PostgreSQL/Redis/Private MinIO、Migration、Built API/Web、Owner A/B と Completed View/Evidence/PDF Fixture を隔離起動し、終了時に Process/Container を破棄します。固定 Web/API Port が使用中なら既存 Process を停止せず Fail closed にします。
+
+Browser Flow は Login、HttpOnly Refresh Cookie、History/Detail、Three ARIA Tabs、Missing Information、Evidence Drawer、Plain-text Injection Sentinel、Responsive Layout、Real Read Presign/MinIO GET/PDF.js Worker/Exact Page/Next Page、Reload Session Recovery を検証します。Owner B は Analysis/View/Download を同じ `404` とし、API Log/Browser Storage/DOM/URL が Password、Token、Full Excerpt、Storage Key、Presigned URL を含まないことを検査します。
+
+E2E PDF は `.gitignore` 対象の Local IR PDF に依存せず、Test Code が deterministic に生成する Git-tracked Three-page PDF Bytes を MinIO へ Upload します。PDF.js Unit も同じ方式の Real Parser/Page Evidence に変更し、Mock-only Evidence を避けます。
+
+Analysis Views 用 OpenAI Live Harness は既存 Production Adapter と Git-tracked `analysis-views` Prompt を明示 opt-in 時だけ一回呼び、Strict Three-view、Japanese、Direct Citation、Missing Information、Compliance、Prompt Injection Defense を評価します。Result は Version/Usage/Boolean/Count の Content-free JSON のみとし、Passed Artifact がない状態は `Partial` のままです。
+
+Task 011 では Test-only Workspace に `@playwright/test@1.61.1`、既存 Version の Testcontainers/Prisma/Workspace Packages を追加します。Production Runtime Dependency、Database Migration、Public API 変更はありません。
 
 ## Rollout and Rollback
 

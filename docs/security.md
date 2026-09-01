@@ -34,6 +34,18 @@
 
 `SameSite=Strict`、Refresh/Logout の POST 限定、許可 Origin を固定した Credential CORS を Cookie Endpoint の CSRF 防御とします。将来 Cross-site Deployment が必要になった場合は、この前提を変更する前に CSRF Token を追加します。
 
+### Browser Session
+
+- Web API Client は Access Token を Module/React Memory だけに保持し、`localStorage`、`sessionStorage`、URL、Client Cookie に保存しません。
+- 全 API Request は `credentials: include` と `cache: no-store` を使用します。Protected Request だけが Memory Token を Bearer Header に付与します。
+- Browser Reload 時は `/api/auth/refresh` を一度呼び、`HttpOnly` Cookie を Rotate して Session を回復します。
+- 複数 Protected Request が同時に `401` を受けても一つの single-flight Refresh に収束し、各 Request は新 Token で一度だけ Replay します。Replay 後も `401`、または Refresh 失敗の場合は Memory Token と TanStack Query Cache を Clear して Login へ戻します。
+- Unified API Error は Shared Strict Zod Schema で検証し、Browser には Stable Code に対応する固定日本語 Message だけを表示します。Server Message、`details`、Malformed Body、Network Detail は表示・保存しません。
+- Analysis Metadata Polling は処理中 Status だけを 5 秒間隔、Page Mount から最大 5 分に限定し、`COMPLETED` / Failed / User-action Status では停止します。Completed Metadata の確認後だけ Strict View Aggregate を取得します。
+- View Text と Evidence Excerpt は React Text Node としてのみ描画し、HTML、Script、Link、Tool Instruction として解釈しません。Evidence Drawer は Response 内の bounded Projection だけを表示し、PDF 操作時にだけ Owner-scoped Read Presign を直接要求します。
+- Presigned Download URL は TanStack Query Cache、Browser Storage、DOM Link、Telemetry に保存せず、`cache: no-store`、`credentials: omit`、Redirect Reject の一回の Byte Fetch にだけ使います。Browser は `application/pdf`、20 MB 上限、`%PDF-` Header を再検証し、URL/Raw Storage Error を含まない固定 Error を表示します。
+- PDF.js Viewer は同 Version の bundled Worker、XFA 無効、Canvas-only Rendering を使用します。Annotation、Text、Link、Scripting Layer を生成しないため、PDF Embedded JavaScript、External Navigation、Attachment/Form Action を Browser Action として公開しません。Unmount 時は Presign/Fetch、Render Task、Document Loading Task を中止・破棄します。
+
 ## 3. Rate Limit
 
 - API 全体は Default で 1 IP あたり 1 分 100 Request です。
@@ -61,7 +73,7 @@ PDF Upload は二段階の信頼境界を持ちます。
 
 Presigned PUT は単一の Random Object Key、Content Length、Content Type、SHA Metadata に署名し、有効期限を最大 300 秒に制限します。Object Key は Owner/Analysis/Upload Session Prefix と Random UUID から作り、Original Filename を含めません。API Response は Bucket、Object Key、Credential を返しません。
 
-Presigned GET は Active Owner/Analysis/Finalized Document、Runtime Bucket 一致、Object `HEAD` を確認した後、単一 Object の `GetObject` と `application/pdf` Response Content Type だけを最大 300 秒で署名します。Response は URL/Expiry だけとし `Cache-Control: no-store` を付与します。Missing Object、Provider Failure、Bucket Mismatch は Storage Detail を含まない `DOCUMENT_DOWNLOAD_UNAVAILABLE` に統一します。
+Presigned GET は Active Owner/Analysis/Finalized Document、Runtime Bucket 一致、Object `HEAD` を確認した後、単一 Object の `GetObject` と `application/pdf` Response Content Type だけを最大 300 秒で署名します。Response は URL/Expiry だけとし `Cache-Control: no-store` を付与します。Missing Object、Provider Failure、Bucket Mismatch は Storage Detail を含まない `DOCUMENT_DOWNLOAD_UNAVAILABLE` に統一します。Browser は URL を自動取得せず、Evidence Drawer の明示操作ごとに新しい URL を発行します。
 
 Upload Session は 24 時間で期限切れになります。Worker は起動時と 60 秒ごとに期限切れ `PENDING` / `VALIDATING` Session を bounded scan し、`EXPIRED` Transition と Durable Cleanup Execution を同じ Serializable Transaction に保存します。Invalid/Expired Upload と Soft-deleted Document の Object Delete は最大 3 Attempt の Exponential Backoff で再試行します。Queue Payload は `jobExecutionId` のみで、Storage Coordinate や Credential を Redis に複製しません。
 
@@ -92,10 +104,11 @@ FAILED Job の再実行は Public API へ公開せず、Explicit Enable、Worklo
 - `S3_BUCKET` は事前作成済み Private Bucket、`S3_PRESIGN_EXPIRES_IN_SECONDS` は 1〜300 秒、`REDIS_URL` は `redis:` または TLS の `rediss:` に限定します。
 - Manual Re-run CLI は `ALLOW_JOB_RERUN=true` と 32 Characters 以上の `JOB_OPERATOR_SECRET` を必須とし、Production では Local Default を拒否します。
 - `OPENAI_API_KEY` と `OPENAI_MODEL` は OpenAI Provider 構築時だけ必須とし、API Key は Worker Environment / Secrets Manager だけに注入します。Model は Hard-code せず、`OPENAI_EMBEDDING_MODEL` は Phase 6 まで Optional です。
+- `NEXT_PUBLIC_API_BASE_URL` は Browser-visible な非 Secret 設定で `/api` を含めます。Credential、Token、Storage Coordinate を `NEXT_PUBLIC_*` に置きません。
 
 ## 8. 残存 Security 項目
 
-- Browser CORS、Production Private Bucket Policy、IAM Policy
+- Production Browser CORS、Private Bucket Policy、IAM Policy
 - Redis-backed Distributed Rate Limit
 - Secret Rotation Runbook
 - Golden Dataset と OpenAI Live Passed Artifact

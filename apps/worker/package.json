@@ -6,6 +6,7 @@
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsx watch src/main.ts",
     "job:operations": "tsx src/job-operations.ts",
+    "openai:live-analysis-views": "tsx src/openai-analysis-views-live-evaluation.ts",
     "openai:live-evaluation": "tsx src/openai-live-evaluation.ts",
     "prompt:activate": "tsx src/prompt-activate.ts",
     "lint": "eslint src --max-warnings=0",
