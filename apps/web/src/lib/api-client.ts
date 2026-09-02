@@ -4,16 +4,32 @@ import {
   analysisViewsResourceSchema,
   apiErrorResponseSchema,
   authResponseSchema,
+  createAnalysisRequestSchema,
+  documentListResponseSchema,
+  documentResourceSchema,
   loginRequestSchema,
+  presignedPdfUploadSchema,
   presignedDocumentDownloadSchema,
+  processAnalysisResponseSchema,
+  registerRequestSchema,
+  startDocumentUploadRequestSchema,
+  startDocumentUploadResponseSchema,
   type AnalysisPageResponse,
   type AnalysisResource,
   type AnalysisStatus,
   type AnalysisViewsResource,
   type AuthResponse,
   type AuthUser,
+  type CreateAnalysisRequest,
+  type DocumentListResponse,
+  type DocumentResource,
   type LoginRequest,
+  type PresignedPdfUploadResponse,
   type PresignedDocumentDownload,
+  type ProcessAnalysisResponse,
+  type RegisterRequest,
+  type StartDocumentUploadRequest,
+  type StartDocumentUploadResponse,
 } from '@stocklens/shared';
 import type { ZodType } from 'zod';
 
@@ -60,6 +76,11 @@ interface JsonRequestOptions<T> {
   signal?: AbortSignal | undefined;
 }
 
+interface NoContentRequestOptions {
+  method: 'DELETE' | 'POST';
+  signal?: AbortSignal | undefined;
+}
+
 export class ApiClient {
   private accessToken: string | null = null;
   private readonly baseUrl: string;
@@ -85,6 +106,17 @@ export class ApiClient {
   async login(input: LoginRequest): Promise<AuthResponse> {
     const body = loginRequestSchema.parse(input);
     const response = await this.rawJsonRequest('/auth/login', {
+      body,
+      method: 'POST',
+      schema: authResponseSchema,
+    });
+    this.applyAuth(response);
+    return response;
+  }
+
+  async registerUser(input: RegisterRequest): Promise<AuthResponse> {
+    const body = registerRequestSchema.parse(input);
+    const response = await this.rawJsonRequest('/auth/register', {
       body,
       method: 'POST',
       schema: authResponseSchema,
@@ -143,6 +175,18 @@ export class ApiClient {
     });
   }
 
+  createAnalysis(
+    input: CreateAnalysisRequest,
+    signal?: AbortSignal,
+  ): Promise<AnalysisResource> {
+    return this.authenticatedJsonRequest('/analyses', {
+      body: createAnalysisRequestSchema.parse(input),
+      method: 'POST',
+      schema: analysisResourceSchema,
+      signal,
+    });
+  }
+
   getAnalysis(
     analysisId: string,
     signal?: AbortSignal,
@@ -186,6 +230,90 @@ export class ApiClient {
     );
   }
 
+  startDocumentUpload(
+    analysisId: string,
+    input: StartDocumentUploadRequest,
+    signal?: AbortSignal,
+  ): Promise<StartDocumentUploadResponse> {
+    return this.authenticatedJsonRequest(
+      `/analyses/${encodeURIComponent(analysisId)}/document-uploads`,
+      {
+        body: startDocumentUploadRequestSchema.parse(input),
+        method: 'POST',
+        schema: startDocumentUploadResponseSchema,
+        signal,
+      },
+    );
+  }
+
+  reissueDocumentUploadUrl(
+    analysisId: string,
+    uploadId: string,
+    signal?: AbortSignal,
+  ): Promise<PresignedPdfUploadResponse> {
+    return this.authenticatedJsonRequest(
+      `/analyses/${encodeURIComponent(analysisId)}/document-uploads/${encodeURIComponent(uploadId)}/presign`,
+      {
+        method: 'POST',
+        schema: presignedPdfUploadSchema,
+        signal,
+      },
+    );
+  }
+
+  finalizeDocumentUpload(
+    analysisId: string,
+    uploadId: string,
+    signal?: AbortSignal,
+  ): Promise<DocumentResource> {
+    return this.authenticatedJsonRequest(
+      `/analyses/${encodeURIComponent(analysisId)}/document-uploads/${encodeURIComponent(uploadId)}/finalize`,
+      {
+        method: 'POST',
+        schema: documentResourceSchema,
+        signal,
+      },
+    );
+  }
+
+  listDocuments(
+    analysisId: string,
+    signal?: AbortSignal,
+  ): Promise<DocumentListResponse> {
+    return this.authenticatedJsonRequest(
+      `/analyses/${encodeURIComponent(analysisId)}/documents`,
+      { method: 'GET', schema: documentListResponseSchema, signal },
+    );
+  }
+
+  deleteDocument(
+    analysisId: string,
+    documentId: string,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    return this.authenticatedNoContentRequest(
+      `/analyses/${encodeURIComponent(analysisId)}/documents/${encodeURIComponent(documentId)}`,
+      { method: 'DELETE', signal },
+    );
+  }
+
+  processAnalysis(
+    analysisId: string,
+    signal?: AbortSignal,
+  ): Promise<ProcessAnalysisResponse> {
+    return this.authenticatedJsonRequest(
+      `/analyses/${encodeURIComponent(analysisId)}/process`,
+      { method: 'POST', schema: processAnalysisResponseSchema, signal },
+    );
+  }
+
+  deleteAnalysis(analysisId: string, signal?: AbortSignal): Promise<void> {
+    return this.authenticatedNoContentRequest(
+      `/analyses/${encodeURIComponent(analysisId)}`,
+      { method: 'DELETE', signal },
+    );
+  }
+
   private async authenticatedJsonRequest<T>(
     path: string,
     options: JsonRequestOptions<T>,
@@ -223,6 +351,30 @@ export class ApiClient {
 
     if (!response.ok) throw await toApiClientError(response);
     return parseResponse(response, options.schema);
+  }
+
+  private async authenticatedNoContentRequest(
+    path: string,
+    options: NoContentRequestOptions,
+    canRecover = true,
+  ): Promise<void> {
+    const tokenAtRequest = this.accessToken;
+    const response = await this.fetchImplementation(
+      this.url(path),
+      this.noContentRequestInit(options, tokenAtRequest),
+    );
+
+    if (response.status === 401 && canRecover) {
+      if (tokenAtRequest === this.accessToken || this.accessToken === null) {
+        await this.refreshSession();
+      }
+      return this.authenticatedNoContentRequest(path, options, false);
+    }
+
+    if (!response.ok) {
+      if (response.status === 401) this.clearAuth();
+      throw await toApiClientError(response);
+    }
   }
 
   private async rawNoContentRequest(
@@ -269,6 +421,20 @@ export class ApiClient {
       method: options.method ?? 'GET',
     };
     if (options.body !== undefined) init.body = JSON.stringify(options.body);
+    if (options.signal) init.signal = options.signal;
+    return init;
+  }
+
+  private noContentRequestInit(
+    options: NoContentRequestOptions,
+    token: string | null,
+  ): RequestInit {
+    const init: RequestInit = {
+      cache: 'no-store',
+      credentials: 'include',
+      headers: this.headers(token, false),
+      method: options.method,
+    };
     if (options.signal) init.signal = options.signal;
     return init;
   }
@@ -325,6 +491,21 @@ function toSafeErrorMessage(code: string, status: number): string {
   }
   if (code === 'RATE_LIMIT_EXCEEDED') {
     return 'リクエストが多すぎます。時間をおいて再度お試しください。';
+  }
+  if (code === 'EMAIL_ALREADY_REGISTERED') {
+    return 'このメールアドレスはすでに登録されています。';
+  }
+  if (code === 'DOCUMENT_LIMIT_EXCEEDED') {
+    return 'PDFは1つの分析につき3件までです。';
+  }
+  if (code === 'DOCUMENT_DUPLICATE') {
+    return '同じPDFはすでに追加されています。';
+  }
+  if (code === 'DOCUMENT_UPLOAD_INVALID') {
+    return 'PDFを確認できませんでした。ファイルを確認してください。';
+  }
+  if (code === 'ANALYSIS_NOT_PROCESSABLE') {
+    return 'この分析は現在処理を開始できません。';
   }
   if (status === 401) {
     return 'セッションの有効期限が切れました。もう一度ログインしてください。';

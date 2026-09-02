@@ -83,6 +83,177 @@ describe('ApiClient VIEW-AC-014', () => {
     );
   });
 
+  it('INTAKE-AC-001 registers, normalizes input, and applies the memory session', async () => {
+    const states: Array<string | null> = [];
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        jsonResponse({ accessToken: 'register-token', expiresIn: 900, user }),
+      );
+    const client = new ApiClient({
+      baseUrl: 'http://api.test/api',
+      fetch: fetchMock,
+    });
+    client.subscribe((state) => states.push(state?.user.id ?? null));
+
+    await client.registerUser({
+      displayName: '  Demo User  ',
+      email: '  DEMO@EXAMPLE.COM ',
+      password: 'correct horse battery staple',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://api.test/api/auth/register',
+      expect.objectContaining({
+        body: JSON.stringify({
+          displayName: 'Demo User',
+          email: 'demo@example.com',
+          password: 'correct horse battery staple',
+        }),
+        credentials: 'include',
+        method: 'POST',
+      }),
+    );
+    expect(states).toEqual([user.id]);
+    expect(localStorage.length).toBe(0);
+    expect(sessionStorage.length).toBe(0);
+  });
+
+  it('INTAKE-FR-002..009 uses strict authenticated write and document contracts', async () => {
+    const analysisId = '8d445ae8-d886-4ee3-a250-fd56cc10597b';
+    const uploadId = 'd2d9c68a-3e7b-4d80-a085-196ce9b8d745';
+    const documentId = 'a9cf30dc-e359-4460-9c7c-a3ad47f93e20';
+    const analysis = {
+      ...analysisPage.items[0],
+      id: analysisId,
+      status: 'DRAFT',
+      title: '決算分析',
+    };
+    const upload = {
+      expiresAt: '2026-09-01T00:05:00.000Z',
+      headers: { 'content-type': 'application/pdf' },
+      url: 'https://storage.example.test/upload?signature=secret',
+    };
+    const uploadSession = {
+      analysisId,
+      createdAt: '2026-09-01T00:00:00.000Z',
+      documentType: 'EARNINGS_SUMMARY',
+      expiresAt: '2026-09-02T00:00:00.000Z',
+      id: uploadId,
+      mimeType: 'application/pdf',
+      originalName: '決算短信.pdf',
+      sha256: 'a'.repeat(64),
+      sizeBytes: 128,
+      status: 'PENDING',
+    };
+    const document = {
+      analysisId,
+      createdAt: '2026-09-01T00:00:00.000Z',
+      documentType: 'EARNINGS_SUMMARY',
+      id: documentId,
+      mimeType: 'application/pdf',
+      originalName: '決算短信.pdf',
+      sha256: 'a'.repeat(64),
+      sizeBytes: 128,
+      updatedAt: '2026-09-01T00:00:00.000Z',
+      uploadedAt: '2026-09-01T00:00:00.000Z',
+    };
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        jsonResponse({ accessToken: 'memory-token', expiresIn: 900, user }),
+      )
+      .mockResolvedValueOnce(jsonResponse(analysis, 201))
+      .mockResolvedValueOnce(jsonResponse({ upload, uploadSession }, 201))
+      .mockResolvedValueOnce(jsonResponse(upload))
+      .mockResolvedValueOnce(jsonResponse(document))
+      .mockResolvedValueOnce(jsonResponse({ items: [document] }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(
+        jsonResponse(
+          {
+            acceptedAt: '2026-09-01T00:00:01.000Z',
+            analysisId,
+            executionId: '776ca16d-7bf0-4c18-85db-d357025f20ce',
+            status: 'PARSING',
+          },
+          202,
+        ),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const client = new ApiClient({
+      baseUrl: 'http://api.test/api',
+      fetch: fetchMock,
+    });
+    await client.refreshSession();
+
+    await expect(
+      client.createAnalysis({ companyId: null, title: ' 決算分析 ' }),
+    ).resolves.toMatchObject({ id: analysisId, title: '決算分析' });
+    await client.startDocumentUpload(analysisId, {
+      documentType: 'EARNINGS_SUMMARY',
+      mimeType: 'application/pdf',
+      originalName: '決算短信.pdf',
+      sha256: 'a'.repeat(64),
+      sizeBytes: 128,
+    });
+    await client.reissueDocumentUploadUrl(analysisId, uploadId);
+    await client.finalizeDocumentUpload(analysisId, uploadId);
+    await expect(client.listDocuments(analysisId)).resolves.toMatchObject({
+      items: [{ id: documentId }],
+    });
+    await client.deleteDocument(analysisId, documentId);
+    await client.processAnalysis(analysisId);
+    await client.deleteAnalysis(analysisId);
+
+    expect(
+      fetchMock.mock.calls
+        .slice(1)
+        .map(([input, init]) => [
+          String(input),
+          init?.method,
+          new Headers(init?.headers).get('authorization'),
+        ]),
+    ).toEqual([
+      ['http://api.test/api/analyses', 'POST', 'Bearer memory-token'],
+      [
+        `http://api.test/api/analyses/${analysisId}/document-uploads`,
+        'POST',
+        'Bearer memory-token',
+      ],
+      [
+        `http://api.test/api/analyses/${analysisId}/document-uploads/${uploadId}/presign`,
+        'POST',
+        'Bearer memory-token',
+      ],
+      [
+        `http://api.test/api/analyses/${analysisId}/document-uploads/${uploadId}/finalize`,
+        'POST',
+        'Bearer memory-token',
+      ],
+      [
+        `http://api.test/api/analyses/${analysisId}/documents`,
+        'GET',
+        'Bearer memory-token',
+      ],
+      [
+        `http://api.test/api/analyses/${analysisId}/documents/${documentId}`,
+        'DELETE',
+        'Bearer memory-token',
+      ],
+      [
+        `http://api.test/api/analyses/${analysisId}/process`,
+        'POST',
+        'Bearer memory-token',
+      ],
+      [
+        `http://api.test/api/analyses/${analysisId}`,
+        'DELETE',
+        'Bearer memory-token',
+      ],
+    ]);
+  });
+
   it('uses one single-flight rotation for concurrent 401 responses and replays each request once', async () => {
     let refreshCalls = 0;
     const fetchMock = vi.fn<typeof fetch>(async (input, init) => {

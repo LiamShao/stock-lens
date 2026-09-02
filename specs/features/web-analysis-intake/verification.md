@@ -14,24 +14,31 @@
 - Isolated PostgreSQL / Redis / BullMQ / MinIO / Deterministic Provider
 - Playwright Chromium Desktop / Mobile
 
+## Implemented Evidence
+
+- `ApiClient` は Shared Strict Schema を再利用し、Registration、Analysis Create/Delete、Upload Start/Re-presign/Finalize、Document List/Delete、Explicit Process を Memory-only Bearer Session と一回の 401 Recovery に接続します。
+- `pdf-upload.ts` は最大 3 Files、1〜20 MB、`.pdf`、exact MIME、`%PDF-` Header、Web Crypto SHA-256 を Browser Boundary で検証します。
+- Object Storage PUT は `credentials: omit`、`cache: no-store`、`redirect: error` と Server-returned Headers だけを使用し、Failure 時は同じ Upload Session の URL を一回だけ再発行します。
+- `api-client.spec.ts` / `pdf-upload.spec.ts`: Registration Normalization/Memory Session、全 Write Route/Bearer Contract、Invalid File Matrix、Real SHA-256、Credential-free PUT、Re-presign/Finalize を検証しました。
+
 ## Acceptance Evidence
 
-| Acceptance Criterion | Evidence | Result        |
-| -------------------- | -------- | ------------- |
-| `INTAKE-AC-001`      | Pending  | `Not started` |
-| `INTAKE-AC-002`      | Pending  | `Not started` |
-| `INTAKE-AC-003`      | Pending  | `Not started` |
-| `INTAKE-AC-004`      | Pending  | `Not started` |
-| `INTAKE-AC-005`      | Pending  | `Not started` |
-| `INTAKE-AC-006`      | Pending  | `Not started` |
-| `INTAKE-AC-007`      | Pending  | `Not started` |
-| `INTAKE-AC-008`      | Pending  | `Not started` |
-| `INTAKE-AC-009`      | Pending  | `Not started` |
-| `INTAKE-AC-010`      | Pending  | `Not started` |
-| `INTAKE-AC-011`      | Pending  | `Not started` |
-| `INTAKE-AC-012`      | Pending  | `Not started` |
-| `INTAKE-AC-013`      | Pending  | `Not started` |
-| `INTAKE-AC-014`      | Pending  | `Not started` |
+| Acceptance Criterion | Evidence                                | Result        |
+| -------------------- | --------------------------------------- | ------------- |
+| `INTAKE-AC-001`      | Pending                                 | `Not started` |
+| `INTAKE-AC-002`      | Pending                                 | `Not started` |
+| `INTAKE-AC-003`      | Browser file boundary Unit              | `Passed`      |
+| `INTAKE-AC-004`      | Hash/PUT/API Unit; real storage pending | `Partial`     |
+| `INTAKE-AC-005`      | Pending                                 | `Not started` |
+| `INTAKE-AC-006`      | Pending                                 | `Not started` |
+| `INTAKE-AC-007`      | Pending                                 | `Not started` |
+| `INTAKE-AC-008`      | Pending                                 | `Not started` |
+| `INTAKE-AC-009`      | Pending                                 | `Not started` |
+| `INTAKE-AC-010`      | Pending                                 | `Not started` |
+| `INTAKE-AC-011`      | Pending                                 | `Not started` |
+| `INTAKE-AC-012`      | Pending                                 | `Not started` |
+| `INTAKE-AC-013`      | Pending                                 | `Not started` |
+| `INTAKE-AC-014`      | Pending                                 | `Not started` |
 
 ## Quality Gates
 
