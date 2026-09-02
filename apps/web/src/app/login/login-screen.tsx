@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginRequestSchema, type LoginRequest } from '@stocklens/shared';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -127,6 +128,15 @@ export function LoginScreen() {
             {isSubmitting ? 'ログイン中…' : 'ログイン'}
           </button>
         </form>
+        <p className="mt-6 text-center text-sm text-slate-600">
+          初めて利用する方は{' '}
+          <Link
+            className="font-medium text-emerald-700 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"
+            href="/register"
+          >
+            アカウントを作成
+          </Link>
+        </p>
       </section>
     </main>
   );

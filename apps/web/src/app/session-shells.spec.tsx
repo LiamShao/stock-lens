@@ -9,7 +9,9 @@ import { createAnalysisViewsFixture } from '@/test/analysis-views-fixture';
 
 import { AnalysisDetailScreen } from './analyses/[analysisId]/analysis-detail-screen';
 import { AnalysisHistoryScreen } from './analyses/analysis-history-screen';
+import { NewAnalysisScreen } from './analyses/new/new-analysis-screen';
 import { LoginScreen } from './login/login-screen';
+import { RegisterScreen } from './register/register-screen';
 
 const { replace } = vi.hoisted(() => ({ replace: vi.fn() }));
 
@@ -75,6 +77,81 @@ describe('VIEW-TASK-008/009 browser shells', () => {
     fireEvent.click(screen.getByRole('button', { name: 'ログイン' }));
 
     await waitFor(() => expect(replace).toHaveBeenCalledWith('/analyses'));
+  });
+
+  it('INTAKE-AC-001 registers an account, omits a blank display name, and routes to history', async () => {
+    const fetchMock = vi.fn<typeof fetch>(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith('/auth/refresh')) {
+        return errorResponse(401, 'REFRESH_TOKEN_INVALID');
+      }
+      if (url.endsWith('/auth/register')) {
+        expect(init).toEqual(
+          expect.objectContaining({ credentials: 'include', method: 'POST' }),
+        );
+        expect(JSON.parse(String(init?.body))).toEqual({
+          email: 'new@example.com',
+          password: 'correct horse battery staple',
+        });
+        return jsonResponse(
+          {
+            accessToken: 'register-token',
+            expiresIn: 900,
+            user: { ...user, email: 'new@example.com', isDemo: false },
+          },
+          201,
+        );
+      }
+      throw new Error(`Unexpected URL: ${url}`);
+    });
+    renderWithSession(fetchMock, <RegisterScreen />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'アカウントを作成' }),
+    ).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('メールアドレス'), {
+      target: { value: ' NEW@EXAMPLE.COM ' },
+    });
+    fireEvent.change(screen.getByLabelText('パスワード'), {
+      target: { value: 'correct horse battery staple' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'アカウントを作成' }));
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/analyses'));
+    expect(localStorage.length).toBe(0);
+    expect(sessionStorage.length).toBe(0);
+  });
+
+  it('INTAKE-AC-002 creates a title-only draft and routes to its intake flow', async () => {
+    const draft = { ...analysis, status: 'DRAFT', title: '任天堂 新規分析' };
+    const fetchMock = vi.fn<typeof fetch>(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith('/auth/refresh')) return authResponse();
+      if (new URL(url).pathname.endsWith('/analyses')) {
+        expect(new Headers(init?.headers).get('authorization')).toBe(
+          'Bearer memory-token',
+        );
+        expect(JSON.parse(String(init?.body))).toEqual({
+          companyId: null,
+          title: '任天堂 新規分析',
+        });
+        return jsonResponse(draft, 201);
+      }
+      throw new Error(`Unexpected URL: ${url}`);
+    });
+    renderWithSession(fetchMock, <NewAnalysisScreen />);
+
+    expect(
+      await screen.findByRole('heading', { name: '新しい分析' }),
+    ).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('分析名'), {
+      target: { value: '  任天堂 新規分析  ' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'PDF追加へ進む' }));
+
+    await waitFor(() =>
+      expect(replace).toHaveBeenCalledWith(`/analyses/${analysis.id}/intake`),
+    );
   });
 
   it('renders owner history and logs out with the refresh cookie', async () => {

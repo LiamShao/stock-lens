@@ -1,6 +1,10 @@
 'use client';
 
-import type { AuthUser, LoginRequest } from '@stocklens/shared';
+import type {
+  AuthUser,
+  LoginRequest,
+  RegisterRequest,
+} from '@stocklens/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   createContext,
@@ -20,6 +24,7 @@ export interface SessionContextValue {
   apiClient: ApiClient;
   login(input: LoginRequest): Promise<void>;
   logout(): Promise<void>;
+  registerAccount(input: RegisterRequest): Promise<void>;
   status: SessionStatus;
   user: AuthUser | null;
 }
@@ -61,9 +66,16 @@ export function SessionProvider({
     await apiClient.logout();
   }, [apiClient]);
 
+  const registerAccount = useCallback(
+    async (input: RegisterRequest) => {
+      await apiClient.registerUser(input);
+    },
+    [apiClient],
+  );
+
   const value = useMemo<SessionContextValue>(
-    () => ({ apiClient, login, logout, status, user }),
-    [apiClient, login, logout, status, user],
+    () => ({ apiClient, login, logout, registerAccount, status, user }),
+    [apiClient, login, logout, registerAccount, status, user],
   );
 
   return (

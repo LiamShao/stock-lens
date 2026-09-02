@@ -20,13 +20,16 @@
 - `pdf-upload.ts` は最大 3 Files、1〜20 MB、`.pdf`、exact MIME、`%PDF-` Header、Web Crypto SHA-256 を Browser Boundary で検証します。
 - Object Storage PUT は `credentials: omit`、`cache: no-store`、`redirect: error` と Server-returned Headers だけを使用し、Failure 時は同じ Upload Session の URL を一回だけ再発行します。
 - `api-client.spec.ts` / `pdf-upload.spec.ts`: Registration Normalization/Memory Session、全 Write Route/Bearer Contract、Invalid File Matrix、Real SHA-256、Credential-free PUT、Re-presign/Finalize を検証しました。
+- `/register` は Shared Zod/React Hook Form、Memory Session、Password Clear、Login Link を持ち、成功後 `/analyses` へ Redirect します。
+- `/analyses/new` は `companyId: null` の Title-only Draft を作成し、Server ID の `/analyses/:id/intake` へ Redirect します。History/Header/Login に Registration/Create Entry を追加しました。
+- `session-shells.spec.tsx` は Optional Blank Display Name、Normalized Registration、No Browser Storage、Title Trim、Null Company、ID Route を検証しました。
 
 ## Acceptance Evidence
 
 | Acceptance Criterion | Evidence                                | Result        |
 | -------------------- | --------------------------------------- | ------------- |
-| `INTAKE-AC-001`      | Pending                                 | `Not started` |
-| `INTAKE-AC-002`      | Pending                                 | `Not started` |
+| `INTAKE-AC-001`      | Register RTL + memory client Unit       | `Passed`      |
+| `INTAKE-AC-002`      | Title-only draft RTL + strict client    | `Passed`      |
 | `INTAKE-AC-003`      | Browser file boundary Unit              | `Passed`      |
 | `INTAKE-AC-004`      | Hash/PUT/API Unit; real storage pending | `Partial`     |
 | `INTAKE-AC-005`      | Pending                                 | `Not started` |

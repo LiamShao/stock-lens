@@ -30,6 +30,12 @@ export function ProtectedShell({ children }: { children: ReactNode }) {
             StockLens AI
           </Link>
           <div className="flex items-center gap-3">
+            <Link
+              className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"
+              href="/analyses/new"
+            >
+              新しい分析
+            </Link>
             <span className="hidden text-sm text-slate-600 sm:inline">
               {user?.displayName ?? user?.email}
             </span>

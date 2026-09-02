@@ -40,6 +40,12 @@ export function AnalysisHistoryScreen() {
           <p className="text-slate-600">
             アップロード済み資料の処理状況と完成した分析を確認できます。
           </p>
+          <Link
+            className="mt-4 inline-flex rounded-md bg-slate-950 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-950"
+            href="/analyses/new"
+          >
+            分析を作成
+          </Link>
         </div>
 
         {analyses.isPending ? (
@@ -68,7 +74,7 @@ export function AnalysisHistoryScreen() {
           <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
             <h2 className="font-semibold">分析はまだありません</h2>
             <p className="mt-2 text-sm text-slate-600">
-              Analysis作成・PDFアップロード画面は今後のタスクで追加します。
+              新しい分析を作成して、公開IR PDFを追加してください。
             </p>
           </div>
         ) : null}
