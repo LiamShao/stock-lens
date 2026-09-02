@@ -7,6 +7,7 @@
 - Browser-only P0 Journey を監査し、Backend Registration/Analysis/Upload/Process API が存在する一方、Web は Login/History/Read Flow に限定され、新規 User が Analysis を作成できない `INTAKE-DEV-001` を記録しました。
 - `specs/features/web-analysis-intake/spec.md` と `decision-request.md` を Draft として作成し、Registration、Explicit Analysis Create、最大 3 PDF の Direct Upload/Finalize、Document Delete、明示的 Process Start、Full Browser Acceptance を Requirement 化しました。
 - Route、Registration Redirect、Company Scope、Parallel Upload、Browser Integrity、Explicit Processing、Draft Cleanup、E2E Provider Boundary を `INTAKE-Q-001`〜`008` として可視化しました。Approval 前のため Technical Plan、Tasks、Runtime は変更していません。
+- User は `INTAKE-Q-001`〜`008` の Option `A` をすべて承認しました。一つの Wizard + ID Route、Register 後 Memory Session、Title-only/`companyId: null`、最大 3 Parallel Upload、Browser Hash/Header Check、明示 Process、明示 Draft Delete、Deterministic Full-stack CI を Baseline とし、Technical Plan と 9 Tasks を作成しました。
 
 ### Phase 5 Analysis Views Final Audit
 

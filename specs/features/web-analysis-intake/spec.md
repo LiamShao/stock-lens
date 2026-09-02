@@ -2,13 +2,14 @@
 
 ## Metadata
 
-| Field                 | Value         |
-| --------------------- | ------------- |
-| Spec status           | `Draft`       |
-| Implementation status | `Not started` |
-| Verification status   | `Not started` |
-| Owner                 | `TBD`         |
-| Last updated          | `2026-09-02`  |
+| Field                 | Value                     |
+| --------------------- | ------------------------- |
+| Spec status           | `Approved`                |
+| Implementation status | `Not started`             |
+| Verification status   | `Not started`             |
+| Owner                 | `TBD`                     |
+| Approval              | `2026-09-02 Q-001〜008 A` |
+| Last updated          | `2026-09-02`              |
 
 ## Goal
 
@@ -122,16 +123,16 @@ Client File State は Memory-only UI State であり、Server Truth ではあり
 
 ## Open Questions
 
-| ID             | Question                                                      | Impact                         | Status |
-| -------------- | ------------------------------------------------------------- | ------------------------------ | ------ |
-| `INTAKE-Q-001` | Intake を一つの Wizard Route にするか、独立 Page に分割するか | UX / Routing / Recovery        | `Open` |
-| `INTAKE-Q-002` | Registration 成功後に自動 Login/Redirect するか               | Auth / Session / UX            | `Open` |
-| `INTAKE-Q-003` | Company Selection を今回含めるか                              | Scope / API / Data             | `Open` |
-| `INTAKE-Q-004` | 2〜3 Files を Sequential または bounded parallel にするか     | UX / Object Storage / Recovery | `Open` |
-| `INTAKE-Q-005` | Browser SHA-256 と early `%PDF-` check を必須にするか         | Security / Performance         | `Open` |
-| `INTAKE-Q-006` | Finalize 後に Processing を自動開始するか                     | Cost / Side effect / UX        | `Open` |
-| `INTAKE-Q-007` | Abandoned Draft を暗黙削除するか明示削除だけにするか          | Data integrity / Recovery      | `Open` |
-| `INTAKE-Q-008` | Browser E2E の Provider Boundary                              | Verification / Cost / CI       | `Open` |
+| ID             | Question                                                      | Impact                         | Status                                       |
+| -------------- | ------------------------------------------------------------- | ------------------------------ | -------------------------------------------- |
+| `INTAKE-Q-001` | Intake を一つの Wizard Route にするか、独立 Page に分割するか | UX / Routing / Recovery        | `Resolved A: one wizard + ID route`          |
+| `INTAKE-Q-002` | Registration 成功後に自動 Login/Redirect するか               | Auth / Session / UX            | `Resolved A: memory session + redirect`      |
+| `INTAKE-Q-003` | Company Selection を今回含めるか                              | Scope / API / Data             | `Resolved A: title + null company`           |
+| `INTAKE-Q-004` | 2〜3 Files を Sequential または bounded parallel にするか     | UX / Object Storage / Recovery | `Resolved A: max-three parallel`             |
+| `INTAKE-Q-005` | Browser SHA-256 と early `%PDF-` check を必須にするか         | Security / Performance         | `Resolved A: bounded browser checks`         |
+| `INTAKE-Q-006` | Finalize 後に Processing を自動開始するか                     | Cost / Side effect / UX        | `Resolved A: explicit start`                 |
+| `INTAKE-Q-007` | Abandoned Draft を暗黙削除するか明示削除だけにするか          | Data integrity / Recovery      | `Resolved A: explicit delete only`           |
+| `INTAKE-Q-008` | Browser E2E の Provider Boundary                              | Verification / Cost / CI       | `Resolved A: deterministic CI + opt-in live` |
 
 ## Dependencies
 
