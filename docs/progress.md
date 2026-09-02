@@ -2,6 +2,12 @@
 
 ## 2026-09-02
 
+### P0 Web Analysis Intake Draft
+
+- Browser-only P0 Journey を監査し、Backend Registration/Analysis/Upload/Process API が存在する一方、Web は Login/History/Read Flow に限定され、新規 User が Analysis を作成できない `INTAKE-DEV-001` を記録しました。
+- `specs/features/web-analysis-intake/spec.md` と `decision-request.md` を Draft として作成し、Registration、Explicit Analysis Create、最大 3 PDF の Direct Upload/Finalize、Document Delete、明示的 Process Start、Full Browser Acceptance を Requirement 化しました。
+- Route、Registration Redirect、Company Scope、Parallel Upload、Browser Integrity、Explicit Processing、Draft Cleanup、E2E Provider Boundary を `INTAKE-Q-001`〜`008` として可視化しました。Approval 前のため Technical Plan、Tasks、Runtime は変更していません。
+
 ### Phase 5 Analysis Views Final Audit
 
 - Approved `VIEW-TASK-012` として Architecture、AI Pipeline、Evidence Model、Feature Verification、Traceability、Deviation を実装状態へ同期しました。新規 Deviation、Database Migration、Public API、Dependency、Production Code 変更はありません。

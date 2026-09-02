@@ -109,6 +109,8 @@ User は同日 `VIEW-Q-001`〜`VIEW-Q-007` Option `A` を承認しました。Ph
 
 2026-09-02 の `VIEW-TASK-012` Final Documentation/Traceability/Quality Audit では新規 Deviation は検出されませんでした。Task 011 で追加済みの `INSUFFICIENT_EVIDENCE` Live-shaped Deterministic Harness と Browser Missing Information E2E を `VIEW-FR-008` / `VIEW-AC-003` に反映し、過去の `Partial` 表記を収口しました。Production OpenAI Live Passed Artifact、5 社 / 15 PDF Golden Dataset、Firefox/WebKit は Deviation ではなく明示済みの残存 Verification Risk として維持します。
 
+同日の P0 Browser Journey Audit で、Registration、Analysis Create、PDF Upload/Finalize/Delete、Process Start の Backend API は実装済みである一方、`apps/web` は Login、History、Detail/View の Read Flow だけを持ち、新規 User が Browser から Analysis を作成・処理できない `INTAKE-DEV-001` を検出しました。これは AGENTS.md の P0 Registration/PDF Upload と portfolio-quality Full-stack Goal に対する Product Flow Gap です。`web-analysis-intake` Draft と `INTAKE-Q-001`〜`008` に Scope/UX/Cost/Verification Decision を記録し、User Approval 前に Runtime を変更しません。
+
 ## Resolution Evidence
 
 | Deviation                              | Resolution evidence                                                                                               |
