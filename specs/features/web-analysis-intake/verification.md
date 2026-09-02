@@ -23,25 +23,29 @@
 - `/register` は Shared Zod/React Hook Form、Memory Session、Password Clear、Login Link を持ち、成功後 `/analyses` へ Redirect します。
 - `/analyses/new` は `companyId: null` の Title-only Draft を作成し、Server ID の `/analyses/:id/intake` へ Redirect します。History/Header/Login に Registration/Create Entry を追加しました。
 - `session-shells.spec.tsx` は Optional Blank Display Name、Normalized Registration、No Browser Storage、Title Trim、Null Company、ID Route を検証しました。
+- `/analyses/:analysisId/intake` は Draft/Uploaded Status に限定し、最大 3 File の Memory-only State、Document Type、Parallel Upload、File-level Retry/Remove、Server Document Restore/Delete、Explicit Process、Explicit Analysis Delete を実装します。
+- Process Button は Finalized Document 1 件以上、Local File 0 件、Upload Terminal の場合だけ有効で、Finalize/Reload/Retry から自動実行されません。Accepted 後だけ既存 Detail Polling へ Redirect します。
+- `analysis-intake-screen.spec.tsx` は Invalid 4 Files の API Side-effect なし、Credential-free PUT、Finalize、No-auto Process、Parallel 1 Success/1 Failure、Reload Document Restore、Explicit Document/Analysis Delete を検証しました。
+- Task 006/007 Web Gate: Lint、Typecheck、10 Files / 40 Tests、Production Build が成功しました。Sandbox 内 Build は Turbopack/PostCSS Port Bind 制限で失敗し、同一 Command の承認済み sandbox 外再実行が成功しました。
 
 ## Acceptance Evidence
 
-| Acceptance Criterion | Evidence                                | Result        |
-| -------------------- | --------------------------------------- | ------------- |
-| `INTAKE-AC-001`      | Register RTL + memory client Unit       | `Passed`      |
-| `INTAKE-AC-002`      | Title-only draft RTL + strict client    | `Passed`      |
-| `INTAKE-AC-003`      | Browser file boundary Unit              | `Passed`      |
-| `INTAKE-AC-004`      | Hash/PUT/API Unit; real storage pending | `Partial`     |
-| `INTAKE-AC-005`      | Pending                                 | `Not started` |
-| `INTAKE-AC-006`      | Pending                                 | `Not started` |
-| `INTAKE-AC-007`      | Pending                                 | `Not started` |
-| `INTAKE-AC-008`      | Pending                                 | `Not started` |
-| `INTAKE-AC-009`      | Pending                                 | `Not started` |
-| `INTAKE-AC-010`      | Pending                                 | `Not started` |
-| `INTAKE-AC-011`      | Pending                                 | `Not started` |
-| `INTAKE-AC-012`      | Pending                                 | `Not started` |
-| `INTAKE-AC-013`      | Pending                                 | `Not started` |
-| `INTAKE-AC-014`      | Pending                                 | `Not started` |
+| Acceptance Criterion | Evidence                                  | Result        |
+| -------------------- | ----------------------------------------- | ------------- |
+| `INTAKE-AC-001`      | Register RTL + memory client Unit         | `Passed`      |
+| `INTAKE-AC-002`      | Title-only draft RTL + strict client      | `Passed`      |
+| `INTAKE-AC-003`      | Browser file boundary Unit                | `Passed`      |
+| `INTAKE-AC-004`      | Hash/PUT/API Unit; real storage pending   | `Partial`     |
+| `INTAKE-AC-005`      | Parallel partial success/retry RTL        | `Passed`      |
+| `INTAKE-AC-006`      | Server document restore + no storage      | `Passed`      |
+| `INTAKE-AC-007`      | Delete RTL; Owner B E2E pending           | `Partial`     |
+| `INTAKE-AC-008`      | Explicit single process RTL               | `Passed`      |
+| `INTAKE-AC-009`      | No-auto process RTL                       | `Passed`      |
+| `INTAKE-AC-010`      | Re-presign/401/safe error Unit + RTL      | `Passed`      |
+| `INTAKE-AC-011`      | Semantic controls RTL; mobile E2E pending | `Partial`     |
+| `INTAKE-AC-012`      | Pending                                   | `Not started` |
+| `INTAKE-AC-013`      | Pending                                   | `Not started` |
+| `INTAKE-AC-014`      | Abort + explicit delete RTL               | `Passed`      |
 
 ## Quality Gates
 
