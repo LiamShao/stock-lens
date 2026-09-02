@@ -107,6 +107,8 @@ User は同日 `VIEW-Q-001`〜`VIEW-Q-007` Option `A` を承認しました。Ph
 
 `VIEW-DEV-004` は同日、Test Code だけから決定的に生成する Valid 3-page PDF と Playwright Full-stack Flow へ置換して解消しました。専用 MinIO への Presigned PUT、Owner-scoped Read Presign、Browser Fetch、PDF.js Canvas の Page 2 初期表示と Page 3 Navigation を Fresh Test Environment で通し、ignored Local File 依存を除去しました。
 
+2026-09-02 の `VIEW-TASK-012` Final Documentation/Traceability/Quality Audit では新規 Deviation は検出されませんでした。Task 011 で追加済みの `INSUFFICIENT_EVIDENCE` Live-shaped Deterministic Harness と Browser Missing Information E2E を `VIEW-FR-008` / `VIEW-AC-003` に反映し、過去の `Partial` 表記を収口しました。Production OpenAI Live Passed Artifact、5 社 / 15 PDF Golden Dataset、Firefox/WebKit は Deviation ではなく明示済みの残存 Verification Risk として維持します。
+
 ## Resolution Evidence
 
 | Deviation                              | Resolution evidence                                                                                               |
@@ -128,6 +130,7 @@ User は同日 `VIEW-Q-001`〜`VIEW-Q-007` Option `A` を承認しました。Ph
 | `EXTRACT-DEV-001`                      | `EXTRACT-Q-001` Approved A、Phase 4 Handoff を `READY_FOR_VIEW_GENERATION` として Spec/Plan に固定                |
 | `VIEW-DEV-001`, `VIEW-DEV-002`         | `VIEW-Q-001` / `VIEW-Q-005` Approved A、三 View Completion と最小 Web Foundation を Scope に固定                  |
 | `VIEW-DEV-003`                         | 5 秒 / 最大 5 分 / Active Status 限定 Polling、Terminal Stop、Component/Pure Boundary Test                        |
+| `VIEW-DEV-004`                         | Tracked Synthetic 3-page PDF、Real MinIO/API/PDF.js Page 2 → 3 Chromium E2E                                       |
 
 ## Detail
 

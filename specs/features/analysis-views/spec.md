@@ -5,11 +5,11 @@
 | Field                 | Value                     |
 | --------------------- | ------------------------- |
 | Spec status           | `Approved`                |
-| Implementation status | `Implementing`            |
+| Implementation status | `Implemented`             |
 | Verification status   | `Partial`                 |
 | Owner                 | `TBD`                     |
 | Approval              | `2026-08-24 Q-001〜007 A` |
-| Last updated          | `2026-08-24`              |
+| Last updated          | `2026-09-02`              |
 
 ## Goal
 

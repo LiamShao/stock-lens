@@ -55,9 +55,9 @@ Analysis View Block は Evidence を複製せず Direct Evidence ID を参照し
 
 ## 5. Frontend Boundary
 
-Phase 5 では Finding Click から Evidence Drawer を開き、Document Name、Page Number、Original Excerpt を表示します。技術的に可能な場合は短命 Presigned Download URL と PDF Viewer の Page Navigation を接続します。
+Phase 5 では Citation Trigger から Evidence Drawer を開き、Document Name、Page Number、Original Excerpt を表示します。明示的な PDF 操作時だけ短命 Presigned Download URL を取得し、Canvas-only PDF.js Viewer で Evidence Page を開きます。
 
-Frontend は Provider Candidate を直接表示せず、Database に Commit 済みの Evidence Projection だけを使用します。Completed-only Analysis Views Read API は Block が参照する ID を重複排除し、Active Owner/Analysis/Document/FindingEvidence と Page Lineage を再確認して最大 120 件を Aggregate 返却します。Evidence Drawer と PDF Page Navigation は Phase 5 後続 Task です。
+Frontend は Provider Candidate を直接表示せず、Database に Commit 済みの Evidence Projection だけを使用します。Completed-only Analysis Views Read API は Block が参照する ID を重複排除し、Active Owner/Analysis/Document/FindingEvidence と Page Lineage を再確認して最大 120 件を Aggregate 返却します。Evidence Drawer と PDF Page Navigation は Unit/Component Test と Real MinIO/API/PDF.js Chromium E2E で検証済みです。
 
 ## 6. Verification
 

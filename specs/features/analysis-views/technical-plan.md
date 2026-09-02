@@ -6,7 +6,7 @@
 | ------------ | --------------------------------------- |
 | Related Spec | `specs/features/analysis-views/spec.md` |
 | Plan status  | `Approved`                              |
-| Last updated | `2026-09-01`                            |
+| Last updated | `2026-09-02`                            |
 
 ## Approach
 

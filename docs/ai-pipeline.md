@@ -74,7 +74,7 @@ Phase 4 Publish Transaction は Exact View Source Hash、Prompt/Schema、Provide
 
 - OpenAI opt-in Live Harness は実装済みですが、Live Passed Artifact は未取得です。
 - 5 Company / 15 Public IR PDF の Golden Dataset Evaluation は未実装です。
-- Phase 5 View Contract、One-call Orchestrator、Owner-scoped Citation/Atomic Publish、Durable `GENERATE_VIEWS` Queue、Repair/Retry/Usage Persist は実装済みです。Read API、Evidence UI は未実装です。
+- Phase 5 View Contract、One-call Orchestrator、Owner-scoped Citation/Atomic Publish、Durable `GENERATE_VIEWS` Queue、Repair/Retry/Usage Persist、Completed-only Read API、Evidence Drawer、PDF.js Page Navigation は実装済みです。
 - Production Secrets Manager/IAM Evidence は Phase 7 Deployment Scope です。
 
-Feature-level Source of Truth は `specs/features/structured-extraction/`、検証結果は `verification.md` と `specs/traceability.md` を参照してください。
+Feature-level Source of Truth は `specs/features/structured-extraction/` と `specs/features/analysis-views/`、検証結果は各 `verification.md` と `specs/traceability.md` を参照してください。

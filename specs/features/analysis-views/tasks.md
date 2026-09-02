@@ -20,4 +20,4 @@
 - [x] `VIEW-TASK-009` (`VIEW-FR-013`, `VIEW-FR-014`, `VIEW-AC-010`〜`VIEW-AC-012`) View Tabs、Status Polling、Responsive/Accessible Evidence Drawer
 - [x] `VIEW-TASK-010` (`VIEW-FR-015`, `VIEW-SEC-007`, `VIEW-AC-013`, `VIEW-AC-016`) PDF.js Embedded Viewer、Page Navigation、Untrusted PDF Action Boundary
 - [x] `VIEW-TASK-011` (`VIEW-AC-001`〜`VIEW-AC-016`) Full PostgreSQL/Redis/BullMQ/Storage/API/Web/E2E/Security Matrix と Opt-in Live Harness
-- [ ] `VIEW-TASK-012` Documentation、Verification、Traceability、Deviation Audit、Full Quality Gate
+- [x] `VIEW-TASK-012` Documentation、Verification、Traceability、Deviation Audit、Full Quality Gate

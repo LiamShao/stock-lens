@@ -2,11 +2,11 @@
 
 ## Metadata
 
-| Field               | Value                                   |
-| ------------------- | --------------------------------------- |
-| Related Spec        | `specs/features/analysis-views/spec.md` |
-| Verification status | `Partial — PDF viewer implemented`      |
-| Last updated        | `2026-09-01`                            |
+| Field               | Value                                        |
+| ------------------- | -------------------------------------------- |
+| Related Spec        | `specs/features/analysis-views/spec.md`      |
+| Verification status | `Partial — production live artifact pending` |
+| Last updated        | `2026-09-02`                                 |
 
 ## Implemented Evidence
 
@@ -108,24 +108,24 @@
 
 ## Acceptance Status
 
-| Acceptance Criterion | Status    | Evidence / Gap                                               |
-| -------------------- | --------- | ------------------------------------------------------------ |
-| `VIEW-AC-001`        | `Passed`  | Fixed identity + Pending Dispatcher + real BullMQ            |
-| `VIEW-AC-002`        | `Passed`  | Deterministic provider → atomic three-view completion        |
-| `VIEW-AC-003`        | `Partial` | Missing contract passed; generation pending                  |
-| `VIEW-AC-004`        | `Passed`  | Owner/Finding/Document/Page/Chunk/Excerpt PostgreSQL         |
-| `VIEW-AC-005`        | `Passed`  | Unknown/cross-owner/unlinked pre-persist rejection           |
-| `VIEW-AC-006`        | `Passed`  | Orchestrator + repository pre-persist rejection              |
-| `VIEW-AC-007`        | `Passed`  | Invalid citation → same Execution one-repair success         |
-| `VIEW-AC-008`        | `Passed`  | Exhaustion + sanitized state + transient Attempt 2           |
-| `VIEW-AC-009`        | `Passed`  | Race/duplicate/manual re-run/no duplicate Execution          |
-| `VIEW-AC-010`        | `Passed`  | Completed Aggregate + Owner A/B real PostgreSQL HTTP         |
-| `VIEW-AC-011`        | `Passed`  | Chromium desktop/mobile viewport + keyboard Browser E2E      |
-| `VIEW-AC-012`        | `Passed`  | Drawer document/page/excerpt + modal focus keyboard          |
-| `VIEW-AC-013`        | `Passed`  | Tracked 3-page PDF + real MinIO/API/PDF.js page 2 → 3 E2E    |
-| `VIEW-AC-014`        | `Passed`  | Memory-only token + reload/401 single-flight rotation        |
-| `VIEW-AC-015`        | `Passed`  | Server/browser sanitized errors; URL/content not exposed     |
-| `VIEW-AC-016`        | `Passed`  | Plain text + canvas-only PDF; no action/link/scripting layer |
+| Acceptance Criterion | Status   | Evidence / Gap                                               |
+| -------------------- | -------- | ------------------------------------------------------------ |
+| `VIEW-AC-001`        | `Passed` | Fixed identity + Pending Dispatcher + real BullMQ            |
+| `VIEW-AC-002`        | `Passed` | Deterministic provider → atomic three-view completion        |
+| `VIEW-AC-003`        | `Passed` | Insufficient source → deterministic missing output + browser |
+| `VIEW-AC-004`        | `Passed` | Owner/Finding/Document/Page/Chunk/Excerpt PostgreSQL         |
+| `VIEW-AC-005`        | `Passed` | Unknown/cross-owner/unlinked pre-persist rejection           |
+| `VIEW-AC-006`        | `Passed` | Orchestrator + repository pre-persist rejection              |
+| `VIEW-AC-007`        | `Passed` | Invalid citation → same Execution one-repair success         |
+| `VIEW-AC-008`        | `Passed` | Exhaustion + sanitized state + transient Attempt 2           |
+| `VIEW-AC-009`        | `Passed` | Race/duplicate/manual re-run/no duplicate Execution          |
+| `VIEW-AC-010`        | `Passed` | Completed Aggregate + Owner A/B real PostgreSQL HTTP         |
+| `VIEW-AC-011`        | `Passed` | Chromium desktop/mobile viewport + keyboard Browser E2E      |
+| `VIEW-AC-012`        | `Passed` | Drawer document/page/excerpt + modal focus keyboard          |
+| `VIEW-AC-013`        | `Passed` | Tracked 3-page PDF + real MinIO/API/PDF.js page 2 → 3 E2E    |
+| `VIEW-AC-014`        | `Passed` | Memory-only token + reload/401 single-flight rotation        |
+| `VIEW-AC-015`        | `Passed` | Server/browser sanitized errors; URL/content not exposed     |
+| `VIEW-AC-016`        | `Passed` | Plain text + canvas-only PDF; no action/link/scripting layer |
 
 ## Quality Gates
 
@@ -155,7 +155,8 @@
 - Task 010 Review では新規 Deviation を検出しませんでした。Operation-only Read Presign、Strict PDF Byte Boundary、Version-matched Worker、Canvas-only Page Navigation を実装しました。Full Browser Cross-service E2E は Task 011 です。
 - Task 011 Initial Audit で `VIEW-DEV-004` を検出しました。Task 010 の Real PDF.js Test は ignored Local IR PDF に依存して CI 再現不能だったため `VIEW-AC-013` を一時 `Partial` に戻し、Tracked Synthetic Real-PDF + Full Browser MinIO/API/PDF.js Evidence で置換します。
 - Task 011 で `VIEW-DEV-004` を解消し、Full-stack Chromium E2E と Analysis Views 専用 opt-in Live Harness を追加しました。Production Live Call/Passed Artifact と Golden Dataset は Approved Scope 上 `Partial` のまま、Firefox/WebKit は残存 Browser Coverage Risk として Task 012 Audit へ引き継ぎます。
+- Task 012 Review では新規 Deviation を検出しませんでした。`VIEW-FR-008` / `VIEW-AC-003` は `INSUFFICIENT_EVIDENCE` を含む Live-shaped Deterministic Harness と Browser E2E の Missing Information 表示を Evidence として `Passed` に収口しました。Production OpenAI Live Passed Artifact、5 社 / 15 PDF Golden Dataset、Firefox/WebKit は残存 Risk として維持します。
 
 ## Conclusion
 
-Approved `VIEW-TASK-002`〜`011` の Shared Contract、Versioned Prompt、Bounded One-call Orchestrator、Owner-scoped Citation Resolution、Atomic Publish、Durable Queue/Repair/Retry/Recovery/Re-run、Completed-only Aggregate Read API、Private Read Presign、Memory-only Browser Session、Login/History/Detail、Three-view Tabs、Evidence Drawer、PDF.js Canvas Page Navigation、Full-stack Chromium E2E、Opt-in Live Harness は実装済みです。Production Live Passed Artifact と Golden Dataset は未取得であり、Task 012 の最終 Documentation/Traceability/Quality Audit 前なので Feature は `Implementing` / `Partial` です。
+Approved `VIEW-TASK-002`〜`012` の Shared Contract、Versioned Prompt、Bounded One-call Orchestrator、Owner-scoped Citation Resolution、Atomic Publish、Durable Queue/Repair/Retry/Recovery/Re-run、Completed-only Aggregate Read API、Private Read Presign、Memory-only Browser Session、Login/History/Detail、Three-view Tabs、Evidence Drawer、PDF.js Canvas Page Navigation、Full-stack Chromium E2E、Opt-in Live Harness、Documentation/Traceability Audit は実装・検証済みです。全 Acceptance Criterion と deterministic/infrastructure/browser Gate は `Passed` です。Production OpenAI Live Passed Artifact と 5 社 / 15 PDF Golden Dataset は未取得のため、Feature は `Implemented` / `Partial` とします。

@@ -23,7 +23,7 @@ Next.js Web ─────► NestJS + Fastify API ─────► PostgreSQ
                            └────────────────────► LLM / Embedding Provider
 ```
 
-- `apps/web`: In-memory Access Token、Refresh Rotation、Login、Owner-scoped History/Detail、bounded Status Polling、Three-view ARIA Tabs、Evidence Drawer、TanStack Query、Form Validation を実装済みです。PDF Page Navigation は後続 Task です。
+- `apps/web`: In-memory Access Token、Refresh Rotation、Login、Owner-scoped History/Detail、bounded Status Polling、Three-view ARIA Tabs、Evidence Drawer、PDF.js Canvas Page Navigation、TanStack Query、Form Validation を実装済みです。
 - `apps/api`: HTTP、Authentication、Analysis Management、Authorization Boundary、Validation、OpenAPI、Job Enqueue を担当します。Controller は Prisma を直接呼びません。
 - `apps/worker`: Upload Cleanup、PDF Parse/Chunk、Deterministic Financial Metrics、Bounded Structured Extraction、Evidence/Compliance Validation、Atomic Phase 5 Handoff、View Contract/One-call Orchestrator、Owner-scoped Atomic Publish、Durable View Queue/Retry/Repair/Recovery/Re-run を実装済みです。Embedding、RAG は未実装です。
 - PostgreSQL: Transactional Data、Owner Scope、JSONB Output、Full Text Search、pgvector を一つの整合性境界で管理します。
@@ -131,7 +131,7 @@ Target は AWS-oriented Architecture です。Web/API/Worker を独立 Deployabl
 
 - Analysis と Document HTTP API の Cross-user Authorization は Bearer User A/B で検証済みです。
 - Object Storage Adapter、PDF Upload/Finalize/Delete API、Concurrent Reservation/Finalize、24-hour Orphan Scan、Cleanup Queue/Worker、PDF Parse/Chunk、Phase 4 Durable LLM Pipeline/Atomic Evidence Publish、Phase 5 Durable View Generation/Atomic Publish、Browser Session/History/Detail、Three-view/Evidence Drawer/PDF.js UI は実装・検証済みです。OpenAI Live Passed Artifact と RAG は未実装です。
-- Read Presign API、Real MinIO GET、Real PDF.js Document/Page Load、Canvas Page Navigation は実装・検証済みです。Production Private Bucket Policy、Browser PUT/GET CORS、API/Worker IAM Policy と Full Browser E2E は未実装・未検証です。
+- Read Presign API、Real MinIO GET、Real PDF.js Document/Page Load、Canvas Page Navigation、Chromium Full Browser E2E は実装・検証済みです。Production Private Bucket Policy、Browser PUT/GET CORS、API/Worker IAM Policy と Firefox/WebKit Coverage は未実装・未検証です。
 - FAILED Cleanup/Parse/Chunk/Metrics/Extract は Guard 付き Operator CLI から既存 Execution を再実行できます。Production Workload IAM/Secrets Manager Evidence は Phase 7 に残ります。
 - Rate Limit Store は Process Local であり、Multi-instance 前に Redis-backed Store が必要です。
 - AI Pipeline、Evidence、Evaluation の詳細文書は作成済みです。Required ADR と Deployment 文書は関連 Phase で追加します。
