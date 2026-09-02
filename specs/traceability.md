@@ -183,29 +183,29 @@ Status は Requirement の実装・検証状況を表します。`Partial` は C
 
 ## Web Analysis Intake
 
-| Requirement      | Implementation                      | Verification                  | Status        |
-| ---------------- | ----------------------------------- | ----------------------------- | ------------- |
-| `INTAKE-FR-001`  | Planned Registration route          | `INTAKE-AC-001`               | `Not started` |
-| `INTAKE-FR-002`  | Planned Draft create route          | `INTAKE-AC-002`               | `Not started` |
-| `INTAKE-FR-003`  | Planned browser PDF boundary        | `INTAKE-AC-003`               | `Not started` |
-| `INTAKE-FR-004`  | Planned hash/start/PUT/finalize     | `INTAKE-AC-004`               | `Not started` |
-| `INTAKE-FR-005`  | Planned per-file parallel state     | `INTAKE-AC-005`               | `Not started` |
-| `INTAKE-FR-006`  | Planned document restore/delete     | `INTAKE-AC-006`, `007`        | `Not started` |
-| `INTAKE-FR-007`  | Planned explicit process mutation   | `INTAKE-AC-008`, `009`        | `Not started` |
-| `INTAKE-FR-008`  | Planned safe step errors/retry      | `INTAKE-AC-005`, `010`        | `Not started` |
-| `INTAKE-FR-009`  | Planned explicit draft delete       | `INTAKE-AC-014`               | `Not started` |
-| `INTAKE-FR-010`  | Planned accessible responsive flow  | `INTAKE-AC-011`               | `Not started` |
-| `INTAKE-FR-011`  | Existing memory session + extension | `INTAKE-AC-001`, `010`        | `Not started` |
-| `INTAKE-FR-012`  | Planned history/navigation entry    | `INTAKE-AC-002`, `012`        | `Not started` |
-| `INTAKE-SEC-001` | Planned API-origin bearer boundary  | `INTAKE-AC-007`, `013`        | `Not started` |
-| `INTAKE-SEC-002` | Planned ephemeral presigned URL     | `INTAKE-AC-004`, `006`, `010` | `Not started` |
-| `INTAKE-SEC-003` | Planned credential-free strict PUT  | `INTAKE-AC-004`, `010`        | `Not started` |
-| `INTAKE-SEC-004` | Existing server trusted validation  | `INTAKE-AC-003`, `004`        | `Not started` |
-| `INTAKE-SEC-005` | Planned byte-only browser boundary  | `INTAKE-AC-003`, `004`        | `Not started` |
-| `INTAKE-SEC-006` | Planned client secret/content guard | `INTAKE-AC-001`, `006`, `010` | `Not started` |
-| `INTAKE-SEC-007` | Existing API error/owner boundary   | `INTAKE-AC-010`, `013`        | `Not started` |
-| `INTAKE-SEC-008` | Planned explicit process start      | `INTAKE-AC-008`, `009`        | `Not started` |
-| `INTAKE-SEC-009` | Planned compliance-only UI copy     | UI review + `INTAKE-AC-011`   | `Not started` |
+| Requirement      | Implementation                              | Verification                             | Status   |
+| ---------------- | ------------------------------------------- | ---------------------------------------- | -------- |
+| `INTAKE-FR-001`  | Register route + Session `applyAuth`        | Client Unit + Register RTL/E2E           | `Passed` |
+| `INTAKE-FR-002`  | Title-only Create + ID Intake route         | Create RTL + Browser E2E                 | `Passed` |
+| `INTAKE-FR-003`  | Count/size/name/MIME/header boundary        | Invalid matrix Unit/RTL                  | `Passed` |
+| `INTAKE-FR-004`  | Web Crypto + Start/PUT/Finalize             | Hash Unit + Real MinIO Browser E2E       | `Passed` |
+| `INTAKE-FR-005`  | Per-file bounded parallel state/retry       | Partial success/retry RTL                | `Passed` |
+| `INTAKE-FR-006`  | Server document restore/delete              | Reload/delete RTL + Owner B E2E          | `Passed` |
+| `INTAKE-FR-007`  | Explicit single process + detail polling    | No-auto RTL + Full BullMQ Browser E2E    | `Passed` |
+| `INTAKE-FR-008`  | Stable safe errors + bounded recovery       | Re-presign/401/failure Unit + RTL        | `Passed` |
+| `INTAKE-FR-009`  | Abort + explicit analysis delete            | Intake delete RTL                        | `Passed` |
+| `INTAKE-FR-010`  | Semantic responsive intake controls         | RTL + 390px Chromium Journey             | `Passed` |
+| `INTAKE-FR-011`  | Memory session + one 401 replay             | Storage/refresh/client Unit + E2E        | `Passed` |
+| `INTAKE-FR-012`  | Header/history/login entry points           | Shell RTL + Browser journey              | `Passed` |
+| `INTAKE-SEC-001` | Owner-free client input + API-only Bearer   | Request Unit + Owner B E2E               | `Passed` |
+| `INTAKE-SEC-002` | Imperative ephemeral upload presign         | PUT Unit + Storage/DOM review            | `Passed` |
+| `INTAKE-SEC-003` | Credential-omit/no-store/redirect-error PUT | Fetch option Unit + Real MinIO E2E       | `Passed` |
+| `INTAKE-SEC-004` | Client UX checks + trusted server Finalize  | Invalid Unit + Real Finalize E2E         | `Passed` |
+| `INTAKE-SEC-005` | Header/hash-only browser PDF byte handling  | PDF boundary Unit + code review          | `Passed` |
+| `INTAKE-SEC-006` | Content-free UI/session/storage boundary    | Storage Unit + E2E log/DOM assertions    | `Passed` |
+| `INTAKE-SEC-007` | Unified error + uniform owner 404           | Safe error Unit + four-route Owner B E2E | `Passed` |
+| `INTAKE-SEC-008` | Finalized summary + explicit process only   | No-auto/single-call RTL + E2E            | `Passed` |
+| `INTAKE-SEC-009` | Public-research/compliance-only copy        | UI review + rendered disclaimer tests    | `Passed` |
 
 ## Job Re-run
 

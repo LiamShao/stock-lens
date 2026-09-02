@@ -28,10 +28,7 @@ test.describe.serial('INTAKE-AC-012..013 full browser journey', () => {
     await page.setViewportSize({ height: 844, width: 390 });
     let processRequests = 0;
     page.on('request', (request) => {
-      if (
-        request.method() === 'POST' &&
-        request.url().endsWith('/process')
-      ) {
+      if (request.method() === 'POST' && request.url().endsWith('/process')) {
         processRequests += 1;
       }
     });
@@ -79,17 +76,13 @@ test.describe.serial('INTAKE-AC-012..013 full browser journey', () => {
       await finalizeResponse.json(),
     );
     documentId = finalizedDocument.id;
-    await expect(
-      page.getByText(DOCUMENT_NAME, { exact: true }),
-    ).toBeVisible();
+    await expect(page.getByText(DOCUMENT_NAME, { exact: true })).toBeVisible();
     await expect(
       page.getByRole('button', { name: 'このPDFで分析を開始' }),
     ).toBeEnabled();
     expect(processRequests).toBe(0);
 
-    await page
-      .getByRole('button', { name: 'このPDFで分析を開始' })
-      .click();
+    await page.getByRole('button', { name: 'このPDFで分析を開始' }).click();
     await expect(page).toHaveURL(new RegExp(`/analyses/${analysisId}$`));
     try {
       await expect(page.getByText('完了', { exact: true })).toBeVisible({
@@ -115,10 +108,13 @@ test.describe.serial('INTAKE-AC-012..013 full browser journey', () => {
     await expect(
       page.getByRole('tab', { name: 'Buffett-Munger Lens' }),
     ).toBeVisible();
-    await page.getByRole('button', { name: /根拠 1を開く/ }).first().click();
-    await expect(page.getByRole('dialog', { name: '根拠を確認' })).toContainText(
-      DOCUMENT_NAME,
-    );
+    await page
+      .getByRole('button', { name: /根拠 1を開く/ })
+      .first()
+      .click();
+    await expect(
+      page.getByRole('dialog', { name: '根拠を確認' }),
+    ).toContainText(DOCUMENT_NAME);
   });
 
   test('owner B receives the same 404 boundary for intake mutations and reads', async ({
@@ -133,10 +129,9 @@ test.describe.serial('INTAKE-AC-012..013 full browser journey', () => {
     const auth = authResponseSchema.parse(await loginResponse.json());
     const headers = { authorization: `Bearer ${auth.accessToken}` };
     const responses = await Promise.all([
-      request.get(
-        `${E2E_API_ORIGIN}/api/analyses/${analysisId}/documents`,
-        { headers },
-      ),
+      request.get(`${E2E_API_ORIGIN}/api/analyses/${analysisId}/documents`, {
+        headers,
+      }),
       request.post(
         `${E2E_API_ORIGIN}/api/analyses/${analysisId}/document-uploads`,
         {
@@ -166,6 +161,18 @@ test.describe.serial('INTAKE-AC-012..013 full browser journey', () => {
       expect(JSON.stringify(error)).not.toContain(ANALYSIS_TITLE);
       expect(JSON.stringify(error)).not.toContain(DOCUMENT_NAME);
     }
+
+    const apiLogPath = process.env.STOCKLENS_E2E_API_LOG_PATH;
+    expect(apiLogPath).toBeTruthy();
+    const logs = await readFile(apiLogPath ?? '', 'utf8');
+    for (const secret of [
+      E2E_INTAKE_OWNER.password,
+      auth.accessToken,
+      ANALYSIS_TITLE,
+      DOCUMENT_NAME,
+    ]) {
+      expect(logs).not.toContain(secret);
+    }
   });
 });
 
@@ -173,7 +180,9 @@ async function readAnalysisDiagnostics(
   databaseUrl: string,
   id: string,
 ): Promise<string> {
-  const prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+  const prisma = new PrismaClient({
+    datasources: { db: { url: databaseUrl } },
+  });
   try {
     const [analysis, jobs] = await Promise.all([
       prisma.analysis.findUnique({

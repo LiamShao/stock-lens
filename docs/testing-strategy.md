@@ -14,7 +14,7 @@ StockLens AI の Test は、Build が通ることだけでなく、Security Boun
 | E2E           | Browser Upload、Status Polling、View、Evidence Drawer、PDF Navigation        | Playwright                           | 隔離 Full Stack             |
 | AI Evaluation | Schema、Evidence Coverage、Citation/Numeric Consistency、Unsupported Claim   | Repeatable Evaluation Script         | Golden Dataset              |
 
-現時点では API Unit/Component、PostgreSQL Integration、Web Session/Metadata/View/Drawer/PDF Viewer の Vitest/React Testing Library Component Test に加え、Playwright Chromium の Full-stack E2E を実装済みです。PDF Fixture は Test Code から生成する追跡対象の Valid 3-page PDF を使い、Real MinIO Presigned GET、PDF.js Canvas の Evidence Page/Next Page、Browser Session、Owner A/B 404 を一つの隔離 Flow で検証します。Golden Dataset AI Evaluation は後続 Task です。
+現時点では API Unit/Component、PostgreSQL Integration、Web Registration/Intake/Session/Metadata/View/Drawer/PDF Viewer の Vitest/React Testing Library Component Test に加え、Playwright Chromium の Full-stack E2E を実装済みです。PDF Fixture は Test Code から生成する追跡対象の Valid 3-page PDF を使い、Browser Registration、Draft Create、Real MinIO Presigned PUT/Finalize、Explicit BullMQ Processing、Three Views/Evidence Drawer、Real Presigned GET/PDF.js Page Navigation、Owner A/B 404 を隔離 Flow で検証します。Golden Dataset AI Evaluation は後続 Task です。
 
 ## 3. PostgreSQL Integration Harness
 
@@ -48,6 +48,8 @@ StockLens AI の Test は、Build が通ることだけでなく、Security Boun
 - Cookie Attribute、CORS、CSRF 前提、Rate Limit、Deleted User を検証する。
 - Logger の実出力を Capture し、Password、Authorization、Cookie、Token が Redact されることを検証する。
 - Browser Session は Storage 非使用、Initial Refresh、single-flight Rotation、401 一回 Replay、Refresh/Replay Failure 時の Cache Clear/Login Return を検証する。
+- Browser Intake は invalid count/size/name/MIME/header の API side effect なし、Web Crypto hash、credential-free/redirect-reject PUT、一回の Re-presign、最大 3 parallel の partial success、reload restore、explicit delete/process、no-auto-process を Unit/RTL で検証する。
+- Full-stack Intake は Test-only deterministic Worker を `NODE_ENV=test` と明示 allow flag の両方で Gate し、実際に Persist された Chunk/Evidence ID から strict output を生成する。Production Worker entry point と OpenAI Provider は置換しない。
 - Analysis View UI は completed-only Query、5 秒/5 分 Polling、ARIA Tab Keyboard、Missing Information、Citation Drawer Content、Escape/Tab/Focus Restore、Plain-text Render を検証する。Playwright Chromium では Desktop/Mobile Viewport、Real PDF Page Navigation、Cookie/Storage、Injection、URL/Log Redaction を検証する。他 Browser Engine の回帰は未実装の残存 Risk とする。
 - Upload は Extension、MIME、`%PDF-` Header、File Count、Size、Cross-user Object Access を検証する。
 - Uploaded PDF 内の Prompt Injection Delimiter を Escape し、`role: user` / `trust: untrusted` の Context に固定する Unit Test を持つ。Pure Map/Merge Orchestrator では System/User Separation、全 Chunk Coverage、No Silent Truncation、Map Candidate Re-escape、Call/Character/Estimated Token Limit を検証済みです。Durable Runtime 接続後に Golden/Live Evaluation を追加します。
@@ -92,7 +94,7 @@ Harness は Git-tracked Prompt と Production `OpenAiLlmProvider` を使用し�
 
 ### Analysis Views Full-stack E2E と Live Smoke
 
-`pnpm e2e` は既存 PostgreSQL Integration、Production Build、Playwright を順に実行します。Playwright は固定 Port が使用中なら既存 Process を停止せず Fail-closed とし、専用 PostgreSQL/Redis/Private MinIO Container、空 Database Migration、Built API/Web、Owner A/B、追跡対象の 3-page PDF Fixture を起動・破棄します。
+`pnpm e2e` は既存 PostgreSQL Integration、Production Build、Playwright を順に実行します。Playwright は固定 Port が使用中なら既存 Process を停止せず Fail-closed とし、専用 PostgreSQL/Redis/Private MinIO Container、空 Database Migration、Active Prompt、Built API/Web/Test-only Worker、Owner A/B、追跡対象の 3-page PDF Fixture を起動・破棄します。
 
 Analysis Views の Production Provider Smoke は同じ明示 opt-in を使い、次を実行します。
 

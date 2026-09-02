@@ -5,7 +5,7 @@
 | Field               | Value                                        |
 | ------------------- | -------------------------------------------- |
 | Related Spec        | `specs/features/web-analysis-intake/spec.md` |
-| Verification status | `Not started`                                |
+| Verification status | `Passed`                                     |
 | Last updated        | `2026-09-02`                                 |
 
 ## Environment
@@ -33,41 +33,42 @@
 
 ## Acceptance Evidence
 
-| Acceptance Criterion | Evidence                                  | Result        |
-| -------------------- | ----------------------------------------- | ------------- |
-| `INTAKE-AC-001`      | Register RTL + memory client Unit         | `Passed`      |
-| `INTAKE-AC-002`      | Title-only draft RTL + strict client      | `Passed`      |
-| `INTAKE-AC-003`      | Browser file boundary Unit                | `Passed`      |
-| `INTAKE-AC-004`      | Hash/PUT Unit + real MinIO Browser E2E    | `Passed`      |
-| `INTAKE-AC-005`      | Parallel partial success/retry RTL        | `Passed`      |
-| `INTAKE-AC-006`      | Server document restore + no storage      | `Passed`      |
-| `INTAKE-AC-007`      | Delete RTL + Owner B E2E boundary         | `Passed`      |
-| `INTAKE-AC-008`      | Explicit single process RTL               | `Passed`      |
-| `INTAKE-AC-009`      | No-auto process RTL                       | `Passed`      |
-| `INTAKE-AC-010`      | Re-presign/401/safe error Unit + RTL      | `Passed`      |
-| `INTAKE-AC-011`      | Semantic controls RTL + 390px Browser E2E | `Passed`      |
-| `INTAKE-AC-012`      | Isolated full-stack 3-page Browser E2E    | `Passed`      |
-| `INTAKE-AC-013`      | Owner B four-route uniform 404 E2E        | `Passed`      |
-| `INTAKE-AC-014`      | Abort + explicit delete RTL               | `Passed`      |
+| Acceptance Criterion | Evidence                                  | Result   |
+| -------------------- | ----------------------------------------- | -------- |
+| `INTAKE-AC-001`      | Register RTL + memory client Unit         | `Passed` |
+| `INTAKE-AC-002`      | Title-only draft RTL + strict client      | `Passed` |
+| `INTAKE-AC-003`      | Browser file boundary Unit                | `Passed` |
+| `INTAKE-AC-004`      | Hash/PUT Unit + real MinIO Browser E2E    | `Passed` |
+| `INTAKE-AC-005`      | Parallel partial success/retry RTL        | `Passed` |
+| `INTAKE-AC-006`      | Server document restore + no storage      | `Passed` |
+| `INTAKE-AC-007`      | Delete RTL + Owner B E2E boundary         | `Passed` |
+| `INTAKE-AC-008`      | Explicit single process RTL               | `Passed` |
+| `INTAKE-AC-009`      | No-auto process RTL                       | `Passed` |
+| `INTAKE-AC-010`      | Re-presign/401/safe error Unit + RTL      | `Passed` |
+| `INTAKE-AC-011`      | Semantic controls RTL + 390px Browser E2E | `Passed` |
+| `INTAKE-AC-012`      | Isolated full-stack 3-page Browser E2E    | `Passed` |
+| `INTAKE-AC-013`      | Owner B four-route uniform 404 E2E        | `Passed` |
+| `INTAKE-AC-014`      | Abort + explicit delete RTL               | `Passed` |
 
 ## Quality Gates
 
-| Command                 | Result |
-| ----------------------- | ------ |
-| `pnpm format:check`     | TBD    |
-| `pnpm spec:check`       | TBD    |
-| `pnpm lint`             | TBD    |
-| `pnpm typecheck`        | TBD    |
-| `pnpm test`             | TBD    |
-| `pnpm test:integration` | TBD    |
-| `pnpm build`            | TBD    |
-| `pnpm e2e`              | TBD    |
+| Command                 | Result                                 |
+| ----------------------- | -------------------------------------- |
+| `pnpm format:check`     | Passed                                 |
+| `pnpm spec:check`       | Passed: 10 Features / 167 Requirements |
+| `pnpm lint`             | Passed: 8 Tasks                        |
+| `pnpm typecheck`        | Passed: 11 Tasks                       |
+| `pnpm test`             | Passed: 311 Unit/Component Tests       |
+| `pnpm test:integration` | Passed: 12 Suites / 75 Tests           |
+| `pnpm build`            | Passed: 7 Tasks                        |
+| `pnpm e2e`              | Passed: Chromium 4 Tests               |
 
 ## Deviations and Residual Risks
 
-- `INTAKE-DEV-001` は Runtime Implementation/Verification 待ちです。
-- Production OpenAI Provider は既存 Feature と同じく Live Passed Artifact がないため `Partial` です。
+- `INTAKE-DEV-001` は Full Browser Journey と Owner Boundary Evidence で解消しました。
+- Production OpenAI Live Passed Artifact は未取得ですが、`INTAKE-Q-008 A` に従い本 Feature の標準 Acceptance は Test-only Deterministic Provider と Real Infrastructure で完了しています。
+- Firefox/WebKit と Production S3 CORS/IAM の実地 Browser Acceptance は Phase 7 の残存 Risk です。
 
 ## Conclusion
 
-Spec/Decision/Technical Plan/Tasks は Approved です。Runtime と Acceptance Evidence は未着手です。
+`INTAKE-AC-001`〜`INTAKE-AC-014` はすべて Passed です。Approved Scope は Public API、Database Migration、Production Dependency を変更せず Implemented/Verified となりました。

@@ -111,6 +111,8 @@ User は同日 `VIEW-Q-001`〜`VIEW-Q-007` Option `A` を承認しました。Ph
 
 同日の P0 Browser Journey Audit で、Registration、Analysis Create、PDF Upload/Finalize/Delete、Process Start の Backend API は実装済みである一方、`apps/web` は Login、History、Detail/View の Read Flow だけを持ち、新規 User が Browser から Analysis を作成・処理できない `INTAKE-DEV-001` を検出しました。これは AGENTS.md の P0 Registration/PDF Upload と portfolio-quality Full-stack Goal に対する Product Flow Gap です。`web-analysis-intake` Draft と `INTAKE-Q-001`〜`008` に Scope/UX/Cost/Verification Decision を記録し、User Approval 前に Runtime を変更しません。
 
+User は同日 `INTAKE-Q-001`〜`008` Option `A` を承認しました。`INTAKE-DEV-001` は Registration、Title-only Draft Create、最大 3 PDF Intake、Document Review/Delete、明示 Process/Delete と Real Full-stack Browser E2E の実装で解消しました。E2E で検出した Process Accepted 後の stale Cache と Detail Cache Hit 時の polling 不開始は Approved Scope 内の Runtime Defect として修正し、3-page PDF の全 Durable Step `SUCCEEDED` と Owner B 四 Route の uniform `404` で再検証しました。Public API、Database、Production Provider/Dependency の変更はありません。
+
 ## Resolution Evidence
 
 | Deviation                              | Resolution evidence                                                                                               |
@@ -133,6 +135,7 @@ User は同日 `VIEW-Q-001`〜`VIEW-Q-007` Option `A` を承認しました。Ph
 | `VIEW-DEV-001`, `VIEW-DEV-002`         | `VIEW-Q-001` / `VIEW-Q-005` Approved A、三 View Completion と最小 Web Foundation を Scope に固定                  |
 | `VIEW-DEV-003`                         | 5 秒 / 最大 5 分 / Active Status 限定 Polling、Terminal Stop、Component/Pure Boundary Test                        |
 | `VIEW-DEV-004`                         | Tracked Synthetic 3-page PDF、Real MinIO/API/PDF.js Page 2 → 3 Chromium E2E                                       |
+| `INTAKE-DEV-001`                       | Register/Create/3-page Upload/Explicit Process/Three-view E2E、Owner B List/Upload/Delete/Process uniform 404     |
 
 ## Detail
 

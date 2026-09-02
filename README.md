@@ -53,7 +53,7 @@ pnpm dev
 - MinIO API: `localhost:9000`
 - MinIO Console: `localhost:9001`
 
-Web は `NEXT_PUBLIC_API_BASE_URL`（Local Default は `http://localhost:3001/api`）へ接続します。Access Token は Browser Memory だけに保持し、Reload 時は API の `HttpOnly` Refresh Cookie を Rotate して Session を回復します。Login は `/login`、Owner-scoped Analysis History は `/analyses`、Detail Shell は `/analyses/:analysisId` です。
+Web は `NEXT_PUBLIC_API_BASE_URL`（Local Default は `http://localhost:3001/api`）へ接続します。Access Token は Browser Memory だけに保持し、Reload 時は API の `HttpOnly` Refresh Cookie を Rotate して Session を回復します。Registration は `/register`、Login は `/login`、Owner-scoped Analysis History は `/analyses`、新規作成は `/analyses/new`、PDF Intake は `/analyses/:analysisId/intake`、Detail は `/analyses/:analysisId` です。
 
 ## 品質チェック
 
@@ -97,6 +97,8 @@ Prisma Schema と Migration には、User、Analysis、Document、Evidence、Job
 `@stocklens/object-storage` は AWS S3 と Local MinIO を共通 Interface で扱います。S3 Operation には `@aws-sdk/client-s3`、短命 Presigned PUT には `@aws-sdk/s3-request-presigner` のみを追加し、API/Worker から Provider 固有処理を分離しています。詳細は [packages/object-storage/README.md](./packages/object-storage/README.md) を参照してください。
 
 PDF Upload は `DRAFT` Analysis に対して Session を作成し、Browser から MinIO/S3 の Private Bucket へ Presigned PUT した後、API の Finalize を呼ぶ二段階方式です。1 File は 1 byte〜20 MB、1 Analysis は Active Document と未期限 Session の合計 3 件までです。未 Finalize Session は 24 時間で期限切れとなり、Worker が起動時と 60 秒ごとに Cleanup を登録します。
+
+Intake UI は最大 3 PDF の Extension、MIME、Size、`%PDF-` Header を早期確認し、Web Crypto SHA-256、Upload Start、Credential-free Presigned PUT、Finalize の順で処理します。Client 判定は UX Boundary であり、Finalize の Trusted Streaming Validation を置き換えません。Processing は Finalized Document を確認した User の明示操作でのみ開始します。
 
 主要な Storage/Queue 環境変数は次のとおりです。
 

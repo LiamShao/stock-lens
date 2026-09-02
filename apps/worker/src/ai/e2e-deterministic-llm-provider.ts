@@ -124,10 +124,15 @@ function createExtractionOutput(source: {
   });
 }
 
-function readMappedExtractionOutput(context: string): StructuredExtractionOutput {
+function readMappedExtractionOutput(
+  context: string,
+): StructuredExtractionOutput {
   const serialized = readTaggedContent(context, 'untrusted_map_candidates');
   const candidates: unknown = JSON.parse(decodeMarkup(serialized));
-  const parsed = structuredExtractionOutputSchema.array().min(1).parse(candidates);
+  const parsed = structuredExtractionOutputSchema
+    .array()
+    .min(1)
+    .parse(candidates);
   return structuredExtractionOutputSchema.parse({
     findings: parsed.flatMap(({ findings }) => findings),
   });

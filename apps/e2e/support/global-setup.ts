@@ -196,7 +196,10 @@ async function seedActivePrompts(prisma: PrismaClient): Promise<void> {
     {
       name: 'analysis-views',
       schemaVersion: 'analysis-views-v1',
-      templatePath: resolve(repositoryRoot, 'prompts/analysis-views/system.ja.md'),
+      templatePath: resolve(
+        repositoryRoot,
+        'prompts/analysis-views/system.ja.md',
+      ),
     },
   ] as const;
   for (const prompt of prompts) {

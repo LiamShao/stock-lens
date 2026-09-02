@@ -2,6 +2,14 @@
 
 ## 2026-09-02
 
+### P0 Web Analysis Intake Implementation
+
+- Approved `INTAKE-TASK-001`〜`008` として `/register`、`/analyses/new`、`/analyses/:analysisId/intake`、Strict Write API Client、Browser PDF Boundary、最大 3 Parallel Upload、Document Review/Delete、明示 Process/Delete を実装しました。
+- Browser Upload は Extension/MIME/Size/`%PDF-`、Web Crypto SHA-256、Credential-free/Redirect-reject Presigned PUT、一回 Re-presign、Finalize に限定し、URL/Hash/Raw Bytes を Query Cache/Persistent Storage/DOM に保持しません。
+- Real PostgreSQL/Redis/BullMQ/MinIO と Test-only Deterministic Worker を使う Chromium E2E で Registration → Draft → 3-page PDF → Explicit Process → `COMPLETED` → Three Views/Evidence Drawer を確認し、Owner B の List/Upload/Delete/Process は同じ `404` になりました。
+- E2E で Process Accepted 後の stale `UPLOADED` Cache と、Detail Cache Hit 時に bounded polling が開始しない問題を検出し、`PARSING` Cache Update と Mount 起点の 5 秒/最大 5 分 Polling に修正しました。Database Migration、Public API、Production Dependency の変更はありません。
+- Final Gate は Format、Spec Check 10 Features / 167 Requirements、Prisma Generate/Validate、8 Lint Tasks、11 Typecheck Tasks、311 Unit/Component Tests、Real PostgreSQL/Redis/BullMQ/MinIO Integration 12 Suites / 75 Tests、7 Build Tasks、Playwright Chromium 4 Tests が成功しました。全 14 Acceptance Criterion は `Passed` で、Feature は `Verified` です。
+
 ### P0 Web Analysis Intake Draft
 
 - Browser-only P0 Journey を監査し、Backend Registration/Analysis/Upload/Process API が存在する一方、Web は Login/History/Read Flow に限定され、新規 User が Analysis を作成できない `INTAKE-DEV-001` を記録しました。

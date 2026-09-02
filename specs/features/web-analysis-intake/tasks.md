@@ -17,4 +17,4 @@
 - [x] `INTAKE-TASK-006` (`INTAKE-FR-005`〜`INTAKE-FR-010`, `INTAKE-SEC-008`, `INTAKE-SEC-009`) Intake Upload/Document/Delete/Explicit Process UI
 - [x] `INTAKE-TASK-007` (`INTAKE-AC-001`〜`INTAKE-AC-011`, `INTAKE-AC-014`) Web Unit/RTL Accessibility、Failure、Recovery Matrix
 - [x] `INTAKE-TASK-008` (`INTAKE-AC-012`, `INTAKE-AC-013`) Real PostgreSQL/Redis/BullMQ/MinIO Full Browser Journey と Owner B Boundary
-- [ ] `INTAKE-TASK-009` Documentation、Verification、Traceability、Deviation Audit、Full Quality Gate
+- [x] `INTAKE-TASK-009` Documentation、Verification、Traceability、Deviation Audit、Full Quality Gate

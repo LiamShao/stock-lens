@@ -4,10 +4,10 @@
 
 | Field                 | Value                     |
 | --------------------- | ------------------------- |
-| Spec status           | `Approved`                |
-| Implementation status | `Not started`             |
-| Verification status   | `Not started`             |
-| Owner                 | `TBD`                     |
+| Spec status           | `Verified`                |
+| Implementation status | `Implemented`             |
+| Verification status   | `Passed`                  |
+| Owner                 | `Project owner`           |
 | Approval              | `2026-09-02 Q-001〜008 A` |
 | Last updated          | `2026-09-02`              |
 

@@ -41,6 +41,13 @@
 - Browser Reload 時は `/api/auth/refresh` を一度呼び、`HttpOnly` Cookie を Rotate して Session を回復します。
 - 複数 Protected Request が同時に `401` を受けても一つの single-flight Refresh に収束し、各 Request は新 Token で一度だけ Replay します。Replay 後も `401`、または Refresh 失敗の場合は Memory Token と TanStack Query Cache を Clear して Login へ戻します。
 - Unified API Error は Shared Strict Zod Schema で検証し、Browser には Stable Code に対応する固定日本語 Message だけを表示します。Server Message、`details`、Malformed Body、Network Detail は表示・保存しません。
+
+### Browser PDF Intake
+
+- 選択時は最大 3 件、1〜20 MB、case-insensitive `.pdf`、exact `application/pdf`、先頭 `%PDF-` を確認し、Web Crypto で lowercase SHA-256 を計算します。この確認は UX Boundary であり、Server Finalize の Trusted Streaming Validation を常に維持します。
+- Upload Presign は imperative local scope だけで扱い、TanStack Query Cache、Browser Storage、DOM、URL、Log に保存しません。Object Storage PUT は `credentials: omit`、`cache: no-store`、`redirect: error` と Server-returned Headers だけを使用し、API Bearer/Cookie を送りません。
+- Browser は Upload PDF の Text、Link、Attachment、Form、Metadata、Embedded JavaScript を解析・実行しません。Raw Bytes は Header 確認、SHA-256、単一 PUT にだけ使用し、Unmount/Delete 時は active request を Abort します。
+- Finalize、Reload、Retry は Analysis Processing を自動開始しません。Provider Cost/External Side Effect を伴う Process API は Finalized Document Summary の後の User 明示操作に限定します。
 - Analysis Metadata Polling は処理中 Status だけを 5 秒間隔、Page Mount から最大 5 分に限定し、`COMPLETED` / Failed / User-action Status では停止します。Completed Metadata の確認後だけ Strict View Aggregate を取得します。
 - View Text と Evidence Excerpt は React Text Node としてのみ描画し、HTML、Script、Link、Tool Instruction として解釈しません。Evidence Drawer は Response 内の bounded Projection だけを表示し、PDF 操作時にだけ Owner-scoped Read Presign を直接要求します。
 - Presigned Download URL は TanStack Query Cache、Browser Storage、DOM Link、Telemetry に保存せず、`cache: no-store`、`credentials: omit`、Redirect Reject の一回の Byte Fetch にだけ使います。Browser は `application/pdf`、20 MB 上限、`%PDF-` Header を再検証し、URL/Raw Storage Error を含まない固定 Error を表示します。

@@ -74,9 +74,10 @@ const worker = new Worker<AnalysisJobData>(
   (job) =>
     job.name === ANALYSIS_GENERATE_VIEWS_JOB_NAME
       ? views.process(job)
-      : [ANALYSIS_CALCULATE_METRICS_JOB_NAME, ANALYSIS_EXTRACT_JOB_NAME].includes(
-            job.name,
-          )
+      : [
+            ANALYSIS_CALCULATE_METRICS_JOB_NAME,
+            ANALYSIS_EXTRACT_JOB_NAME,
+          ].includes(job.name)
         ? extraction.process(job)
         : processing.process(job),
   { concurrency: config.concurrency, connection },

@@ -71,7 +71,7 @@ PostgreSQL constraint
 - Access Token は短命 JWT で、Sign/Verify Algorithm は `HS256` に固定します。
 - Refresh Token は Random Opaque Secret、DB には SHA-256 Hash のみを保存し、Rotation/Reuse Detection を行います。
 - Refresh Cookie は `HttpOnly`、`SameSite=Strict`、Production `Secure` です。
-- Web は `credentials: include` / `cache: no-store` の API Client を使い、Reload 時に Refresh Cookie を一回 Rotate します。Concurrent `401` は single-flight Refresh と各 Request 一回 Replay に収束し、失敗時は Memory Token と Query Cache を破棄します。
+- Web は `credentials: include` / `cache: no-store` の API Client を使い、Reload 時に Refresh Cookie を一回 Rotate します。Concurrent `401` は single-flight Refresh と各 Request 一回 Replay に収束し、失敗時は Memory Token と Query Cache を破棄します。Registration、Title-only Draft Create、最大 3 PDF Intake、Document Review/Delete、明示 Process Start を ID-based Route で接続します。
 - Credential CORS は設定済み Origin の完全一致だけを許可します。
 - Request ID は 128 文字以内の限定文字種だけを受理し、それ以外は Server UUID に置換します。
 - Structured Logger は Authorization、Cookie、Password、Token Field を Redact します。
@@ -130,7 +130,7 @@ Target は AWS-oriented Architecture です。Web/API/Worker を独立 Deployabl
 ## 8. 現在の既知 Gap
 
 - Analysis と Document HTTP API の Cross-user Authorization は Bearer User A/B で検証済みです。
-- Object Storage Adapter、PDF Upload/Finalize/Delete API、Concurrent Reservation/Finalize、24-hour Orphan Scan、Cleanup Queue/Worker、PDF Parse/Chunk、Phase 4 Durable LLM Pipeline/Atomic Evidence Publish、Phase 5 Durable View Generation/Atomic Publish、Browser Session/History/Detail、Three-view/Evidence Drawer/PDF.js UI は実装・検証済みです。OpenAI Live Passed Artifact と RAG は未実装です。
+- Object Storage Adapter、PDF Upload/Finalize/Delete API、Concurrent Reservation/Finalize、24-hour Orphan Scan、Cleanup Queue/Worker、PDF Parse/Chunk、Phase 4 Durable LLM Pipeline/Atomic Evidence Publish、Phase 5 Durable View Generation/Atomic Publish、Browser Registration/Analysis Intake/Session/History/Detail、Three-view/Evidence Drawer/PDF.js UI は実装・検証済みです。OpenAI Live Passed Artifact と RAG は未実装です。
 - Read Presign API、Real MinIO GET、Real PDF.js Document/Page Load、Canvas Page Navigation、Chromium Full Browser E2E は実装・検証済みです。Production Private Bucket Policy、Browser PUT/GET CORS、API/Worker IAM Policy と Firefox/WebKit Coverage は未実装・未検証です。
 - FAILED Cleanup/Parse/Chunk/Metrics/Extract は Guard 付き Operator CLI から既存 Execution を再実行できます。Production Workload IAM/Secrets Manager Evidence は Phase 7 に残ります。
 - Rate Limit Store は Process Local であり、Multi-instance 前に Redis-backed Store が必要です。
