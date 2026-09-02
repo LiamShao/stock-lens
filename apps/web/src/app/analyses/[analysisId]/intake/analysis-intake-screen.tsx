@@ -1,6 +1,6 @@
 'use client';
 
-import type { DocumentType } from '@stocklens/shared';
+import type { AnalysisResource, DocumentType } from '@stocklens/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
@@ -81,7 +81,14 @@ export function AnalysisIntakeScreen({ analysisId }: { analysisId: string }) {
   });
   const process = useMutation({
     mutationFn: () => session.apiClient.processAnalysis(analysisId),
-    onSuccess: () => {
+    onSuccess: (accepted) => {
+      queryClient.setQueryData<AnalysisResource>(
+        ['analysis', analysisId],
+        (current) =>
+          current === undefined
+            ? current
+            : { ...current, status: accepted.status },
+      );
       void queryClient.invalidateQueries({ queryKey: ['analyses'] });
       router.replace(`/analyses/${analysisId}`);
     },

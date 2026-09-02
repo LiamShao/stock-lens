@@ -14,3 +14,8 @@ export const E2E_OWNER_B = {
   email: 'owner-b@e2e.stocklens.local',
   password: 'owner-b-e2e-password',
 } as const;
+export const E2E_INTAKE_OWNER = {
+  displayName: 'E2E Intake Owner',
+  email: 'intake-owner@e2e.stocklens.local',
+  password: 'intake-owner-e2e-password',
+} as const;

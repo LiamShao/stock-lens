@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
 import { createWriteStream, mkdtempSync } from 'node:fs';
-import { rm } from 'node:fs/promises';
+import { readFile, rm } from 'node:fs/promises';
 import { request as httpRequest } from 'node:http';
 import { request as httpsRequest } from 'node:https';
 import { createRequire } from 'node:module';
@@ -56,6 +56,7 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
   );
   const apiLogPath = resolve(temporaryDirectory, 'api.log');
   let apiProcess: ManagedProcess | undefined;
+  let workerProcess: ManagedProcess | undefined;
   let webProcess: ManagedProcess | undefined;
   let postgres:
     Awaited<ReturnType<PostgreSqlContainerType['start']>> | undefined;
@@ -64,7 +65,11 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
   let prisma: PrismaClient | undefined;
 
   const cleanup = async () => {
-    await Promise.all([stopProcess(webProcess), stopProcess(apiProcess)]);
+    await Promise.all([
+      stopProcess(webProcess),
+      stopProcess(workerProcess),
+      stopProcess(apiProcess),
+    ]);
     await prisma?.$disconnect();
     await Promise.all([minio?.stop(), redis?.stop(), postgres?.stop()]);
     await rm(temporaryDirectory, { force: true, recursive: true });
@@ -132,11 +137,25 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
     ]);
     prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
     await prisma.$connect();
+    await seedActivePrompts(prisma);
     const fixture = await seedCompletedAnalysis({
       minioEndpoint,
       ownerId: ownerA.user.id,
       prisma,
     });
+
+    const workerLogPath = resolve(temporaryDirectory, 'worker.log');
+    workerProcess = startProcess(
+      resolve(repositoryRoot, 'apps/worker/dist/e2e-main.js'),
+      [],
+      {
+        ...apiEnvironment,
+        STOCKLENS_ALLOW_E2E_DETERMINISTIC_WORKER: 'true',
+        WORKER_CONCURRENCY: '1',
+      },
+      workerLogPath,
+    );
+    await waitForLog(workerLogPath, '"event":"worker.ready"');
 
     const webLogPath = resolve(temporaryDirectory, 'web.log');
     webProcess = startProcess(
@@ -151,14 +170,47 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
     Object.assign(process.env, {
       STOCKLENS_E2E_ANALYSIS_ID: fixture.analysisId,
       STOCKLENS_E2E_API_LOG_PATH: apiLogPath,
+      STOCKLENS_E2E_DATABASE_URL: databaseUrl,
       STOCKLENS_E2E_DOCUMENT_ID: fixture.documentId,
       STOCKLENS_E2E_OWNER_B_ID: ownerB.user.id,
       STOCKLENS_E2E_STORAGE_KEY: fixture.storageKey,
+      STOCKLENS_E2E_WORKER_LOG_PATH: workerLogPath,
     });
     return cleanup;
   } catch (error) {
     await cleanup();
     throw error;
+  }
+}
+
+async function seedActivePrompts(prisma: PrismaClient): Promise<void> {
+  const prompts = [
+    {
+      name: 'structured-extraction',
+      schemaVersion: 'structured-finding-v1',
+      templatePath: resolve(
+        repositoryRoot,
+        'prompts/structured-extraction/system.ja.md',
+      ),
+    },
+    {
+      name: 'analysis-views',
+      schemaVersion: 'analysis-views-v1',
+      templatePath: resolve(repositoryRoot, 'prompts/analysis-views/system.ja.md'),
+    },
+  ] as const;
+  for (const prompt of prompts) {
+    const template = await readFile(prompt.templatePath, 'utf8');
+    await prisma.promptVersion.create({
+      data: {
+        contentSha256: sha256(template),
+        isActive: true,
+        name: prompt.name,
+        schemaVersion: prompt.schemaVersion,
+        template,
+        version: 1,
+      },
+    });
   }
 }
 
@@ -437,6 +489,21 @@ async function waitForUrl(url: string): Promise<void> {
     );
   }
   throw new Error('E2E application startup timed out.');
+}
+
+async function waitForLog(logPath: string, marker: string): Promise<void> {
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    try {
+      if ((await readFile(logPath, 'utf8')).includes(marker)) return;
+    } catch {
+      // The isolated process has not created its log yet.
+    }
+    await new Promise<void>((resolvePromise) =>
+      setTimeout(resolvePromise, 100),
+    );
+  }
+  throw new Error('E2E worker startup timed out.');
 }
 
 async function assertPortAvailable(port: number): Promise<void> {

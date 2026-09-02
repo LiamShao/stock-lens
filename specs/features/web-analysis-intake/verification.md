@@ -27,6 +27,9 @@
 - Process Button は Finalized Document 1 件以上、Local File 0 件、Upload Terminal の場合だけ有効で、Finalize/Reload/Retry から自動実行されません。Accepted 後だけ既存 Detail Polling へ Redirect します。
 - `analysis-intake-screen.spec.tsx` は Invalid 4 Files の API Side-effect なし、Credential-free PUT、Finalize、No-auto Process、Parallel 1 Success/1 Failure、Reload Document Restore、Explicit Document/Analysis Delete を検証しました。
 - Task 006/007 Web Gate: Lint、Typecheck、10 Files / 40 Tests、Production Build が成功しました。Sandbox 内 Build は Turbopack/PostCSS Port Bind 制限で失敗し、同一 Command の承認済み sandbox 外再実行が成功しました。
+- `analysis-intake.e2e.spec.ts` は Browser Registration → Draft Create → 3-page PDF → Real MinIO PUT/Finalize → Explicit Process → PostgreSQL/Redis/BullMQ Worker → `COMPLETED` → Three Views/Evidence Drawer を検証しました。
+- 同 E2E は Owner B による Owner A Analysis の Document List、Upload Start、Document Delete、Process Start がすべて同じ `404 ANALYSIS_NOT_FOUND` となることを検証しました。
+- E2E で Intake の fresh `UPLOADED` Cache が Process 後にも残る問題と、Detail の Query Cache Hit 時に bounded polling が開始しない問題を検出し、Accepted `PARSING` Cache update と Mount 起点の 5 分 bounded polling に修正しました。
 
 ## Acceptance Evidence
 
@@ -35,16 +38,16 @@
 | `INTAKE-AC-001`      | Register RTL + memory client Unit         | `Passed`      |
 | `INTAKE-AC-002`      | Title-only draft RTL + strict client      | `Passed`      |
 | `INTAKE-AC-003`      | Browser file boundary Unit                | `Passed`      |
-| `INTAKE-AC-004`      | Hash/PUT/API Unit; real storage pending   | `Partial`     |
+| `INTAKE-AC-004`      | Hash/PUT Unit + real MinIO Browser E2E    | `Passed`      |
 | `INTAKE-AC-005`      | Parallel partial success/retry RTL        | `Passed`      |
 | `INTAKE-AC-006`      | Server document restore + no storage      | `Passed`      |
-| `INTAKE-AC-007`      | Delete RTL; Owner B E2E pending           | `Partial`     |
+| `INTAKE-AC-007`      | Delete RTL + Owner B E2E boundary         | `Passed`      |
 | `INTAKE-AC-008`      | Explicit single process RTL               | `Passed`      |
 | `INTAKE-AC-009`      | No-auto process RTL                       | `Passed`      |
 | `INTAKE-AC-010`      | Re-presign/401/safe error Unit + RTL      | `Passed`      |
-| `INTAKE-AC-011`      | Semantic controls RTL; mobile E2E pending | `Partial`     |
-| `INTAKE-AC-012`      | Pending                                   | `Not started` |
-| `INTAKE-AC-013`      | Pending                                   | `Not started` |
+| `INTAKE-AC-011`      | Semantic controls RTL + 390px Browser E2E | `Passed`      |
+| `INTAKE-AC-012`      | Isolated full-stack 3-page Browser E2E    | `Passed`      |
+| `INTAKE-AC-013`      | Owner B four-route uniform 404 E2E        | `Passed`      |
 | `INTAKE-AC-014`      | Abort + explicit delete RTL               | `Passed`      |
 
 ## Quality Gates

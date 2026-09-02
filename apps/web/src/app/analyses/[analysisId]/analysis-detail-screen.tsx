@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
 import { AnalysisViewsPanel } from '@/components/analysis-views/analysis-views-panel';
 import { ProtectedShell } from '@/components/protected-shell';
@@ -17,10 +17,11 @@ import { useRequireSession } from '@/session/use-require-session';
 
 export function AnalysisDetailScreen({ analysisId }: { analysisId: string }) {
   const session = useRequireSession();
+  const [mountedAt] = useState(() => Date.now());
   const pollingState = useRef<{ analysisId: string; startedAt: number | null }>(
     {
       analysisId,
-      startedAt: null,
+      startedAt: mountedAt,
     },
   );
   const analysis = useQuery({
